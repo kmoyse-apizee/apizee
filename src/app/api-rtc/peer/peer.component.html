@@ -1,0 +1,10 @@
+<div id="{{participant.stream.streamId}}" class="embed-responsive embed-responsive-4by3">
+    <video #remoteVideo autoplay playsinline></video>
+    <div class="mycard-text">
+
+        <h5>{{participant.stream.contact.userData.username}}</h5>
+        <!-- <p>{{participant.qosStat | json}}</p> -->
+        <app-audio-stats [stats]="participant.qosStat?.audioReceived"></app-audio-stats>
+        <app-video-stats [stats]="participant.qosStat?.videoReceived"></app-video-stats>
+    </div>
+</div>

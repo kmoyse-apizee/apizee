@@ -1,0 +1,50 @@
+<div class="container">
+    <pre>
+        <code>access_token is : {{access_token}}</code>
+    </pre>
+
+    <form [formGroup]="formGroup" (ngSubmit)="onSubmit()">
+        <div class="form-row">
+            <div class="form-group col-md-12">
+                <label for="emails">Participants&nbsp;<button class="btn btn-primary" (click)="addParticipant()" title="Add Participant"><i class="bi bi-plus-circle-dotted"></i></button></label>
+                <div class="form-row" formArrayName="participants">
+                    <div class="col" *ngFor="let fc of participants.controls; let index = index">
+                        <mat-form-field appearance="fill">
+                            <mat-label>Enter email</mat-label>
+                            <input matInput placeholder="pat@example.com" [formControl]="fc" required>
+                            <mat-error *ngIf="fc.invalid">{{getEmailErrorMessage(fc)}}</mat-error>
+                        </mat-form-field>
+                        <i class="bi bi-x-circle" (click)="removeParticipant(index)"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group col-md-12">
+                <label for="emails">Password</label>
+                <div>
+                    <mat-form-field appearance="fill">
+                        <mat-label>Enter password</mat-label>
+                        <input matInput placeholder="1234" formControlName="password" type="number">
+                        <mat-error *ngIf="password.invalid">{{getPasswordErrorMessage(password)}}</mat-error>
+                    </mat-form-field>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <!-- [color]="color"  [disabled]="disabled"-->
+            <mat-slide-toggle class="example-margin" formControlName="audioMute">
+                audio
+            </mat-slide-toggle>
+        </div>
+
+        <br>
+        <button class="btn btn-primary" type="submit" [disabled]="!formGroup.valid">createConference</button>
+
+    </form>
+
+    <p>{{response | json}}</p>
+
+
+</div>

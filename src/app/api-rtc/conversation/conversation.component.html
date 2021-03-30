@@ -1,0 +1,74 @@
+<div class="container">
+
+    <div class="text-center">
+        <form *ngIf="!registered" [formGroup]="formGroup" (ngSubmit)="createConference()">
+            <mat-form-field>
+                <mat-label>Nom de ma conférence</mat-label>
+                <span matPrefix>{{confBaseUrl}}/</span>
+                <input type="text" matInput placeholder="abcd" formControlName="confName">
+                <!-- <mat-icon matSuffix>mode_edit</mat-icon> -->
+            </mat-form-field>&nbsp;
+            <button mat-raised-button color="primary" type="submit" [disabled]="!formGroup.valid"><i class="bi bi-box-arrow-in-right"></i></button>
+        </form>
+
+        <p *ngIf="registered">{{confUrl}}&nbsp;<button mat-raised-button color="primary" [cdkCopyToClipboard]="confUrl"><i class="bi bi-share" ></i></button></p>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+
+            <div id="videos" class="row row-cols-1 row-cols-sm-2">
+                <div class="col mycard">
+                    <!-- style="width: 18rem;" -->
+                    <!-- <div class="card" style="width: 20rem;"> -->
+                    <div id="{{localParticipant?.stream.streamId}}" class="embed-responsive embed-responsive-4by3">
+                        <video #localVideo muted autoplay playsinline></video>
+                        <div class="mycard-text">
+                            <h5 *ngIf="!name.value">{{localPeerId}}</h5>
+                            <h5 *ngIf="name.value">{{name.value}}</h5>
+                            <form class="row row-cols-lg-auto g-3 align-items-center">
+                                <div class="col-12">
+                                    <mat-form-field appearance="outline">
+                                        <mat-label>Name</mat-label>
+                                        <input matInput placeholder="Name" [formControl]="name">
+                                        <mat-icon matSuffix>sentiment_very_satisfied</mat-icon>
+                                        <mat-hint>Enter your name</mat-hint>
+                                    </mat-form-field>
+                                </div>
+                            </form>
+                            <app-audio-stats [stats]="localParticipant?.qosStat?.audioSent"></app-audio-stats>
+                            <app-video-stats [stats]="localParticipant?.qosStat?.videoSent"></app-video-stats>
+                        </div>
+                    </div>
+                </div>
+
+                <div *ngFor="let participant of participants" class="col mycard">
+                    <app-peer [participant]="participant"></app-peer>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer">
+            <div>
+                <select id='select-camera' name="camera" class="custom-select" placeholder="No camera"></select>
+                <legend id="my-camera">Camera</legend>
+                <select id='select-mic' name="camera" class="custom-select" placeholder="No microphone"></select>
+                <legend id="my-mic">Microphone</legend>
+            </div>
+
+            <!-- [disabled]="!registered||joined" -->
+            <button mat-raised-button color="primary" (click)="!joined?join():leave()" [disabled]="!registered">{{!joined?'Join':'Leave'}}</button>
+            <button mat-raised-button color="primary" (click)="publish()">Publish</button>
+        </div>
+    </div>
+
+    <hr>
+    <pre>
+        <code>localPeerId is : {{localPeerId}}</code>
+        <code>port {{window.location.port}}</code>
+        <code>host {{window.location.host}}</code>
+        <code>href {{window.location.href}}</code>
+        <code>protocol {{window.location.protocol}}</code>
+    </pre>
+
+
+</div>

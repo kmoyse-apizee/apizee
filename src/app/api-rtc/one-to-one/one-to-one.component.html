@@ -1,0 +1,44 @@
+<div class="container">
+    <div>My Id :
+        <span>{{uuid}}</span>
+    </div>
+
+    <div class="input-group mb-3">
+        <div class="input-group-prepend">
+            <span class="input-group-text" id="basic-addon-id">@</span>
+        </div>
+        <input type="text" class="form-control" placeholder="Id" aria-label="Id" aria-describedby="basic-addon-id"
+            [(ngModel)]="id">
+    </div>
+    <div class="input-group mb-3">
+        <div class="input-group-prepend">
+            <span class="input-group-text" id="basic-addon-msg">msg</span>
+        </div>
+        <input type="text" class="form-control" placeholder="Msg" aria-label="Msg" aria-describedby="basic-addon-msg"
+            [(ngModel)]="message">
+        <div class="input-group-append">
+            <button class="btn btn-outline-secondary" type="button" id="button-addon-send"
+                (click)="sendMsg(id,message)">Send</button>
+        </div>
+        <div class="input-group-append">
+            <button class="btn btn-outline-secondary" type="button" id="button-addon-call"
+                (click)="call(id)">Call</button>
+        </div>
+        <div class="input-group-append">
+            <button class="btn btn-outline-secondary" type="button" id="button-addon-hangup"
+                (click)="hangUp()">Hang-Up</button>
+        </div>
+    </div>
+
+    <div>
+        Received:
+        <span>{{in_message}}</span>
+    </div>
+
+
+    <div id="videos">
+        <video #localVideo id="localVideo" muted autoplay playsinline></video>
+        <video #remoteVideo id="remoteVideo" autoplay playsinline></video>
+    </div>
+
+</div>
