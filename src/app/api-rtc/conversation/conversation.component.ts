@@ -37,6 +37,7 @@ export class ConversationComponent implements OnInit, OnDestroy {
   localParticipant: Participant;
 
   participants: Array<Participant> = new Array();
+  participantsByStreamId: Object = {};
   participantsByCallId: Object = {};
 
   get confName() {
@@ -120,7 +121,7 @@ export class ConversationComponent implements OnInit, OnDestroy {
       console.log("apiCC", apiCC);
       if ((apiCC.browser === 'Chrome') || (apiCC.browser === 'Firefox')) {
         this.apiRtcService.getUserAgent().enableCallStatsMonitoring(true, { interval: 10000 });
-        this.apiRtcService.getUserAgent().enableActiveSpeakerDetecting(true, { threshold: 100 });
+        this.apiRtcService.getUserAgent().enableActiveSpeakerDetecting(true, { threshold: 50 });
       }
 
       session.on("contactListUpdate", updatedContacts => { //display a list of connected users
@@ -138,7 +139,6 @@ export class ConversationComponent implements OnInit, OnDestroy {
             this.connectedConversation.subscribeToMedia(streamInfo.streamId)
               .then(stream => {
                 console.log('subscribeToMedia success:', stream);
-                //stream.addInDiv('remote-container', 'remote-media-' + stream.streamId, {}, false);
               }).catch(err => {
                 console.error('subscribeToMedia error', err);
               });
@@ -152,6 +152,7 @@ export class ConversationComponent implements OnInit, OnDestroy {
 
         const participant = Participant.build(stream);
 
+        this.participantsByStreamId[stream.streamId] = participant;
         this.participantsByCallId[stream.callId] = participant;
         this.participants.push(participant);
 
@@ -165,6 +166,8 @@ export class ConversationComponent implements OnInit, OnDestroy {
             console.log("removedStream:", removedStream);
           }
         }
+        delete this.participantsByStreamId[stream.streamId];
+        delete this.participantsByCallId[stream.callId];
       }).on('contactJoined', contact => {
         console.log("Contact that has joined :", contact);
       }).on('contactLeft', contact => {
@@ -193,22 +196,19 @@ export class ConversationComponent implements OnInit, OnDestroy {
           });
           console.info("sent", this.localParticipant.getQosStat());
         }
-
-        
       });
 
       this.connectedConversation.on('audioAmplitude', amplitudeInfo => {
+
+        console.log("on:audioAmplitude", amplitudeInfo);
+
         if (amplitudeInfo.callId !== null) {
-          var speakerMsgDiv = document.getElementById('activeSpeaker-' + amplitudeInfo.callId);
+          // TODO :
+          // There is a problem here, it seems the amplitudeInfo.callId is actually a streamId
+          const participant: Participant = this.participantsByStreamId[amplitudeInfo.callId];
+          participant.setSpeaking(amplitudeInfo.descriptor.isSpeaking);
         } else {
-          var speakerMsgDiv = document.getElementById('activeSpeaker-0');
-        }
-        if (speakerMsgDiv) {
-          if (amplitudeInfo.descriptor.isSpeaking) {
-            speakerMsgDiv.innerHTML = "Speaking";
-          } else {
-            speakerMsgDiv.innerHTML = "Stopped Speaking";
-          }
+          this.localParticipant.setSpeaking(amplitudeInfo.descriptor.isSpeaking);
         }
       });
 

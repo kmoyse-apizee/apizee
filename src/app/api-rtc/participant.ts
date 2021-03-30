@@ -7,6 +7,8 @@ export class Participant {
 
     public qosStat: any;
 
+    public isSpeaking = false;
+
     constructor(stream: any, qosStat?: any) {
         this.stream = stream;
         this.streamId = stream.streamId;
@@ -36,6 +38,10 @@ export class Participant {
 
     public getStream(): any {
         return this.stream
+    }
+
+    public setSpeaking(isSpeaking: boolean) {
+        this.isSpeaking = isSpeaking;
     }
 
 }
