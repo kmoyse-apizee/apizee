@@ -2,22 +2,25 @@ import { Inject, Injectable } from '@angular/core';
 
 declare var apiRTC: any;
 
+//import {UserAgent} from '@apizee/apirtc/';
+
 @Injectable({
 	providedIn: 'root'
 })
 export class ApiRtcService {
 
-	private ua: any;
-
 	constructor(@Inject('apiKey') private apiKey: string) {
-		this.ua = new apiRTC.UserAgent({
+	}
+
+	public getApiKey(): string {
+		return this.apiKey;
+	}
+
+	public createUserAgent() {
+		return new apiRTC.UserAgent({
 			// format is like 'apzKey:9669e2ae3eb32307853499850770b0c3'
 			uri: 'apzkey:' + this.apiKey
 		});
-	}
-
-	public getUserAgent() {
-		return this.ua;
 	}
 
 	public uuidv4() {

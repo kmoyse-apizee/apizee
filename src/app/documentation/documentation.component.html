@@ -1,0 +1,40 @@
+<div class="container">
+
+    <h1>Documentation ApiRTC</h1>
+
+    <h2>Lexique des objets</h2>
+
+    <h3>UserAgent</h3>
+    <p>On instancie un <code>UserAgent</code> avec une clef d'API fournie par Apizee et associée à votre compte sur apizee.com : l'<code>apiKey</code></p>
+
+    <pre><code>
+userAgent = new UserAgent(&#123;
+    uri: 'apzkey:' + this.apiKey
+    &#125;)
+    </code></pre>
+
+    <p>C'est un point d'entrée pour enregistrer un <strong>participant</strong> auprès des serveurs d'Apizee</p>
+    <p>L'enregistrement permet d'obtenir une <code>Session</code> qui permettra d'utiliser les fonctionnalités de conference/conversation
+    </p>
+
+    <h3>Session</h3>
+    <p>On obtient une instance de <code>Session</code> en retour (Promise) de la méthode
+        <code>UserAgent.register()</code></p>
+    <pre><code>
+userAgent.register().then(session => &#123;
+        // use session
+    &#125;;
+    </code></pre>
+
+    <h3>Conversation</h3>
+    <p>On obtient une instance de <code>Conversation</code> en retour de la méthode
+        <code>Session.getOrCreateConversation(name)</code></p>
+    note : ceci est bizarre pour joindre ume conversation c'est conversation.join() sémantiquement on aurai
+    <p>L'appel à la méthode <code>Conversation.join()</code> permet au <strong>participant</strong> de rejoindre la
+        <strong>conversation</strong></p>
+    <!-- <h3>Conference</h3> -->
+
+    <h3>Stream</h3>
+    <p>un objet Stream est founi</p>
+
+</div>

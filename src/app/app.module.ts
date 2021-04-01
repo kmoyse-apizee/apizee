@@ -15,10 +15,12 @@ import { AppComponent } from './app.component';
 
 import { ApiRestModule } from './api-rest/api-rest.module';
 import { ApiRtcModule } from './api-rtc/api-rtc.module';
+import { DocumentationComponent } from './documentation/documentation.component';
 
 @NgModule({
   declarations: [
-    AppComponent
+    AppComponent,
+    DocumentationComponent
   ],
   imports: [
     BrowserModule,

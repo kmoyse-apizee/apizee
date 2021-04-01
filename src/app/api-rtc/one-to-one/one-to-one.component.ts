@@ -12,6 +12,8 @@ export class OneToOneComponent implements OnInit {
   @ViewChild("localVideo") localVideoRef: ElementRef;
   @ViewChild("remoteVideo") remoteVideoRef: ElementRef;
 
+  // apiRTC objects
+  userAgent:any;
   session: any;
 
   uuid: string;
@@ -24,14 +26,15 @@ export class OneToOneComponent implements OnInit {
   _call: any;
 
   constructor(private apiRtcService: ApiRtcService) {
+    this.userAgent = this.apiRtcService.createUserAgent();
     this.uuid = this.apiRtcService.uuidv4();
   }
 
   ngOnInit(): void {
 
     const self = this;
-
-    this.apiRtcService.getUserAgent().register({
+    
+    this.userAgent.register({
       id: this.uuid // OPTIONAL // This is used for setting userId
     }).then(session => {
       // ok

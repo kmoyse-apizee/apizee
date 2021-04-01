@@ -30,9 +30,12 @@ export class ConversationComponent implements OnInit, OnDestroy {
     confName: this.fb.control('', [Validators.required])
   });
 
-  connectedConversation: any;
+  // apiRTC objects
+  userAgent: any;
+  conversation: any;
 
-  localPeerId: string;
+  //localPeerId: string;
+
   // Local participant
   localParticipant: Participant;
 
@@ -51,9 +54,11 @@ export class ConversationComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private apiRtcService: ApiRtcService,
     private fb: FormBuilder) {
-    this.localPeerId = this.apiRtcService.uuidv4();
 
+    this.userAgent = this.apiRtcService.createUserAgent();
+    //this.localPeerId = this.apiRtcService.uuidv4();
     this.confBaseUrl = `${this.window.location.protocol}//${this.window.location.host}/conversation`;
+
   }
 
   // Note : beforeUnloadHandler alone does not work on android Chrome
@@ -93,7 +98,7 @@ export class ConversationComponent implements OnInit, OnDestroy {
 
     this.name.valueChanges.subscribe((selectedValue) => {
       console.log("name valueChanges:", selectedValue);
-      this.apiRtcService.getUserAgent().setUsername(selectedValue);
+      this.userAgent.setUsername(selectedValue);
     });
   }
 
@@ -102,51 +107,58 @@ export class ConversationComponent implements OnInit, OnDestroy {
   }
 
   private doHangUp(): void {
-    if (this.connectedConversation) {
-      this.connectedConversation.destroy();
+    if (this.conversation) {
+      this.conversation.destroy();
     }
   }
 
   createConference(): void {
 
-    this.apiRtcService.getUserAgent().register({
-      id: this.localPeerId // OPTIONAL // This is used for setting userId
-    }).then(session => {
+    // {
+    //   id: this.localPeerId // OPTIONAL // This is used for setting userId
+    // }
+
+    this.userAgent.register().then(session => {
 
       // Create the conversation
-      this.connectedConversation = session.getConversation(this.confName.value);
+      // TODO : the tutorials use getConversation but logs and code actually say it is deprecated
+      // in favor to getOrCreateConversation(name, options = {})
+      this.conversation = session.getOrCreateConversation(this.confName.value);
+      // TODO il existe aussi getOrCreateConference mais les deux retournent une Conference ou une Conversation en fonction du format du nom..
+      // se faire expliquer !
 
       // STATS
       // Call Stats monitoring is supported on Chrome and Firefox and will be added soon on Safari
-      console.log("apiCC", apiCC);
+      //console.log("apiCC", apiCC);
       if ((apiCC.browser === 'Chrome') || (apiCC.browser === 'Firefox')) {
-        this.apiRtcService.getUserAgent().enableCallStatsMonitoring(true, { interval: 10000 });
-        this.apiRtcService.getUserAgent().enableActiveSpeakerDetecting(true, { threshold: 50 });
+        this.userAgent.enableCallStatsMonitoring(true, { interval: 10000 });
+        this.userAgent.enableActiveSpeakerDetecting(true, { threshold: 50 });
       }
 
       session.on("contactListUpdate", updatedContacts => { //display a list of connected users
         console.log("MAIN - contactListUpdate", updatedContacts);
-        if (this.connectedConversation !== null) {
-          let contactList = this.connectedConversation.getContacts();
-          console.info("contactList  connectedConversation.getContacts() :", contactList);
+        if (this.conversation !== null) {
+          let contactList = this.conversation.getContacts();
+          console.info("contactList  conversation.getContacts() :", contactList);
         }
       })
 
-      this.connectedConversation.on('streamListChanged', streamInfo => {
+      this.conversation.on('streamListChanged', streamInfo => {
         console.log("streamListChanged :", streamInfo);
+        //  USE subscribeToStream instead of subscribeToMedia?
         if (streamInfo.listEventType === 'added') {
           if (streamInfo.isRemote === true) {
-            this.connectedConversation.subscribeToMedia(streamInfo.streamId)
+            this.conversation.subscribeToStream(streamInfo.streamId)
               .then(stream => {
-                console.log('subscribeToMedia success:', stream);
+                console.log('subscribeToStream success:', stream);
               }).catch(err => {
-                console.error('subscribeToMedia error', err);
+                console.error('subscribeToStream error', err);
               });
           }
         }
       });
 
-      this.connectedConversation.on('streamAdded', stream => {
+      this.conversation.on('streamAdded', stream => {
         console.log('streamAdded, stream:', stream)
         //stream.addInDiv('remote-container', 'remote-media-' + stream.streamId, {}, false);
 
@@ -175,7 +187,7 @@ export class ConversationComponent implements OnInit, OnDestroy {
       });
 
       // STATS
-      this.connectedConversation.on('callStatsUpdate', callStats => {
+      this.conversation.on('callStatsUpdate', callStats => {
 
         console.log("callStatsUpdate:", callStats);
 
@@ -198,7 +210,7 @@ export class ConversationComponent implements OnInit, OnDestroy {
         }
       });
 
-      this.connectedConversation.on('audioAmplitude', amplitudeInfo => {
+      this.conversation.on('audioAmplitude', amplitudeInfo => {
 
         console.log("on:audioAmplitude", amplitudeInfo);
 
@@ -222,9 +234,9 @@ export class ConversationComponent implements OnInit, OnDestroy {
   }
 
   join(): void {
-    if (this.connectedConversation) {
+    if (this.conversation) {
       // Join the conversation
-      this.connectedConversation.join()
+      this.conversation.join()
         .then(response => {
           //Conversation joined
           this.joined = true;
@@ -236,14 +248,14 @@ export class ConversationComponent implements OnInit, OnDestroy {
   }
 
   leave(): void {
-    if (this.connectedConversation) {
-      this.connectedConversation.leave()
+    if (this.conversation) {
+      this.conversation.leave()
         .then(() => {
           this.joined = false;
           console.info('Conversation left');
           // do not destroy otherwise you cannot join back !
-          // this.connectedConversation.destroy();
-          // this.connectedConversation = null;
+          // this.conversation.destroy();
+          // this.conversation = null;
         })
         .catch(err => { console.error('Conversation leave error', err); });
     }
@@ -251,13 +263,13 @@ export class ConversationComponent implements OnInit, OnDestroy {
 
   publish(): void {
     console.log("publish()");
-    if (this.connectedConversation) {
+    if (this.conversation) {
 
       // TODO : I was following tutorial at https://dev.apirtc.com/tutorials/conferencing/conf
       // but I was stucked here because I lacked to correct way to create a stream
       // The doc redirects to other tutorials but this is even less clear...
       // I tried to create it with standard navigator.mediaDevices.getUserMedia
-      // but this is not creating the correct type of object thus connectedConversation.publish(localStream, null);
+      // but this is not creating the correct type of object thus conversation.publish(localStream, null);
       // failed with error like [2021-03-18T15:50:36.537Z][ERROR]apiRTC(Conversation) publish() - No stream specified
       // Frederic told me thet there was actually a link to the associated guthub code for the tutorial
       // in it we can fins the correct way to create an expected apirtc stream.
@@ -275,7 +287,7 @@ export class ConversationComponent implements OnInit, OnDestroy {
               this.localVideoRef.nativeElement.srcObject = localStream;
       
               //Publish your own stream to the conversation : localStream
-              this.connectedConversation.publish(localStream, null);
+              this.conversation.publish(localStream, null);
       
             }).catch(err => {
               alert("getUserMedia not supported by your web browser or Operating system version" + err);
@@ -286,7 +298,7 @@ export class ConversationComponent implements OnInit, OnDestroy {
         audio: true,
         video: true
       };
-      this.apiRtcService.getUserAgent().createStream(createStreamOptions)
+      this.userAgent.createStream(createStreamOptions)
         .then(stream => {
           console.log('createStream :', stream);
 
@@ -401,7 +413,7 @@ export class ConversationComponent implements OnInit, OnDestroy {
           stream.attachToElement(this.localVideoRef.nativeElement);
 
           // Publish your own stream to the conversation
-          this.connectedConversation.publish(stream, null);
+          this.conversation.publish(stream, null);
         });
 
 
