@@ -38,10 +38,14 @@ export class ConversationComponent implements OnInit, OnDestroy {
 
   // Local participant
   localParticipant: Participant;
+  published = false;
+  publishInPrgs = false;
+
 
   participants: Array<Participant> = new Array();
   participantsByStreamId: Object = {};
   participantsByCallId: Object = {};
+
 
   get confName() {
     return this.formGroup.get('confName') as FormControl;
@@ -261,163 +265,190 @@ export class ConversationComponent implements OnInit, OnDestroy {
     }
   }
 
+  destroy(): void {
+    if (this.conversation) {
+      console.info('Destroy conversation');
+      this.conversation.destroy();
+    }
+  }
+
+  createStream(): void {
+    console.log("createStream()");
+    // TODO : I was following tutorial at https://dev.apirtc.com/tutorials/conferencing/conf
+    // but I was stucked here because I lacked to correct way to create a stream
+    // The doc redirects to other tutorials but this is even less clear...
+    // I tried to create it with standard navigator.mediaDevices.getUserMedia
+    // but this is not creating the correct type of object thus conversation.publish(localStream, null);
+    // failed with error like [2021-03-18T15:50:36.537Z][ERROR]apiRTC(Conversation) publish() - No stream specified
+    // Frederic told me thet there was actually a link to the associated guthub code for the tutorial
+    // in it we can fins the correct way to create an expected apirtc stream.
+    // IDEA : ajouter un message avec un lien sur le github dès le début de la page du tuto !
+
+    /*       navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: true
+          }).then(localStream => {
+            this.localStream = localStream;
+            //this.localVideoRef.nativeElement.autoplay = true;
+            // Seems this has to be set by code to work :
+            this.localVideoRef.nativeElement.muted = true;
+            // Attach stream
+            this.localVideoRef.nativeElement.srcObject = localStream;
+    
+            //Publish your own stream to the conversation : localStream
+            this.conversation.publish(localStream, null);
+    
+          }).catch(err => {
+            alert("getUserMedia not supported by your web browser or Operating system version" + err);
+          }); */
+
+    var createStreamOptions: any = {};
+    createStreamOptions.constraints = {
+      audio: true,
+      video: true
+    };
+    this.userAgent.createStream(createStreamOptions)
+      .then(stream => {
+        console.log('createStream :', stream);
+
+        /*           createStream : 
+                  {…}
+  ​
+  audioInput: undefined
+  ​
+  callId: null
+  ​
+  contact: null
+  ​
+  data: MediaStream { id: "{f314a806-088f-4fd4-884a-d73265fb4bcb}", active: true, onaddtrack: null, … }
+  ​
+  isRemote: false
+  ​
+  mediaRecorder: null
+  ​
+  publishedInConversations: Map { ft → "8178766209097722" }
+  ​
+  recordedBlobs: Array []
+  ​
+  streamId: 4004898158847876
+  ​
+  type: "video"
+  ​
+  userMediaStreamId: "4004898158847876"
+  ​
+  videoInput: undefined
+  ​
+  <prototype>: {…}
+  ​
+  activateAIAnnotations: function value()​​
+  activateAILogs: function value()​​
+  activateAISnapshots: function value()​​
+  addInDiv: function value(e, t, i, n, a)​​
+  attachToElement: function value(e)​​
+  checkImageCaptureCompatibility: function value()​​
+  constructor: function d(e)​​
+  disableAudioAnalysis: function value()​​
+  enableAudioAnalysis: function value()​​
+  getCapabilities: function value()​​
+  getConstraints: function value()​​
+  getContact: function value()​​
+  getConversations: function value()​​
+  getData: function value()​​
+  getId: function value()​​
+  getLabels: function value()​​
+  getLocalMediaStreamTrack: function value()​​
+  getOwner: function value()​​
+  getSettings: function value()​​
+  getStreamAIE: function value()​​
+  getType: function value()​​
+  hasAudio: function value()​​
+  hasData: function value()​​
+  hasVideo: function value()​​
+  isAudioMuted: function value()​​
+  isScreensharing: function value()​​
+  isVideoMuted: function value()​​
+  muteAudio: function value()​​
+  muteVideo: function value()​​
+  pauseRecord: function value()​​
+  release: function value()​​
+  releaseAudio: function value()​​
+  releaseVideo: function value()​​
+  removeFromDiv: function value(e, t)​​
+  resumeRecord: function value()​​
+  setAspectRatio: function value(e)​​
+  setBrightness: function value(e)​​
+  setCapabilities: function value(e)​​
+  setCapability: function value(e, t)​​
+  setColorTemperature: function value(e)​​
+  setContrast: function value(e)​​
+  setExposureCompensation: function value(e)​​
+  setExposureMode: function value(e)​​
+  setExposureTime: function value(e)​​
+  setFacingMode: function value(e)​​
+  setFocusDistance: function value(e)​​
+  setFocusMode: function value(e)​​
+  setFrameRate: function value(e)​​
+  setHeight: function value(e)​​
+  setIso: function value(e)​​
+  setResizeMode: function value(e)​​
+  setSaturation: function value(e)​​
+  setSharpness: function value(e)​​
+  setTorch: function value(e)​​
+  setWhiteBalanceMode: function value(e)​​
+  setWidth: function value(e)​​
+  setZoom: function value(e)​​
+  startRecord: function value(e)​​
+  stopAIAnnotations: function value()​​
+  stopAILogs: function value()​​
+  stopAISnapshots: function value()​​
+  stopRecord: function value()​​
+  takePhoto: function value()​​
+  takeSnapshot: function value()​​
+  unmuteAudio: function value()​​
+  unmuteVideo: function value()​​
+  <prototype>: {…}
+  ​
+  constructor: function e(t)​​​
+  on: function value(e, t)​​​
+  removeListener: function value(e, t)​​​
+  <prototype>: {…*/
+
+        this.localParticipant = Participant.build(stream);
+
+        // Attach stream
+        //this.localVideoRef.nativeElement.srcObject = stream;
+        // previous line CANNOT work because this stream is not the same as native one from webrtc
+        // so I had to do :
+        stream.attachToElement(this.localVideoRef.nativeElement);
+
+
+      }).catch(err => {
+        console.error('createStream error', err);
+      });
+  }
+
   publish(): void {
     console.log("publish()");
+
+    const stream = this.localParticipant.getStream();
+
     if (this.conversation) {
+      // Publish your own stream to the conversation
+      this.publishInPrgs = true;
+      this.conversation.publish(stream, null).then(stream => {
+        this.published = true;
+        this.publishInPrgs = false;
+      }).catch(err => {
+        console.error('publish error', err);
+        this.publishInPrgs = false;
+      });
+    }
+  }
 
-      // TODO : I was following tutorial at https://dev.apirtc.com/tutorials/conferencing/conf
-      // but I was stucked here because I lacked to correct way to create a stream
-      // The doc redirects to other tutorials but this is even less clear...
-      // I tried to create it with standard navigator.mediaDevices.getUserMedia
-      // but this is not creating the correct type of object thus conversation.publish(localStream, null);
-      // failed with error like [2021-03-18T15:50:36.537Z][ERROR]apiRTC(Conversation) publish() - No stream specified
-      // Frederic told me thet there was actually a link to the associated guthub code for the tutorial
-      // in it we can fins the correct way to create an expected apirtc stream.
-      // IDEA : ajouter un message avec un lien sur le github dès le début de la page du tuto !
-
-      /*       navigator.mediaDevices.getUserMedia({
-              video: true,
-              audio: true
-            }).then(localStream => {
-              this.localStream = localStream;
-              //this.localVideoRef.nativeElement.autoplay = true;
-              // Seems this has to be set by code to work :
-              this.localVideoRef.nativeElement.muted = true;
-              // Attach stream
-              this.localVideoRef.nativeElement.srcObject = localStream;
-      
-              //Publish your own stream to the conversation : localStream
-              this.conversation.publish(localStream, null);
-      
-            }).catch(err => {
-              alert("getUserMedia not supported by your web browser or Operating system version" + err);
-            }); */
-
-      var createStreamOptions: any = {};
-      createStreamOptions.constraints = {
-        audio: true,
-        video: true
-      };
-      this.userAgent.createStream(createStreamOptions)
-        .then(stream => {
-          console.log('createStream :', stream);
-
-          /*           createStream : 
-                    {…}
-    ​
-    audioInput: undefined
-    ​
-    callId: null
-    ​
-    contact: null
-    ​
-    data: MediaStream { id: "{f314a806-088f-4fd4-884a-d73265fb4bcb}", active: true, onaddtrack: null, … }
-    ​
-    isRemote: false
-    ​
-    mediaRecorder: null
-    ​
-    publishedInConversations: Map { ft → "8178766209097722" }
-    ​
-    recordedBlobs: Array []
-    ​
-    streamId: 4004898158847876
-    ​
-    type: "video"
-    ​
-    userMediaStreamId: "4004898158847876"
-    ​
-    videoInput: undefined
-    ​
-    <prototype>: {…}
-    ​
-    activateAIAnnotations: function value()​​
-    activateAILogs: function value()​​
-    activateAISnapshots: function value()​​
-    addInDiv: function value(e, t, i, n, a)​​
-    attachToElement: function value(e)​​
-    checkImageCaptureCompatibility: function value()​​
-    constructor: function d(e)​​
-    disableAudioAnalysis: function value()​​
-    enableAudioAnalysis: function value()​​
-    getCapabilities: function value()​​
-    getConstraints: function value()​​
-    getContact: function value()​​
-    getConversations: function value()​​
-    getData: function value()​​
-    getId: function value()​​
-    getLabels: function value()​​
-    getLocalMediaStreamTrack: function value()​​
-    getOwner: function value()​​
-    getSettings: function value()​​
-    getStreamAIE: function value()​​
-    getType: function value()​​
-    hasAudio: function value()​​
-    hasData: function value()​​
-    hasVideo: function value()​​
-    isAudioMuted: function value()​​
-    isScreensharing: function value()​​
-    isVideoMuted: function value()​​
-    muteAudio: function value()​​
-    muteVideo: function value()​​
-    pauseRecord: function value()​​
-    release: function value()​​
-    releaseAudio: function value()​​
-    releaseVideo: function value()​​
-    removeFromDiv: function value(e, t)​​
-    resumeRecord: function value()​​
-    setAspectRatio: function value(e)​​
-    setBrightness: function value(e)​​
-    setCapabilities: function value(e)​​
-    setCapability: function value(e, t)​​
-    setColorTemperature: function value(e)​​
-    setContrast: function value(e)​​
-    setExposureCompensation: function value(e)​​
-    setExposureMode: function value(e)​​
-    setExposureTime: function value(e)​​
-    setFacingMode: function value(e)​​
-    setFocusDistance: function value(e)​​
-    setFocusMode: function value(e)​​
-    setFrameRate: function value(e)​​
-    setHeight: function value(e)​​
-    setIso: function value(e)​​
-    setResizeMode: function value(e)​​
-    setSaturation: function value(e)​​
-    setSharpness: function value(e)​​
-    setTorch: function value(e)​​
-    setWhiteBalanceMode: function value(e)​​
-    setWidth: function value(e)​​
-    setZoom: function value(e)​​
-    startRecord: function value(e)​​
-    stopAIAnnotations: function value()​​
-    stopAILogs: function value()​​
-    stopAISnapshots: function value()​​
-    stopRecord: function value()​​
-    takePhoto: function value()​​
-    takeSnapshot: function value()​​
-    unmuteAudio: function value()​​
-    unmuteVideo: function value()​​
-    <prototype>: {…}
-    ​
-    constructor: function e(t)​​​
-    on: function value(e, t)​​​
-    removeListener: function value(e, t)​​​
-    <prototype>: {…*/
-
-          this.localParticipant = Participant.build(stream);
-
-          // Attach stream
-          //this.localVideoRef.nativeElement.srcObject = stream;
-          // previous line CANNOT work because this stream is not the same as native one from webrtc
-          // so I had to do :
-          stream.attachToElement(this.localVideoRef.nativeElement);
-
-          // Publish your own stream to the conversation
-          this.conversation.publish(stream, null);
-        });
-
-
-
+  unpublish(): void {
+    if (this.conversation) {
+      // https://apizee.atlassian.net/browse/APIRTC-863
+      this.conversation.unpublish(this.localParticipant.getStream(), null);
     }
   }
 

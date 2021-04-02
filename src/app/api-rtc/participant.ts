@@ -37,7 +37,7 @@ export class Participant {
     }
 
     public getStream(): any {
-        return this.stream
+        return this.stream;
     }
 
     public setSpeaking(isSpeaking: boolean) {

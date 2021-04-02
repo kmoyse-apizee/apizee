@@ -12,7 +12,9 @@
                     class="bi bi-box-arrow-in-right"></i></button>
         </form>
 
-        <p *ngIf="registered">{{confUrl}}&nbsp;<button mat-raised-button color="primary" [cdkCopyToClipboard]="confUrl"><i class="bi bi-share"></i></button></p>
+        <p *ngIf="registered">{{confUrl}}&nbsp;<button mat-raised-button color="primary" [cdkCopyToClipboard]="confUrl"><i class="bi bi-share"></i></button>
+            <button mat-raised-button color="primary" (click)="!joined?join():leave()" [disabled]="!registered">{{!joined?'Join':'Leave'}}</button></p>
+
     </div>
 
     <div class="card">
@@ -63,9 +65,11 @@
                 <legend id="my-mic">Microphone</legend>
             </div>
 
-            <!-- [disabled]="!registered||joined" -->
-            <button mat-raised-button color="primary" (click)="!joined?join():leave()" [disabled]="!registered">{{!joined?'Join':'Leave'}}</button>
-            <button mat-raised-button color="primary" (click)="publish()">Publish</button>
+            <button mat-raised-button color="primary" (click)="createStream()">createStream</button>
+            <!-- publishInPrgs -->
+            <button mat-raised-button color="primary" (click)="!published?publish():unpublish()" [disabled]="!joined||publishInPrgs">{{!published?'Publish':'Unpublish'}}
+                <span *ngIf="publishInPrgs" class="spinner-border text-light" role="status"></span></button> &nbsp;
+            <button mat-raised-button color="warn" (click)="destroy()">Destroy</button>
         </div>
     </div>
 

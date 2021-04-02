@@ -13,7 +13,7 @@ export class OneToOneComponent implements OnInit {
   @ViewChild("remoteVideo") remoteVideoRef: ElementRef;
 
   // apiRTC objects
-  userAgent:any;
+  userAgent: any;
   session: any;
 
   uuid: string;
@@ -32,8 +32,6 @@ export class OneToOneComponent implements OnInit {
 
   ngOnInit(): void {
 
-    const self = this;
-    
     this.userAgent.register({
       id: this.uuid // OPTIONAL // This is used for setting userId
     }).then(session => {
@@ -46,20 +44,20 @@ export class OneToOneComponent implements OnInit {
         //if (e.sender === activeContact) {
         //    $('#message-list').append('<li><b>' + e.sender.getId() + '</b> : ' + e.content + '</li>');
         //}
-        self.in_message = e.content ? e.content : null;
+        this.in_message = e.content ? e.content : null;
         console.log("session1::on.contactMessage|" + JSON.stringify(e))
       });
 
 
-      this.session.on('incomingCall', function (invitation) {
+      this.session.on('incomingCall', invitation => {
         console.log("MAIN - incomingCall");
         //==============================
         // ACCEPT CALL INVITATION
         //==============================
         invitation.accept()
-          .then(function (call) {
-            self._call = call;
-            self.setCallListeners(call);
+          .then(call => {
+            this._call = call;
+            this.setCallListeners(call);
 
             //TODO
             //addHangupButton(call.getId());
@@ -68,7 +66,7 @@ export class OneToOneComponent implements OnInit {
         //document.getElementById('hangup').style.display = 'inline-block';
       })
 
-      this.session.on("incomingScreenSharingCall", function (call) { //When client receives an screenSharing call from another user
+      this.session.on("incomingScreenSharingCall", call => { //When client receives an screenSharing call from another user
         console.log("screenSharing received from :", call.getContact().id);
         //setCallListeners(call);
         //TODO
