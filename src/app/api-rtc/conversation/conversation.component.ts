@@ -34,8 +34,6 @@ export class ConversationComponent implements OnInit, OnDestroy {
   userAgent: any;
   conversation: any;
 
-  //localPeerId: string;
-
   // Local participant
   localParticipant: Participant;
   published = false;
@@ -60,9 +58,7 @@ export class ConversationComponent implements OnInit, OnDestroy {
     private fb: FormBuilder) {
 
     this.userAgent = this.apiRtcService.createUserAgent();
-    //this.localPeerId = this.apiRtcService.uuidv4();
     this.confBaseUrl = `${this.window.location.protocol}//${this.window.location.host}/conversation`;
-
   }
 
   // Note : beforeUnloadHandler alone does not work on android Chrome
@@ -84,11 +80,8 @@ export class ConversationComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-
     this.onChanges();
-
     const conf_name = this.route.snapshot.paramMap.get("confname");
-
     if (conf_name) {
       this.confName.setValue(conf_name);
       this.createConference();
@@ -313,33 +306,19 @@ export class ConversationComponent implements OnInit, OnDestroy {
 
         /*           createStream : 
                   {…}
-  ​
   audioInput: undefined
-  ​
   callId: null
-  ​
   contact: null
-  ​
   data: MediaStream { id: "{f314a806-088f-4fd4-884a-d73265fb4bcb}", active: true, onaddtrack: null, … }
-  ​
   isRemote: false
-  ​
   mediaRecorder: null
-  ​
   publishedInConversations: Map { ft → "8178766209097722" }
-  ​
   recordedBlobs: Array []
-  ​
   streamId: 4004898158847876
-  ​
   type: "video"
-  ​
   userMediaStreamId: "4004898158847876"
-  ​
   videoInput: undefined
-  ​
   <prototype>: {…}
-  ​
   activateAIAnnotations: function value()​​
   activateAILogs: function value()​​
   activateAISnapshots: function value()​​
@@ -420,8 +399,6 @@ export class ConversationComponent implements OnInit, OnDestroy {
         // previous line CANNOT work because this stream is not the same as native one from webrtc
         // so I had to do :
         stream.attachToElement(this.localVideoRef.nativeElement);
-
-
       }).catch(err => {
         console.error('createStream error', err);
       });
@@ -435,7 +412,7 @@ export class ConversationComponent implements OnInit, OnDestroy {
     if (this.conversation) {
       // Publish your own stream to the conversation
       this.publishInPrgs = true;
-      this.conversation.publish(stream, null).then(stream => {
+      this.conversation.publish(stream).then(stream => {
         this.published = true;
         this.publishInPrgs = false;
       }).catch(err => {
@@ -448,7 +425,9 @@ export class ConversationComponent implements OnInit, OnDestroy {
   unpublish(): void {
     if (this.conversation) {
       // https://apizee.atlassian.net/browse/APIRTC-863
-      this.conversation.unpublish(this.localParticipant.getStream(), null);
+      //this.conversation.unpublish(this.localParticipant.getStream(), null);
+      this.conversation.unpublish(this.localParticipant.getStream());
+      this.published = false;
     }
   }
 

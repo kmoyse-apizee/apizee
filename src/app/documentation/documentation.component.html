@@ -2,7 +2,7 @@
 
     <h1>Documentation ApiRTC</h1>
 
-    <h2>Usage et sémantique des objets</h2>
+    <h2>Usage et sémantique des classes</h2>
 
     <h3>UserAgent</h3>
     <p>Une instance de <code>UserAgent</code> représente un <strong>participant</strong>. C'est le point d'entrée à <strong>apiRTC</strong>.</p>
@@ -44,9 +44,10 @@
     <p>La conférence est une conversation avec la possibilité d'avoir un modérateur qui doit être un utilisateur géré par Apizee.</p>
 
     <h3>Stream</h3>
-    <p>L'objet Stream porte des flux média d'un <strong>participant</strong>. Il permet de faire afficher dans le DOM la video et d'écouter le son du <strong>participant</strong>.</p>
-    <p>Note plusieurs <code>Stream</code> peuvent appartenir à un même <strong>participant</strong>.</p>
-    <p>Du coup comment liés les stream entrant à un particpant ???</p>
+    <p>L'objet Stream porte des <strong>flux</strong> média d'un <strong>participant</strong>. Il permet de faire afficher dans le DOM la video et d'écouter le son du <strong>participant</strong>.</p>
+    <p>TODO(vérifier) Un <strong>flux</strong> peut être vidéoe et audio, audio seul, ou video seul. Ce peut-etre un partage d'écran.</p>
+    <p>Note plusieurs <strong>flux</strong> peuvent appartenir à un même <strong>participant</strong>.</p>
+    <p>TODO : Du coup comment lier les stream entrant à un particpant ???</p>
 
     <h2>Code</h2>
 
