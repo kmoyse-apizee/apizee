@@ -12,10 +12,8 @@ export class PeerComponent implements OnInit, AfterViewInit {
   @Input() conversation: any;
   @Input() participant: Participant;
 
-
   name: string = null;
   subscribed: boolean = false;
-
 
   @ViewChild("remoteVideo") remoteVideoRef: ElementRef;
 
@@ -34,6 +32,7 @@ export class PeerComponent implements OnInit, AfterViewInit {
 
   toggleSubscribe() {
     if (!this.subscribed) {
+      // TODO : plutot faire un output à ce component pour notifier l'appelant qui décidera de faire le un/subscribe ??
       this.conversation.subscribeToStream(this.participant.streamId).then(stream => {
         console.log('PeerComponent::subscribeToStream success:', stream);
         this.subscribed = true;
@@ -41,10 +40,10 @@ export class PeerComponent implements OnInit, AfterViewInit {
         console.error('PeerComponent::subscribeToStream error', err);
       });
     } else {
+      // TODO : plutot faire un output à ce component pour notifier l'appelant qui décidera de faire le un/subscribe ??
       this.conversation.unsubscribeToStream(this.participant.streamId);
       this.subscribed = false;
     }
   }
-
 
 }

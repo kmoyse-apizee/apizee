@@ -10,6 +10,7 @@ import { ApiRtcService } from '../api-rtc.service';
 import { Participant } from '../participant'
 
 declare var apiCC: any;
+declare var apiRTC: any;
 
 @Component({
   selector: 'app-conversation',
@@ -25,6 +26,7 @@ export class ConversationComponent implements OnInit, OnDestroy {
 
   registered = false;
   joined = false;
+  screenSharingStream = null;
 
   formGroup = this.fb.group({
     confName: this.fb.control('', [Validators.required])
@@ -39,10 +41,11 @@ export class ConversationComponent implements OnInit, OnDestroy {
   published = false;
   publishInPrgs = false;
 
-
+  // Peer participants
   participants: Array<Participant> = new Array();
   participantsByStreamId: Object = {};
   participantsByCallId: Object = {};
+  participantsByUserId: Object = {};
 
 
   get confName() {
@@ -50,7 +53,7 @@ export class ConversationComponent implements OnInit, OnDestroy {
   }
 
   @ViewChild("localVideo") localVideoRef: ElementRef;
-
+  @ViewChild("screenSharingVideo") screenSharingVideoRef: ElementRef;
 
   constructor(@Inject(WINDOW) public window: Window,
     private route: ActivatedRoute,
@@ -159,11 +162,20 @@ export class ConversationComponent implements OnInit, OnDestroy {
         console.log('streamAdded, stream:', stream)
         //stream.addInDiv('remote-container', 'remote-media-' + stream.streamId, {}, false);
 
-        const participant = Participant.build(stream);
+        // TODO :
+        //  Stream and Participant are not sctually the same
+        // Get or create participant
+        var participant;
+        // TODO does getContact().getId() return the same ?
+        //if (!this.participantsByUserId[stream.getContact().getUserData().id]) {
+          participant = Participant.build(stream);
+          this.participants.push(participant);
+        //} else {
+       //   participant = this.participantsByUserId[stream.getContact().getUserData().id];
+       // }
 
         this.participantsByStreamId[stream.streamId] = participant;
         this.participantsByCallId[stream.callId] = participant;
-        this.participants.push(participant);
 
       }).on('streamRemoved', stream => {
         console.log('streamRemoved:', stream)
@@ -431,4 +443,102 @@ export class ConversationComponent implements OnInit, OnDestroy {
     }
   }
 
+
+  toggleScreenSharing(): void {
+
+    if (this.screenSharingStream === null) {
+
+      const displayMediaStreamConstraints = {
+        video: {
+          cursor: "always"
+        },
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          sampleRate: 44100
+        }
+      };
+
+      apiRTC.Stream.createDisplayMediaStream(displayMediaStreamConstraints, false)
+        .then(stream => {
+
+          stream.on('stopped', () => {
+            //Used to detect when user stop the screenSharing with Chrome DesktopCapture UI
+            console.log("stopped event on stream");
+            var elem = document.getElementById('local-screensharing');
+            if (elem !== null) {
+              elem.remove();
+            }
+            this.screenSharingStream = null;
+          });
+
+          this.screenSharingStream = stream;
+          this.conversation.publish(this.screenSharingStream);
+
+          // Attach stream
+          this.screenSharingStream.attachToElement(this.screenSharingVideoRef.nativeElement);
+        })
+        .catch(function (err) {
+          console.error('Could not create screensharing stream :', err);
+        });
+    } else {
+      this.conversation.unpublish(this.screenSharingStream);
+      this.screenSharingStream.release();
+      this.screenSharingStream = null;
+    }
+  }
 }
+
+// Screen Share streamAdded
+//
+// audioInput: null
+// callAudioActive: false
+// callAudioAvailable: true
+// callAudioMuted: false
+// callId: "1629628401784658"
+// callVideoActive: true
+// callVideoAvailable: true
+// callVideoMuted: false
+// contact: {…}
+  // enterprise: null
+  // fileTransfers: Array []
+  // groups: Array [ "default", "fty" ]
+  // previousMessages: Array []
+  // profile: null
+  // streams: Map(0)
+  // userData: {…}
+    // apiRTCVersion: "4.4.9"
+    // audioDevicePresent: "true"
+    // browser: "Firefox"
+    // browser_major_version: "87"
+    // browser_version: "87.0"
+    // dtlsCompliant: "true"
+    // id: "156276"
+    // isSimulated: "false"
+    // osName: "Ubuntu"
+    // userConfId: "guest-f78dc267-9bd91617779587187"
+    // username: "1"
+    // videoDevicePresent: "true"
+    // webRtcCompliant: "true"
+    // <prototype>: Object { … }
+  // <prototype>: Object { … }
+// data: MediaStream
+// active: true
+// id: "janus"
+// onaddtrack: function onaddtrack(e)​​
+// onremovetrack: function ()
+// <prototype>: MediaStreamPrototype { getAudioTracks: getAudioTracks(), getVideoTracks: getVideoTracks(), getTracks: getTracks(), … }
+// isRemote: true
+// mediaRecorder: null
+// publishedInConversations: Map(1)
+// size: 1
+// <entries>
+// <prototype>: Map.prototype { … }
+// recordedBlobs: []
+// length: 0
+// <prototype>: Array []
+// streamId: 2296099743439031
+// type: "video"
+// userMediaStreamId: null
+// videoInput: null
+// <prototype>: {…

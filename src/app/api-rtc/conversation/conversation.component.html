@@ -13,7 +13,8 @@
         </form>
 
         <p *ngIf="registered">{{confUrl}}&nbsp;<button mat-raised-button color="primary" [cdkCopyToClipboard]="confUrl"><i class="bi bi-share"></i></button>
-            <button mat-raised-button color="primary" (click)="!joined?join():leave()" [disabled]="!registered">{{!joined?'Join':'Leave'}}</button></p>
+            <button mat-raised-button color="primary" (click)="!joined?join():leave()" [disabled]="!registered">{{!joined?'Join':'Leave'}}</button>
+        </p>
 
     </div>
 
@@ -52,6 +53,12 @@
                     </div>
                 </div>
 
+                <div class="col mycard" [hidden]="!screenSharingStream">
+                    <div id="{{screenSharingStream?.streamId}}" class="embed-responsive embed-responsive-4by3">
+                        <video #screenSharingVideo muted autoplay playsinline></video>
+                    </div>
+                </div>
+
                 <div *ngFor="let participant of participants" class="col mycard">
                     <app-peer [conversation]="conversation" [participant]="participant"></app-peer>
                 </div>
@@ -69,6 +76,7 @@
             <!-- publishInPrgs -->
             <button mat-raised-button color="primary" (click)="!published?publish():unpublish()" [disabled]="!joined||publishInPrgs">{{!published?'Publish':'Unpublish'}}
                 <span *ngIf="publishInPrgs" class="spinner-border text-light" role="status"></span></button> &nbsp;
+            <button mat-raised-button color="primary" (click)="toggleScreenSharing()">{{screenSharingStream?'Unshare':'Share'}} Screen</button> &nbsp;
             <button mat-raised-button color="warn" (click)="destroy()">Destroy</button>
         </div>
     </div>
