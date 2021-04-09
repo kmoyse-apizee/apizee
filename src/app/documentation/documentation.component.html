@@ -5,19 +5,59 @@
     <h2>Usage et sémantique des classes</h2>
 
     <h3>UserAgent</h3>
-    <p>Une instance de <code>UserAgent</code> représente un <strong>participant</strong>. C'est le point d'entrée à <strong>apiRTC</strong>.</p>
 
-    <p>On instancie un <code>UserAgent</code> avec une clef d'API fournie par Apizee et associée à votre compte sur apizee.com : l'<code>apiKey</code>.</p>
+    <!-- <p>Une instance de <code>UserAgent</code> représente un <strong>participant</strong>. C'est le point d'entrée à <strong>apiRTC</strong>.</p> -->
+    <!-- <p>On instancie un <code>UserAgent</code> avec une clef d'API fournie par Apizee et associée à votre compte sur apizee.com : l'<code>apiKey</code>.</p> -->
 
-    <p>La méthode <code>userAgent.register()</code> permet d'enregistrer un <strong>participant</strong> auprès des serveurs d'Apizee.</p>
-    <p>L'enregistrement permet d'obtenir une instance de <code>Session</code> qui permettra d'utiliser les fonctionnalités connectées d'<strong>apiRTC</strong>.
+    <p><code>UserAgent</code> est le point d'entrée à <strong>apiRTC</strong>. Il s'instancie en fournissant la clef d'API associée à votre compte sur apizee.com : l'<code>apiKey</code>.</p>
+
+    <p class="text-center"><img src="/assets/apirtc_useragent.svg" alt="image"></p>
+
+    <pre class="border"><code>
+        userAgent = new UserAgent(&#123;uri: 'apzkey:' + yourApiKey&#125;);
+    </code></pre>
+
+    <p><code>UserAgent</code> permet d'accèder aux fonctionnalités <strong>non-connectées</strong> d'apiRTC.</p>
+    <p>TODO : lister les fonctionnalités non connectées</p>
+
+
+    <h3>Stream</h3>
+
+    <p>La méthode <code>UserAgent.createStream</code> permet de récupérer un <strong>flux</strong> audio&video du matériel accessible par le navigateur.</p>
+
+    <p>Elle retoune un objet de la classe <code>Stream</code> d'<strong>apiRTC</strong>. La méthode
+        <code>UserAgent.attachToElement</code> permet d'attacher le <code>stream</code> à un element du DOM, affichant ainsi le <strong>flux</strong> dans la page web :
+    </p>
+
+
+    <p class="text-center"><img src="/assets/apirtc_createstream.svg" alt="image"></p>
+
+    <pre class="border"><code>
+        userAgent.createStream(&#123;audio: true,video: true&#125;).then(stream => &#123;stream.attachToElement(domElement)&#125;);
+    </code></pre>
+
+    <p>Un objet <code>Stream</code> porte des <strong>flux</strong> média. Il permet de faire afficher dans le DOM la video et d'écouter le son du <strong>flux</strong>.</p>
+
+    <p>Un <strong>flux</strong> peut être vidéo et audio, audio seul, ou video seul. Ce peut-etre un partage d'écran.
     </p>
 
     <h3>Session</h3>
-    <p>On obtient une instance de <code>Session</code> en retour (Promise) de la méthode
-        <code>userAgent.register().then(session => ...)</code>.
+
+    <p>Pour accèder aux fonctionnalités connectées d'apiRTC, il faut s'enregistrer auprès des serveurs d'apizee. Cette opération peut se faire avec ou sans authentification.</p>
+    <p>TODO: lister les modes d'authentification, ou faire un lien vers un chapitre dédié</p>
+
+    <p>Dans un premier temps, appeler <code>userAgent.register()</code> sans préciser d'authentification permet d'enregistrer ce
+        <code>UserAgent</code> auprès des serveurs d'Apizee. Un <code>id</code> peut être donné afin d'identifier ce
+        <code>userAgent</code>.
     </p>
-    <p>La session va permettre d'obtenir des objets permettant de mettre en oeuvre des fonctionnalités telles que les
+
+    <p class="text-center"><img src="/assets/apirtc_useragent_register.svg" alt="image"></p>
+
+    <pre class="border"><code>
+        userAgent.register(&#123;id: 'user1'&#125;).then(session => &#123;...&#125;);
+    </code></pre>
+
+    <p>La <code>session</code> va permettre d'obtenir des objets permettant de mettre en oeuvre des fonctionnalités telles que les
         <strong>conversations</strong> ou <strong>conférences</strong>.
     </p>
 
@@ -26,28 +66,59 @@
         <code>session.getOrCreateConversation(name)</code>.
     </p>
 
+
+    <!-- <p>TODO : présenter un schéma montrant de façon claire que sur chaque instance de la webapp il existe en principe une seule instance de UserAgent et que cela constitue un participant à la conversation même si en l'occurence il n'existe pas en apiRTC
+        de classe Participant qui repésenterait tous les participants connectés
+    </p> -->
+
+    <p class="text-center"><img src="/assets/apirtc_session_getOrCreateConversation.svg" alt="image"></p>
+
+    <pre class="border"><code>
+        conversation = session.getOrCreateConversation("MY_CONVERSATION");
+    </code></pre>
+
     <!-- note : ceci est bizarre  à explique pour joindre ume conversation c'est conversation.join() sémantiquement on aurait -->
     <!-- pu préférer que un User joigne la conversation -->
-    <p>L'appel à la méthode <code>conversation.join()</code> permet au <strong>participant</strong> ayant créé cette instance de <code>Conversation</code> (via sa <code>Session</code>) de rejoindre la
-        <strong>conversation</strong>.
+    <p>L'appel à la méthode <code>conversation.join()</code> permet au <code>userAgent</code> ayant créé cette instance de <code>Conversation</code> (via sa <code>Session</code>) de rejoindre la
+        <strong>conversation</strong>. Il devient alors un <strong>participant</strong>.
     </p>
 
-    <p>Une fois une <strong>conversation</strong> jointe, écouter sur l'event
+    <p class="text-center"><img src="/assets/apirtc_conversation_join.svg" alt="image"></p>
+    <pre class="border"><code>
+        conversation.join();
+    </code></pre>
+
+    <p>Une fois une <strong>conversation</strong> jointe, un <strong>participant</strong> peut publier un
+        <strong>flux</strong> grace à la méthode <code>Conversation.publishStream(stream)</code></p>
+
+    <pre class="border"><code>
+        conversation.publish(stream).then(stream => &#123;...&#125;);
+    </code></pre>
+
+    <p>Ecouter sur l'event
         <code>conversation.on('streamListChanged', streamInfo => ...);</code> va permettre d'être informé sur l'arrivée de <strong>flux</strong> correspondant aux <strong>participants</strong> à la <strong>conversation</strong>.
     </p>
 
     <p>La méthode <code>conversation.subscribeToStream(streamInfo.streamId)</code> permet de souscrire à un flux.</p>
-    <p>Une fois souscrit, écouter sur l'event <code>conversation.on('streamAdded', stream => ...);</code> permet d'obtenir une instance de <code>Stream</code>.</p>
+    <p>Une fois souscrit, écouter sur l'event <code>conversation.on('streamAdded', stream => ...);</code> permet d'obtenir une instance de <code>Stream</code>, et donc d'afficher ce dernier dans la page Web de l'application
+    </p>
+
+    <p class="text-center"><img src="/assets/apirtc_conversation_streamadded.svg" alt="image"></p>
+
+    <pre class="border"><code>
+        conversation.on('streamListChanged', streamInfo => (&#123;
+            conversation.subscribe(streamInfo.toStream)
+        &#125;);
+        conversation.on('streamAdded', stream => (&#123;
+            stream.attachToElement(domElement)
+        &#125;);
+    </code></pre>
 
 
     <h3>Conference</h3>
     <p>La conférence est une conversation avec la possibilité d'avoir un modérateur qui doit être un utilisateur géré par Apizee.</p>
 
-    <h3>Stream</h3>
-    <p>L'objet Stream porte des <strong>flux</strong> média d'un <strong>participant</strong>. Il permet de faire afficher dans le DOM la video et d'écouter le son du <strong>participant</strong>.</p>
-    <p>TODO(vérifier) Un <strong>flux</strong> peut être vidéo et audio, audio seul, ou video seul. Ce peut-etre un partage d'écran.</p>
-    <p>Note plusieurs <strong>flux</strong> peuvent appartenir à un même <strong>participant</strong>.</p>
-    <p>TODO : Du coup comment lier les stream entrant à un particpant ??? => getContact().getUserData().id</p>
+
 
     <h2>Code</h2>
 

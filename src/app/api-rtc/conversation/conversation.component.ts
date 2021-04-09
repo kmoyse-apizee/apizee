@@ -6,6 +6,8 @@ import { ActivatedRoute } from "@angular/router";
 import { WINDOW } from '../../windows-provider';
 
 import { ApiRtcService } from '../api-rtc.service';
+import { ServerService } from '../server.service';
+
 
 import { Participant } from '../participant'
 
@@ -47,6 +49,14 @@ export class ConversationComponent implements OnInit, OnDestroy {
   participantsByCallId: Object = {};
   participantsByUserId: Object = {};
 
+  // Local user credentials
+  // TODO : for demo purpose they are  harcoded here
+  // but in a normal application they shall be prompted
+  username = 'kevin';
+  password = 'mypassword';
+
+  // JSON Web Token
+  jWT: string;
 
   get confName() {
     return this.formGroup.get('confName') as FormControl;
@@ -58,10 +68,21 @@ export class ConversationComponent implements OnInit, OnDestroy {
   constructor(@Inject(WINDOW) public window: Window,
     private route: ActivatedRoute,
     private apiRtcService: ApiRtcService,
+    private serverService: ServerService,
     private fb: FormBuilder) {
 
     this.userAgent = this.apiRtcService.createUserAgent();
     this.confBaseUrl = `${this.window.location.protocol}//${this.window.location.host}/conversation`;
+
+    // Authenticate to get a JWT
+    this.serverService.login(this.username, this.password).subscribe(
+      json => {
+        this.jWT = json.token;
+        console.log("JWT : ", json.token);
+      },
+      error => {
+        console.error('ConversationComponent::login|' + JSON.stringify(error));
+      });
   }
 
   // Note : beforeUnloadHandler alone does not work on android Chrome
@@ -114,11 +135,19 @@ export class ConversationComponent implements OnInit, OnDestroy {
 
   createConference(): void {
 
-    // {
-    //   id: this.localPeerId // OPTIONAL // This is used for setting userId
-    // }
+    const registerInformation = {
+      id: this.username,
+      token: this.jWT
+    };
 
-    this.userAgent.register().then(session => {
+    //this.userAgent.register().then((session:any) => {
+    // OR
+    this.userAgent.register(registerInformation).then((session: any) => {
+      // TODO : if I don't use same registerInformation.id as the user id (username) that was used to create the token,
+      // I get error :
+      //[2021-04-08T15:23:30.150Z][ERROR]apiRTC(ApiCC_Channel) Channel error : access token failure: invalid channelId apiRTC-latest.min.js:5:19425
+      //[2021-04-08T15:23:30.155Z][ERROR]apiRTC(UserAgent) register() - ApiRTC Initialization error : Channel Error : access token failure: invalid channelId
+      // This is misleading as we never heard about a channelId before !
 
       // Create the conversation
       // TODO : the tutorials use getConversation but logs and code actually say it is deprecated
@@ -158,7 +187,7 @@ export class ConversationComponent implements OnInit, OnDestroy {
         }
       });
 
-      this.conversation.on('streamAdded', stream => {
+      this.conversation.on('streamAdded', (stream: any) => {
         console.log('streamAdded, stream:', stream)
         //stream.addInDiv('remote-container', 'remote-media-' + stream.streamId, {}, false);
 
@@ -168,16 +197,16 @@ export class ConversationComponent implements OnInit, OnDestroy {
         var participant;
         // TODO does getContact().getId() return the same ?
         //if (!this.participantsByUserId[stream.getContact().getUserData().id]) {
-          participant = Participant.build(stream);
-          this.participants.push(participant);
+        participant = Participant.build(stream);
+        this.participants.push(participant);
         //} else {
-       //   participant = this.participantsByUserId[stream.getContact().getUserData().id];
-       // }
+        //   participant = this.participantsByUserId[stream.getContact().getUserData().id];
+        // }
 
         this.participantsByStreamId[stream.streamId] = participant;
         this.participantsByCallId[stream.callId] = participant;
 
-      }).on('streamRemoved', stream => {
+      }).on('streamRemoved', (stream: any) => {
         console.log('streamRemoved:', stream)
         //stream.removeFromDiv('remote-container', 'remote-media-' + stream.streamId);
         for (var i = 0; i < this.participants.length; i++) {

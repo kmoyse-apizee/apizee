@@ -16,7 +16,7 @@ export class ApiRtcService {
 		return this.apiKey;
 	}
 
-	public createUserAgent() {
+	public createUserAgent(): any {
 		return new apiRTC.UserAgent({
 			// format is like 'apzKey:9669e2ae3eb32307853499850770b0c3'
 			uri: 'apzkey:' + this.apiKey
