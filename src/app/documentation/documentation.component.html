@@ -11,22 +11,24 @@
 
     <p><code>UserAgent</code> est le point d'entrée à <strong>apiRTC</strong>. Il s'instancie en fournissant la clef d'API associée à votre compte sur apizee.com : l'<code>apiKey</code>.</p>
 
+    <p class="alert alert-info" role="alert">Obtenez votre <code>apiKey</code> sur <a href="https://cloud.apirtc.com/enterprise/api" target="_blank">https://cloud.apirtc.com/enterprise/api</a></p>
+
     <p class="text-center"><img src="/assets/apirtc_useragent.svg" alt="image"></p>
 
     <pre class="border"><code>
-        userAgent = new UserAgent(&#123;uri: 'apzkey:' + yourApiKey&#125;);
+        userAgent = new UserAgent(&#123;uri: 'apzkey:' + apiKey&#125;);
     </code></pre>
-
+    <!-- 
     <p><code>UserAgent</code> permet d'accèder aux fonctionnalités <strong>non-connectées</strong> d'apiRTC.</p>
     <p>TODO : lister les fonctionnalités non connectées</p>
-
+    <ul><li></li></ul> -->
 
     <h3>Stream</h3>
 
     <p>La méthode <code>UserAgent.createStream</code> permet de récupérer un <strong>flux</strong> audio&video du matériel accessible par le navigateur.</p>
 
     <p>Elle retoune un objet de la classe <code>Stream</code> d'<strong>apiRTC</strong>. La méthode
-        <code>UserAgent.attachToElement</code> permet d'attacher le <code>stream</code> à un element du DOM, affichant ainsi le <strong>flux</strong> dans la page web :
+        <code>Stream.attachToElement</code> permet d'attacher le <code>stream</code> à un element du DOM, affichant ainsi le <strong>flux</strong> dans la page web :
     </p>
 
 
@@ -46,7 +48,7 @@
     <p>Pour accèder aux fonctionnalités connectées d'apiRTC, il faut s'enregistrer auprès des serveurs d'apizee. Cette opération peut se faire avec ou sans authentification.</p>
     <p>TODO: lister les modes d'authentification, ou faire un lien vers un chapitre dédié</p>
 
-    <p>Dans un premier temps, appeler <code>userAgent.register()</code> sans préciser d'authentification permet d'enregistrer ce
+    <p>Dans un premier temps, appeler <code>userAgent.register</code> sans préciser d'authentification permet d'enregistrer ce
         <code>UserAgent</code> auprès des serveurs d'Apizee. Un <code>id</code> peut être donné afin d'identifier ce
         <code>userAgent</code>.
     </p>
@@ -63,7 +65,7 @@
 
     <h3>Conversation</h3>
     <p>On obtient une instance de <code>Conversation</code> en retour de la méthode
-        <code>session.getOrCreateConversation(name)</code>.
+        <code>Session.getOrCreateConversation</code>.
     </p>
 
 
@@ -79,7 +81,7 @@
 
     <!-- note : ceci est bizarre  à explique pour joindre ume conversation c'est conversation.join() sémantiquement on aurait -->
     <!-- pu préférer que un User joigne la conversation -->
-    <p>L'appel à la méthode <code>conversation.join()</code> permet au <code>userAgent</code> ayant créé cette instance de <code>Conversation</code> (via sa <code>Session</code>) de rejoindre la
+    <p>L'appel à la méthode <code>Conversation.join</code> permet au <code>userAgent</code> ayant créé cette instance de <code>Conversation</code> (via sa <code>Session</code>) de rejoindre la
         <strong>conversation</strong>. Il devient alors un <strong>participant</strong>.
     </p>
 
@@ -89,25 +91,25 @@
     </code></pre>
 
     <p>Une fois une <strong>conversation</strong> jointe, un <strong>participant</strong> peut publier un
-        <strong>flux</strong> grace à la méthode <code>Conversation.publishStream(stream)</code></p>
+        <strong>flux</strong> grace à la méthode <code>Conversation.publishStream</code> :</p>
 
     <pre class="border"><code>
         conversation.publish(stream).then(stream => &#123;...&#125;);
     </code></pre>
 
     <p>Ecouter sur l'event
-        <code>conversation.on('streamListChanged', streamInfo => ...);</code> va permettre d'être informé sur l'arrivée de <strong>flux</strong> correspondant aux <strong>participants</strong> à la <strong>conversation</strong>.
+        <code>'streamListChanged'</code> va permettre d'être informé sur l'arrivée de <strong>flux</strong> provenant de <strong>participants</strong> à la <strong>conversation</strong>.
     </p>
 
-    <p>La méthode <code>conversation.subscribeToStream(streamInfo.streamId)</code> permet de souscrire à un flux.</p>
-    <p>Une fois souscrit, écouter sur l'event <code>conversation.on('streamAdded', stream => ...);</code> permet d'obtenir une instance de <code>Stream</code>, et donc d'afficher ce dernier dans la page Web de l'application
+    <p>La méthode <code>conversation.subscribeToStream</code> permet de souscrire à un flux.</p>
+    <p>Une fois souscrit, écouter sur l'event <code>'streamAdded'</code> permet d'obtenir une instance de <code>Stream</code>, et donc d'afficher ce dernier dans la page Web de l'application.
     </p>
 
     <p class="text-center"><img src="/assets/apirtc_conversation_streamadded.svg" alt="image"></p>
 
     <pre class="border"><code>
         conversation.on('streamListChanged', streamInfo => (&#123;
-            conversation.subscribe(streamInfo.toStream)
+            conversation.subscribeToStream(streamInfo.streamId);
         &#125;);
         conversation.on('streamAdded', stream => (&#123;
             stream.attachToElement(domElement)
@@ -115,26 +117,23 @@
     </code></pre>
 
 
+    <!-- TODO -->
+    <p class="alert alert-info" role="alert">
+        Retrouver le code complet d'exemples mettant en oeuvre ces notions en <a href="https://dev.apirtc.com/tutorials" target="_blank">pur JS</a>, <a>Angular</a>, <a>React</a>.
+    </p>
+
+
+    <!-- TODO IDEA : -->
+    <!-- Faire une documentation v5 qui correspondrait à ce que cela pourrait etre pour etre plus simple
+    UserAgent -> Participant
+    Session n'existe plus
+    On crée une Conversation depuis un autre point d'entrée ?
+    les events de converation sont revus pour ne pas avoir streamListChanged puis streamAdded, on aurait plutot participantJoined et sur participant récupéré streamAdded -->
+
+
+    <!-- 
     <h3>Conference</h3>
-    <p>La conférence est une conversation avec la possibilité d'avoir un modérateur qui doit être un utilisateur géré par Apizee.</p>
-
-
-
-    <h2>Code</h2>
-
-    <pre><code>
-userAgent = new UserAgent(&#123;uri: 'apzkey:' + yourApiKey&#125;)
-userAgent.register().then(session => &#123;
-    conversation = session.getOrCreateConversation('conversationName');
-    //...
-    &#125;;
-</code></pre>
-
-
-    <h2>Plus en détail</h2>
-
-    <p><code>Stream.streamId</code> : TODO</p>
-
+    <p>La conférence est une conversation avec la possibilité d'avoir un modérateur qui doit être un utilisateur géré par Apizee.</p> -->
 
 
 </div>
