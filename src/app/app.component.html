@@ -1,8 +1,8 @@
-<div class="container">
-    <!-- Content here -->
-    <!-- <button type="button" class="btn btn-primary" (click)="sendMsg()">Primary</button> -->
-
+<div class="container-fluid">
     <ul class="nav">
+        <li class="nav-item">
+            <a class="nav-link" href="/doc">Getting started</a>
+        </li>
         <li class="nav-item">
             <a class="nav-link" href="/onetoone">OneToOne</a></li>
         <li class="nav-item">
@@ -10,11 +10,37 @@
         <li class="nav-item">
             <a class="nav-link" href="/apirest">API REST</a>
         </li>
-        <li class="nav-item">
-            <a class="nav-link" href="/doc">Documentation</a>
-        </li>
     </ul>
-
 </div>
-
 <router-outlet></router-outlet>
+<!-- <div class="container-fluid">
+    <div class="row">
+        <div class="col-md-3">
+            <nav class="navbar navbar-expand-md navbar-light">
+                <a href="./" title="Website Title" rel="home"><img src="logo.png" class="logo" border="0" alt="Website" /></a>
+                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#topnavbar" aria-controls="topnavbar" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div id="topnavbar" class="collapse navbar-collapse">
+                    <ul id="menu-main-menu" class="navbar-nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/onetoone">OneToOne</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/conversation">Conversation</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/apirest">API REST</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/doc">Documentation</a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+        </div>
+        <div class="col-md">
+            <router-outlet></router-outlet>
+        </div>
+    </div>
+</div> -->
