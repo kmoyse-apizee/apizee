@@ -1,16 +1,16 @@
-<div id="{{participant.stream.streamId}}" class="embed-responsive embed-responsive-4by3">
+<div id="{{stream.streamId}}" class="embed-responsive embed-responsive-4by3">
     <video #remoteVideo autoplay playsinline></video>
     <div class="mycard-text">
-        <h5>{{participant.stream.contact.userData.username}}</h5>
-        <!-- <p>{{participant.qosStat | json}}</p> -->
-        <app-audio-stats [stats]="participant.qosStat?.audioReceived"></app-audio-stats>
-        <app-video-stats [stats]="participant.qosStat?.videoReceived"></app-video-stats>
+        <h5>{{stream.stream.contact.userData.username}}</h5>
+        <!-- <p>{{stream.qosStat | json}}</p> -->
+        <app-audio-stats [stats]="stream.qosStat?.audioReceived"></app-audio-stats>
+        <app-video-stats [stats]="stream.qosStat?.videoReceived"></app-video-stats>
     </div>
     <div class="mycard-over">
         <pre>
-<code>streamId:{{participant.streamId}}</code>
-<code>callId:{{participant.callId}}</code>
+<code>streamId:{{stream.streamId}}</code>
+<code>callId:{{stream.callId}}</code>
 </pre>
-        <mat-icon *ngIf="participant.isSpeaking" matSuffix>record_voice_over</mat-icon>
+        <mat-icon *ngIf="stream.isSpeaking" matSuffix>record_voice_over</mat-icon>
     </div>
 </div>

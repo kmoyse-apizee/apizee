@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, ViewChild, ElementRef, HostListener } from '@angular/core';
+import { Component, OnDestroy, OnInit, AfterViewInit, ViewChild, ElementRef, HostListener } from '@angular/core';
 import { Inject } from '@angular/core';
 import { FormBuilder, FormArray, FormControl, Validators } from '@angular/forms';
 import { ActivatedRoute } from "@angular/router";
@@ -9,7 +9,7 @@ import { ApiRtcService } from '../api-rtc.service';
 import { ServerService } from '../server.service';
 
 
-import { Participant } from '../participant'
+import { Stream } from '../stream';
 
 declare var apiCC: any;
 declare var apiRTC: any;
@@ -19,47 +19,46 @@ declare var apiRTC: any;
   templateUrl: './conversation.component.html',
   styleUrls: ['./conversation.component.css']
 })
-export class ConversationComponent implements OnInit, OnDestroy {
+export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
 
   name = new FormControl('');
 
-  confBaseUrl: string;
-  confUrl: string;
+  convName:string = null;
+  convBaseUrl: string;
+  convUrl: string;
 
-  registered = false;
   joined = false;
   screenSharingStream = null;
 
   formGroup = this.fb.group({
-    confName: this.fb.control('', [Validators.required])
+    convName: this.fb.control('', [Validators.required])
   });
+
+  registrationError:any  = null;
 
   // apiRTC objects
   userAgent: any;
-  conversation: any;
+  session:any = null;
+  conversation: any = null;
 
-  // Local participant
-  localParticipant: Participant;
+  // Local user credentials
+  credentials:any = null;
+
+  // Local Stream
+  localStream: Stream;
   published = false;
   publishInPrgs = false;
 
-  // Peer participants
-  participants: Array<Participant> = new Array();
-  participantsByStreamId: Object = {};
-  participantsByCallId: Object = {};
-  participantsByUserId: Object = {};
-
-  // Local user credentials
-  // TODO : for demo purpose they are  harcoded here
-  // but in a normal application they shall be prompted
-  username = 'kevin';
-  password = 'mypassword';
+  // Peer Streams
+  streams: Array<Stream> = new Array();
+  streamsByStreamId: Object = {};
+  streamsByCallId: Object = {};
 
   // JSON Web Token
   jWT: string;
 
-  get confName() {
-    return this.formGroup.get('confName') as FormControl;
+  get convNameFc() {
+    return this.formGroup.get('convName') as FormControl;
   }
 
   @ViewChild("localVideo") localVideoRef: ElementRef;
@@ -72,17 +71,10 @@ export class ConversationComponent implements OnInit, OnDestroy {
     private fb: FormBuilder) {
 
     this.userAgent = this.apiRtcService.createUserAgent();
-    this.confBaseUrl = `${this.window.location.protocol}//${this.window.location.host}/conversation`;
+    this.convBaseUrl = `${this.window.location.protocol}//${this.window.location.host}/conversation`;
 
-    // Authenticate to get a JWT
-    this.serverService.login(this.username, this.password).subscribe(
-      json => {
-        this.jWT = json.token;
-        console.log("JWT : ", json.token);
-      },
-      error => {
-        console.error('ConversationComponent::login|' + JSON.stringify(error));
-      });
+    const mediaDevices = this.userAgent.getUserMediaDevices();
+    console.log(JSON.stringify(mediaDevices));
   }
 
   // Note : beforeUnloadHandler alone does not work on android Chrome
@@ -105,16 +97,83 @@ export class ConversationComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.onChanges();
-    const conf_name = this.route.snapshot.paramMap.get("confname");
-    if (conf_name) {
-      this.confName.setValue(conf_name);
-      this.createConference();
+    const _convname = this.route.snapshot.paramMap.get("convname");
+    if (_convname) {
+      console.log("convname", _convname);
+      this.convName = _convname;
+      this.convNameFc.setValue(_convname);
+    }
+
+    // Media device selection
+    //
+    //const mediaDevices = this.userAgent.getUserMediaDevices();
+    //console.log(JSON.stringify(mediaDevices));
+    // TODO : understand why always empty:
+    // displays {"audioinput":{},"audiooutput":{},"videoinput":{}}
+    // Seems only this works :
+    this.userAgent.on("mediaDeviceChanged", updatedContacts => {
+      const mediaDevices = this.userAgent.getUserMediaDevices();
+      console.log("mediaDeviceChanged", JSON.stringify(mediaDevices));
+      this.doUpdateMediaDevices(mediaDevices);
+    });
+
+    this.audioIn_fc.valueChanges.subscribe(value => {
+      console.log("audioIn_fc", value);
+      this.selectedAudioInDevice = value;
+      this.doChangeStream();
+		});
+    this.video_fc.valueChanges.subscribe(value => {
+      console.log("video_fc", value);
+      this.selectedVideoDevice = value;
+      this.doChangeStream();
+		});
+  }
+
+  audioInDevices: Array<any>;
+  audioIn_fc = new FormControl('');
+  selectedAudioInDevice = null;
+
+  audioOutDevices: Array<any>;
+
+  videoDevices: Array<any>;
+  video_fc = new FormControl('');
+  selectedVideoDevice = null;
+
+  doUpdateMediaDevices(mediaDevices: any): void {
+    // Convert map values to array
+    this.audioInDevices = Object.values(mediaDevices.audioinput);
+    this.audioOutDevices = Object.values(mediaDevices.audiooutput);
+    this.videoDevices = Object.values(mediaDevices.videoinput);
+  }
+
+  doChangeStream() :void{
+
+    // first release previous stream
+    if (this.localStream && this.localStream.getStream()){
+
+      this.localStream.getStream().release();
+
+      const options = {};
+      if (this.selectedAudioInDevice){
+        options['audioInputId'] = this.selectedAudioInDevice.id;
+      }
+      if (this.selectedVideoDevice){
+        options['videoInputId'] = this.selectedVideoDevice.id;
+      }
+
+      this.createStream(options);
     }
   }
 
+  ngAfterViewInit() {
+    // const mediaDevices = this.userAgent.getUserMediaDevices();
+    // console.log("ngAfterViewInit",JSON.stringify(mediaDevices));
+    // // Still Displays ngAfterViewInit {"audioinput":{},"audiooutput":{},"videoinput":{}}
+  }
+
   onChanges(): void {
-    this.confName.valueChanges.subscribe(val => {
-      this.confUrl = `${this.confBaseUrl}/${val}`;
+    this.convNameFc.valueChanges.subscribe(val => {
+      this.convUrl = `${this.convBaseUrl}/${val}`;
     });
 
     this.name.valueChanges.subscribe((selectedValue) => {
@@ -127,19 +186,38 @@ export class ConversationComponent implements OnInit, OnDestroy {
     this.doHangUp();
   }
 
+  onCredentials(credentials:any):void {
+    this.registrationError = null;
+    this.credentials = credentials;
+    // Authenticate to get a JWT
+    this.serverService.login(this.credentials.username, this.credentials.password).subscribe(
+      json => {
+        this.jWT = json.token;
+        console.log("JWT : ", json.token);
+        this.name.setValue(this.credentials.username);
+        this.register();
+      },
+      error => {
+        console.error('ConversationComponent::login|' + JSON.stringify(error));
+        this.registrationError = error;
+      });
+  }
+
   private doHangUp(): void {
+    // TODO !: hangup shall not destroy ???
     if (this.conversation) {
       this.conversation.destroy();
+      this.conversation = null;
     }
   }
 
-  createConference(): void {
+  register(){
+    this.registrationError = null;
 
-    const registerInformation = {
-      id: this.username,
+    const registerInformation = this.credentials ? {
+      id: this.credentials.username,
       token: this.jWT
-    };
-
+    } : {};
     //this.userAgent.register().then((session:any) => {
     // OR
     this.userAgent.register(registerInformation).then((session: any) => {
@@ -148,125 +226,119 @@ export class ConversationComponent implements OnInit, OnDestroy {
       //[2021-04-08T15:23:30.150Z][ERROR]apiRTC(ApiCC_Channel) Channel error : access token failure: invalid channelId apiRTC-latest.min.js:5:19425
       //[2021-04-08T15:23:30.155Z][ERROR]apiRTC(UserAgent) register() - ApiRTC Initialization error : Channel Error : access token failure: invalid channelId
       // This is misleading as we never heard about a channelId before !
-
-      // Create the conversation
-      // TODO : the tutorials use getConversation but logs and code actually say it is deprecated
-      // in favor to getOrCreateConversation(name, options = {})
-      this.conversation = session.getOrCreateConversation(this.confName.value);
-      // TODO il existe aussi getOrCreateConference mais les deux retournent une Conference ou une Conversation en fonction du format du nom..
-      // se faire expliquer !
-
-      // STATS
-      // Call Stats monitoring is supported on Chrome and Firefox and will be added soon on Safari
-      //console.log("apiCC", apiCC);
-      if ((apiCC.browser === 'Chrome') || (apiCC.browser === 'Firefox')) {
-        this.userAgent.enableCallStatsMonitoring(true, { interval: 10000 });
-        this.userAgent.enableActiveSpeakerDetecting(true, { threshold: 50 });
-      }
-
-      session.on("contactListUpdate", updatedContacts => { //display a list of connected users
-        console.log("MAIN - contactListUpdate", updatedContacts);
-        if (this.conversation !== null) {
-          let contactList = this.conversation.getContacts();
-          console.info("contactList  conversation.getContacts() :", contactList);
-        }
-      })
-
-      this.conversation.on('streamListChanged', streamInfo => {
-        console.log("streamListChanged :", streamInfo);
-        //  USE subscribeToStream instead of subscribeToMedia?
-        if (streamInfo.listEventType === 'added') {
-          if (streamInfo.isRemote === true) {
-            this.conversation.subscribeToStream(streamInfo.streamId)
-              .then(stream => {
-                console.log('subscribeToStream success:', stream);
-              }).catch(err => {
-                console.error('subscribeToStream error', err);
-              });
-          }
-        }
-      });
-
-      this.conversation.on('streamAdded', (stream: any) => {
-        console.log('streamAdded, stream:', stream)
-        //stream.addInDiv('remote-container', 'remote-media-' + stream.streamId, {}, false);
-
-        // TODO :
-        //  Stream and Participant are not sctually the same
-        // Get or create participant
-        var participant;
-        // TODO does getContact().getId() return the same ?
-        //if (!this.participantsByUserId[stream.getContact().getUserData().id]) {
-        participant = Participant.build(stream);
-        this.participants.push(participant);
-        //} else {
-        //   participant = this.participantsByUserId[stream.getContact().getUserData().id];
-        // }
-
-        this.participantsByStreamId[stream.streamId] = participant;
-        this.participantsByCallId[stream.callId] = participant;
-
-      }).on('streamRemoved', (stream: any) => {
-        console.log('streamRemoved:', stream)
-        //stream.removeFromDiv('remote-container', 'remote-media-' + stream.streamId);
-        for (var i = 0; i < this.participants.length; i++) {
-          if (this.participants[i].getStream()['streamId'] === stream.streamId) {
-            const removed = this.participants.splice(i, 1);
-            const removedStream = removed[0];
-            console.log("removedStream:", removedStream);
-          }
-        }
-        delete this.participantsByStreamId[stream.streamId];
-        delete this.participantsByCallId[stream.callId];
-      }).on('contactJoined', contact => {
-        console.log("Contact that has joined :", contact);
-      }).on('contactLeft', contact => {
-        console.log("Contact that has left :", contact);
-      });
-
-      // STATS
-      this.conversation.on('callStatsUpdate', callStats => {
-
-        console.log("callStatsUpdate:", callStats);
-
-        if (callStats.stats.videoReceived || callStats.stats.audioReceived) {
-          // "received" media is from peer participants
-          const participant: Participant = this.participantsByCallId[callStats.callId];
-          participant.setQosStat({
-            videoReceived: callStats.stats.videoReceived,
-            audioReceived: callStats.stats.audioReceived
-          });
-          console.info("received", participant.getQosStat());
-        }
-        else if (callStats.stats.videoSent || callStats.stats.audioSent) {
-          // "sent" media is from local participant (to peers)
-          this.localParticipant.setQosStat({
-            videoSent: callStats.stats.videoSent,
-            audioSent: callStats.stats.audioSent
-          });
-          console.info("sent", this.localParticipant.getQosStat());
-        }
-      });
-
-      this.conversation.on('audioAmplitude', amplitudeInfo => {
-
-        console.log("on:audioAmplitude", amplitudeInfo);
-
-        if (amplitudeInfo.callId !== null) {
-          // TODO :
-          // There is a problem here, it seems the amplitudeInfo.callId is actually a streamId
-          const participant: Participant = this.participantsByStreamId[amplitudeInfo.callId];
-          participant.setSpeaking(amplitudeInfo.descriptor.isSpeaking);
-        } else {
-          this.localParticipant.setSpeaking(amplitudeInfo.descriptor.isSpeaking);
-        }
-      });
-
-      this.registered = true;
-
+      this.session = session;
     }).catch(error => {
       // error
       console.log("Registration error", error);
+      this.registrationError = error;
+    });
+  }
+
+  getOrcreateConversation(): void {
+
+    // Create the conversation
+    // TODO : the tutorials use getConversation but logs and code actually say it is deprecated
+    // in favor to getOrCreateConversation(name, options = {})
+    this.conversation = this.session.getOrCreateConversation(this.convNameFc.value);
+    // TODO il existe aussi getOrCreateConference mais les deux retournent une Conference ou une Conversation en fonction du format du nom..
+    // se faire expliquer !
+
+    // STATS
+    // Call Stats monitoring is supported on Chrome and Firefox and will be added soon on Safari
+    //console.log("apiCC", apiCC);
+    if ((apiCC.browser === 'Chrome') || (apiCC.browser === 'Firefox')) {
+      this.userAgent.enableCallStatsMonitoring(true, { interval: 10000 });
+      this.userAgent.enableActiveSpeakerDetecting(true, { threshold: 50 });
+    }
+
+    this.session.on("contactListUpdate", updatedContacts => { //display a list of connected users
+      console.log("MAIN - contactListUpdate", updatedContacts);
+      if (this.conversation !== null) {
+        let contactList = this.conversation.getContacts();
+        console.info("contactList  conversation.getContacts() :", contactList);
+      }
+    })
+
+    this.conversation.on('streamListChanged', streamInfo => {
+      console.log("streamListChanged :", streamInfo);
+      //  USE subscribeToStream instead of subscribeToMedia?
+      if (streamInfo.listEventType === 'added') {
+        if (streamInfo.isRemote === true) {
+          this.conversation.subscribeToStream(streamInfo.streamId)
+            .then(stream => {
+            console.log('subscribeToStream success:', stream);
+            }).catch(err => {
+            console.error('subscribeToStream error', err);
+             });
+        }
+       }
+     });
+
+    this.conversation.on('streamAdded', (stream: any) => {
+      console.log('streamAdded, stream:', stream)
+      //stream.addInDiv('remote-container', 'remote-media-' + stream.streamId, {}, false);
+
+      // TODO : does stream.getContact().getId() return the same as stream.getContact().getUserData().id ?
+      // TODO : also store streams by user id ?
+        
+      const _stream:Stream = Stream.build(stream);
+      this.streams.push(_stream);
+      this.streamsByStreamId[_stream.streamId] = _stream;
+      this.streamsByCallId[_stream.callId] = _stream;
+    }).on('streamRemoved', (stream: any) => {
+      console.log('streamRemoved:', stream)
+      //stream.removeFromDiv('remote-container', 'remote-media-' + stream.streamId);
+      for (var i = 0; i < this.streams.length; i++) {
+        if (this.streams[i].getStream()['streamId'] === stream.streamId) {
+          const removed = this.streams.splice(i, 1);
+          const removedStream = removed[0];
+          console.log("removedStream:", removedStream);
+        }
+      }
+      delete this.streamsByStreamId[stream.streamId];
+      delete this.streamsByCallId[stream.callId];
+    }).on('contactJoined', contact => {
+      console.log("Contact that has joined :", contact);
+     }).on('contactLeft', contact => {
+      console.log("Contact that has left :", contact);
+    });
+
+    // STATS
+    this.conversation.on('callStatsUpdate', callStats => {
+
+      console.log("callStatsUpdate:", callStats);
+
+      if (callStats.stats.videoReceived || callStats.stats.audioReceived) {
+        // "received" media is from peer streams
+        const stream: Stream = this.streamsByCallId[callStats.callId];
+        stream.setQosStat({
+          videoReceived: callStats.stats.videoReceived,
+          audioReceived: callStats.stats.audioReceived
+        });
+        console.info("received", stream.getQosStat());
+      }
+      else if (callStats.stats.videoSent || callStats.stats.audioSent) {
+        // "sent" media is from local stream (to peers)
+        this.localStream.setQosStat({
+          videoSent: callStats.stats.videoSent,
+          audioSent: callStats.stats.audioSent
+        });
+        console.info("sent", this.localStream.getQosStat());
+      }
+    });
+
+    this.conversation.on('audioAmplitude', amplitudeInfo => {
+
+      console.log("on:audioAmplitude", amplitudeInfo);
+
+      if (amplitudeInfo.callId !== null) {
+        // TODO :
+        // There is a problem here, it seems the amplitudeInfo.callId is actually a streamId
+        const stream: Stream = this.streamsByStreamId[amplitudeInfo.callId];
+        stream.setSpeaking(amplitudeInfo.descriptor.isSpeaking);
+      } else {
+        this.localStream.setSpeaking(amplitudeInfo.descriptor.isSpeaking);
+      }
     });
 
   }
@@ -303,10 +375,12 @@ export class ConversationComponent implements OnInit, OnDestroy {
     if (this.conversation) {
       console.info('Destroy conversation');
       this.conversation.destroy();
+      this.conversation = null;
     }
   }
 
-  createStream(): void {
+  // if options are specified, this is because a specific device was selected
+  createStream(options?:any): void {
     console.log("createStream()");
     // TODO : I was following tutorial at https://dev.apirtc.com/tutorials/conferencing/conf
     // but I was stucked here because I lacked to correct way to create a stream
@@ -336,14 +410,101 @@ export class ConversationComponent implements OnInit, OnDestroy {
             alert("getUserMedia not supported by your web browser or Operating system version" + err);
           }); */
 
-    var createStreamOptions: any = {};
-    createStreamOptions.constraints = {
+    var default_createStreamOptions: any = {};
+    default_createStreamOptions.constraints = {
       audio: true,
       video: true
     };
-    this.userAgent.createStream(createStreamOptions)
+
+    this.userAgent.createStream(options? options : default_createStreamOptions)
       .then(stream => {
         console.log('createStream :', stream);
+
+        this.localStream = Stream.build(stream);
+
+        // Attach stream
+        //this.localVideoRef.nativeElement.srcObject = stream;
+        // previous line CANNOT work because this stream is not the same as native one from webrtc
+        // so I had to do :
+        stream.attachToElement(this.localVideoRef.nativeElement);
+      }).catch(err => {
+        console.error('createStream error', err);
+      });
+  }
+
+  publish(): void {
+    console.log("publish()");
+
+    const stream = this.localStream.getStream();
+
+    if (this.conversation) {
+      // Publish your own stream to the conversation
+      this.publishInPrgs = true;
+      this.conversation.publish(stream).then(stream => {
+        this.published = true;
+        this.publishInPrgs = false;
+      }).catch(err => {
+        console.error('publish error', err);
+        this.publishInPrgs = false;
+      });
+    }
+  }
+
+  unpublish(): void {
+    if (this.conversation) {
+      // https://apizee.atlassian.net/browse/APIRTC-863
+      //this.conversation.unpublish(this.localStream.getStream(), null);
+      this.conversation.unpublish(this.localStream.getStream());
+      this.published = false;
+    }
+  }
+
+
+  toggleScreenSharing(): void {
+
+    if (this.screenSharingStream === null) {
+
+      const displayMediaStreamConstraints = {
+        video: {
+          cursor: "always"
+        },
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          sampleRate: 44100
+        }
+      };
+
+      apiRTC.Stream.createDisplayMediaStream(displayMediaStreamConstraints, false)
+        .then(stream => {
+
+          stream.on('stopped', () => {
+            //Used to detect when user stop the screenSharing with Chrome DesktopCapture UI
+            console.log("stopped event on stream");
+            var elem = document.getElementById('local-screensharing');
+            if (elem !== null) {
+              elem.remove();
+            }
+            this.screenSharingStream = null;
+          });
+
+          this.screenSharingStream = stream;
+          this.conversation.publish(this.screenSharingStream);
+
+          // Attach stream
+          this.screenSharingStream.attachToElement(this.screenSharingVideoRef.nativeElement);
+        })
+        .catch(function (err) {
+          console.error('Could not create screensharing stream :', err);
+        });
+    } else {
+      this.conversation.unpublish(this.screenSharingStream);
+      this.screenSharingStream.release();
+      this.screenSharingStream = null;
+    }
+  }
+}
+
 
         /*           createStream : 
                   {…}
@@ -432,91 +593,6 @@ export class ConversationComponent implements OnInit, OnDestroy {
   on: function value(e, t)​​​
   removeListener: function value(e, t)​​​
   <prototype>: {…*/
-
-        this.localParticipant = Participant.build(stream);
-
-        // Attach stream
-        //this.localVideoRef.nativeElement.srcObject = stream;
-        // previous line CANNOT work because this stream is not the same as native one from webrtc
-        // so I had to do :
-        stream.attachToElement(this.localVideoRef.nativeElement);
-      }).catch(err => {
-        console.error('createStream error', err);
-      });
-  }
-
-  publish(): void {
-    console.log("publish()");
-
-    const stream = this.localParticipant.getStream();
-
-    if (this.conversation) {
-      // Publish your own stream to the conversation
-      this.publishInPrgs = true;
-      this.conversation.publish(stream).then(stream => {
-        this.published = true;
-        this.publishInPrgs = false;
-      }).catch(err => {
-        console.error('publish error', err);
-        this.publishInPrgs = false;
-      });
-    }
-  }
-
-  unpublish(): void {
-    if (this.conversation) {
-      // https://apizee.atlassian.net/browse/APIRTC-863
-      //this.conversation.unpublish(this.localParticipant.getStream(), null);
-      this.conversation.unpublish(this.localParticipant.getStream());
-      this.published = false;
-    }
-  }
-
-
-  toggleScreenSharing(): void {
-
-    if (this.screenSharingStream === null) {
-
-      const displayMediaStreamConstraints = {
-        video: {
-          cursor: "always"
-        },
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          sampleRate: 44100
-        }
-      };
-
-      apiRTC.Stream.createDisplayMediaStream(displayMediaStreamConstraints, false)
-        .then(stream => {
-
-          stream.on('stopped', () => {
-            //Used to detect when user stop the screenSharing with Chrome DesktopCapture UI
-            console.log("stopped event on stream");
-            var elem = document.getElementById('local-screensharing');
-            if (elem !== null) {
-              elem.remove();
-            }
-            this.screenSharingStream = null;
-          });
-
-          this.screenSharingStream = stream;
-          this.conversation.publish(this.screenSharingStream);
-
-          // Attach stream
-          this.screenSharingStream.attachToElement(this.screenSharingVideoRef.nativeElement);
-        })
-        .catch(function (err) {
-          console.error('Could not create screensharing stream :', err);
-        });
-    } else {
-      this.conversation.unpublish(this.screenSharingStream);
-      this.screenSharingStream.release();
-      this.screenSharingStream = null;
-    }
-  }
-}
 
 // Screen Share streamAdded
 //

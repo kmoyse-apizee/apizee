@@ -9,8 +9,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatListModule } from '@angular/material/list';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-
+import { MatSelectModule } from '@angular/material/select';
 import { ClipboardModule } from '@angular/cdk/clipboard';
+
+import { UtilsModule } from '../utils/utils.module';
 
 import { ConversationComponent } from './conversation/conversation.component';
 import { PeerComponent } from './peer/peer.component';
@@ -32,9 +34,10 @@ import { VideoStatsComponent } from './video-stats/video-stats.component';
     HttpClientModule,
 
     MatFormFieldModule, MatInputModule, MatIconModule, MatButtonModule,
-    MatListModule, MatSlideToggleModule,
+    MatListModule, MatSlideToggleModule, MatSelectModule,
+    ClipboardModule,
 
-    ClipboardModule
+    UtilsModule
   ],
   exports: [ConversationComponent, OneToOneComponent],
   providers: [WINDOW_PROVIDERS]

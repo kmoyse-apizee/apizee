@@ -1,6 +1,6 @@
 import { Component, OnInit, Input, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 
-import { Participant } from '../participant';
+import { Stream } from '../stream';
 
 @Component({
   selector: 'app-peer',
@@ -10,7 +10,7 @@ import { Participant } from '../participant';
 export class PeerComponent implements OnInit, AfterViewInit {
 
   @Input() conversation: any;
-  @Input() participant: Participant;
+  @Input() stream: Stream;
 
   name: string = null;
   subscribed: boolean = false;
@@ -27,13 +27,13 @@ export class PeerComponent implements OnInit, AfterViewInit {
     // remote stream is attached to DOM during ngAfterViewInit because @ViewChild is not bound before this stage
     //this.remoteVideoRef.nativeElement.srcObject = this.stream;
     //this.remoteVideoRef.nativeElement.muted = false;
-    this.participant.stream.attachToElement(this.remoteVideoRef.nativeElement);
+    this.stream.stream.attachToElement(this.remoteVideoRef.nativeElement);
   }
 
   toggleSubscribe() {
     if (!this.subscribed) {
       // TODO : plutot faire un output à ce component pour notifier l'appelant qui décidera de faire le un/subscribe ??
-      this.conversation.subscribeToStream(this.participant.streamId).then(stream => {
+      this.conversation.subscribeToStream(this.stream.streamId).then(stream => {
         console.log('PeerComponent::subscribeToStream success:', stream);
         this.subscribed = true;
       }).catch(err => {
@@ -41,7 +41,7 @@ export class PeerComponent implements OnInit, AfterViewInit {
       });
     } else {
       // TODO : plutot faire un output à ce component pour notifier l'appelant qui décidera de faire le un/subscribe ??
-      this.conversation.unsubscribeToStream(this.participant.streamId);
+      this.conversation.unsubscribeToStream(this.stream.streamId);
       this.subscribed = false;
     }
   }

@@ -1,5 +1,6 @@
-
-export class Participant {
+// Decorator for apiRTC.Stream class
+//
+export class Stream {
 
     public readonly streamId: string;
     public readonly callId: string;
@@ -21,13 +22,25 @@ export class Participant {
      * @param stream 
      * @returns 
      */
-    public static build(stream: any, qosStat?: any): Participant {
-        return new Participant(stream, qosStat);
+    public static build(stream: any, qosStat?: any): Stream {
+        return new Stream(stream, qosStat);
+    }
+
+    // Accessors
+
+    public getStreamId(): string {
+        return this.streamId;
     }
 
     public getCallId(): string {
         return this.callId;
     }
+
+    public getStream(): any {
+        return this.stream;
+    }
+
+    // QoS
 
     public setQosStat(qosStat: any) {
         this.qosStat = qosStat;
@@ -36,9 +49,6 @@ export class Participant {
         return this.qosStat;
     }
 
-    public getStream(): any {
-        return this.stream;
-    }
 
     public setSpeaking(isSpeaking: boolean) {
         this.isSpeaking = isSpeaking;
