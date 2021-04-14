@@ -29,3 +29,9 @@ To get more help on the Angular CLI use `ng help` or go check out the [Angular C
 ## Run with ssl to let getUserMedia work
 
 ng serve --host 0.0.0.0 --ssl
+
+## Deploy to 'docs' (for github pages deployment)
+
+ng build --prod --output-path docs --base-href /apizee/
+
+then : Run cp docs/index.html docs/404.html
