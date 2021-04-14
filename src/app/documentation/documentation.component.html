@@ -45,7 +45,7 @@
     <p class="alert alert-info" role="alert">Get your <strong>apiKey</strong> from <a href="https://cloud.apirtc.com/enterprise/api" target="_blank">https://cloud.apirtc.com/enterprise/api</a>
     </p>
 
-    <p class="text-center"><img src="/assets/apirtc_useragent.svg" alt="image"></p>
+    <p class="text-center"><img src="assets/apirtc_useragent.svg" alt="image"></p>
 
     <pre class="border"><code>
         userAgent = new apiRTC.UserAgent(&#123;uri: 'apzkey:' + apiKey&#125;);
@@ -63,7 +63,7 @@
 
     <p>The method <code>Stream.attachToElement</code> binds the <strong>stream</strong> to a DOM element in order to display it in the web page.</p>
 
-    <p class="text-center"><img src="/assets/apirtc_createstream.svg" alt="image"></p>
+    <p class="text-center"><img src="assets/apirtc_createstream.svg" alt="image"></p>
 
     <pre class="border"><code>
         userAgent.createStream(&#123;audio: true,video: true&#125;).then(stream => &#123;stream.attachToElement(domElement)&#125;);
@@ -81,7 +81,7 @@
         <code>userAgent</code>.
     </p>
 
-    <p class="text-center"><img src="/assets/apirtc_useragent_register.svg" alt="image"></p>
+    <p class="text-center"><img src="assets/apirtc_useragent_register.svg" alt="image"></p>
 
     <pre class="border"><code>
         userAgent.register(&#123;id: 'user1'&#125;).then(session => &#123;...&#125;);
@@ -95,7 +95,7 @@
     <p>An instance of <code>Conversation</code> is obtained from <code>Session.getOrCreateConversation</code>.
     </p>
 
-    <p class="text-center"><img src="/assets/apirtc_session_getOrCreateConversation.svg" alt="image"></p>
+    <p class="text-center"><img src="assets/apirtc_session_getOrCreateConversation.svg" alt="image"></p>
 
     <pre class="border"><code>
         conversation = session.getOrCreateConversation("MY_CONVERSATION");
@@ -109,7 +109,7 @@
         <!-- The <code>userAgent</code> then becomes a <strong>participant</strong>. -->
     </p>
 
-    <p class="text-center"><img src="/assets/apirtc_conversation_join.svg" alt="image"></p>
+    <p class="text-center"><img src="assets/apirtc_conversation_join.svg" alt="image"></p>
     <pre class="border"><code>
         conversation.join();
     </code></pre>
@@ -119,7 +119,7 @@
         <strong>stream</strong> using <code>Conversation.publish</code> method :
     </p>
 
-    <p class="text-center"><img src="/assets/apirtc_conversation_publish.svg" alt="image"></p>
+    <p class="text-center"><img src="assets/apirtc_conversation_publish.svg" alt="image"></p>
 
     <pre class="border"><code>
         conversation.publish(stream).then(stream => &#123;...&#125;);
@@ -141,7 +141,7 @@
         <code>Stream</code> instance which can be attached to web page for display.
     </p>
 
-    <p class="text-center"><img src="/assets/apirtc_conversation_subscribe.svg" alt="image"></p>
+    <p class="text-center"><img src="assets/apirtc_conversation_subscribe.svg" alt="image"></p>
 
     <pre class="border"><code>
         conversation.on('streamListChanged', streamInfo => (&#123;
