@@ -265,10 +265,10 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
         if (streamInfo.isRemote === true) {
           this.conversation.subscribeToStream(streamInfo.streamId)
             .then(stream => {
-            console.log('subscribeToStream success:', stream);
+              console.log('subscribeToStream success:', stream);
             }).catch(err => {
-            console.error('subscribeToStream error', err);
-             });
+              console.error('subscribeToStream error', err);
+            });
         }
        }
      });
@@ -296,6 +296,9 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       }
       delete this.streamsByStreamId[stream.streamId];
       delete this.streamsByCallId[stream.callId];
+
+      console.log("getAvailableStreamList:",this.conversation.getAvailableStreamList());
+
     }).on('contactJoined', contact => {
       console.log("Contact that has joined :", contact);
      }).on('contactLeft', contact => {

@@ -33,9 +33,9 @@
 
         </form>
 
-        <p *ngIf="conversation">{{convUrl}}&nbsp;<button mat-raised-button color="primary" [cdkCopyToClipboard]="convUrl"><i class="bi bi-share"></i></button>
-            <button mat-raised-button color="primary" (click)="!joined?join():leave()" title="Join Conversation">{{!joined?'Join':'Leave'}}</button>
-            <button mat-raised-button color="warn" (click)="destroy()">Destroy</button>
+        <p *ngIf="conversation">{{convUrl}}&nbsp;<button mat-raised-button color="primary" [cdkCopyToClipboard]="convUrl" title="Copy link"><i class="bi bi-share"></i></button>
+            <button mat-raised-button color="primary" (click)="!joined?join():leave()" title="{{!joined?'Join':'Leave'}} Conversation">{{!joined?'Join':'Leave'}}</button>
+            <button mat-raised-button color="warn" (click)="destroy()" title="Destroy Conversation">Destroy</button>
         </p>
     </div>
 
@@ -105,7 +105,7 @@
             <!-- publishInPrgs -->
             <button mat-raised-button color="primary" (click)="!published?publish():unpublish()" [disabled]="!joined||publishInPrgs">{{!published?'Publish':'Unpublish'}}
                 <span *ngIf="publishInPrgs" class="spinner-border text-light" role="status"></span></button> &nbsp;
-            <button mat-raised-button color="primary" (click)="toggleScreenSharing()">{{screenSharingStream?'Unshare':'Share'}} Screen</button> &nbsp;
+            <button mat-raised-button color="primary" (click)="toggleScreenSharing()" [disabled]="!conversation">{{screenSharingStream?'Unshare':'Share'}} Screen</button> &nbsp;
         </div>
     </div>
 

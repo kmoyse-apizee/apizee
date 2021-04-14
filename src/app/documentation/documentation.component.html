@@ -48,7 +48,7 @@
     <p class="text-center"><img src="/assets/apirtc_useragent.svg" alt="image"></p>
 
     <pre class="border"><code>
-        userAgent = new UserAgent(&#123;uri: 'apzkey:' + apiKey&#125;);
+        userAgent = new apiRTC.UserAgent(&#123;uri: 'apzkey:' + apiKey&#125;);
     </code></pre>
     <!-- 
     <p><code>UserAgent</code> permet d'accèder aux fonctionnalités <strong>non-connectées</strong> d'apiRTC.</p>
@@ -58,7 +58,7 @@
     <h2>Stream</h2>
 
     <p>The method <code>UserAgent.createStream</code> returns an instance of <code>Stream</code>. It carries media
-        <strong>stream</strong> from computer device through the browser. audio, video, and/or screen-share
+        <strong>stream</strong> from computer device through the browser.
     </p>
 
     <p>The method <code>Stream.attachToElement</code> binds the <strong>stream</strong> to a DOM element in order to display it in the web page.</p>
@@ -126,7 +126,7 @@
     </code></pre>
 
     <!-- TODO : All that is weird and should be simplified -->
-    <p>Subscribing to other participants <strong>streams</strong> is done in two steps :</p>
+    <p>Subscribing to peers <strong>streams</strong> is done in two steps :</p>
     <ul>
         <li>
             Listening on <code>'streamListChanged'</code> event notifies of <strong>streams</strong> published to the
