@@ -16,7 +16,7 @@
                 </div>
             </div>
         </div>
-        <div *ngIf="session" class="alert alert-success" role="alert">Got Session</div>
+        <p *ngIf="session" class="alert alert-success" role="alert">Got Session <span *ngIf="jWT">jWT=<code>{{jWT}}</code></span></p>
         <p *ngIf="registrationError" class="alert alert-danger" role="alert">{{registrationError | json}}
         </p>
     </div>
@@ -44,25 +44,22 @@
 
             <div id="videos" class="row row-cols-1 row-cols-sm-2">
                 <div class="col mycard">
-                    <!-- style="width: 18rem;" -->
-                    <!-- <div class="card" style="width: 20rem;"> -->
                     <div id="{{localStream?.stream.streamId}}" class="embed-responsive embed-responsive-4by3">
                         <video #localVideo muted autoplay playsinline></video>
                         <div class="mycard-text">
-                            <!-- <h5 *ngIf="!name.value">{{localPeerId}}</h5> -->
-                            <h5 *ngIf="name.value">{{name.value}}</h5>
+                            <!-- <h5 *ngIf="usernameFc.value">{{usernameFc.value}}</h5> -->
                             <form class="row row-cols-lg-auto g-3 align-items-center">
                                 <div class="col-12">
                                     <mat-form-field appearance="outline">
                                         <mat-label>Name</mat-label>
-                                        <input matInput placeholder="Name" [formControl]="name">
+                                        <input matInput placeholder="Name" [formControl]="usernameFc">
                                         <mat-icon matSuffix>sentiment_very_satisfied</mat-icon>
                                         <mat-hint>Enter your name</mat-hint>
                                     </mat-form-field>
                                     <br>
                                     <mat-form-field appearance="fill">
                                         <mat-label>VideoIn</mat-label>
-                                        <mat-select [formControl]="video_fc">
+                                        <mat-select [formControl]="videoFc">
                                             <mat-option *ngFor="let device of videoDevices" [value]="device.id">
                                                 {{device.label}}
                                             </mat-option>
@@ -70,7 +67,7 @@
                                     </mat-form-field>
                                     <mat-form-field appearance="fill">
                                         <mat-label>AudioIn</mat-label>
-                                        <mat-select [formControl]="audioIn_fc">
+                                        <mat-select [formControl]="audioInFc">
                                             <mat-option *ngFor="let device of audioInDevices" [value]="device">
                                                 {{device.label}}
                                             </mat-option>
@@ -104,7 +101,7 @@
         </div>
         <div class="card-footer">
 
-            <button mat-raised-button color="primary" (click)="createStream()">createStream</button>
+            <button mat-raised-button color="primary" (click)="!localStream?createStream():destroyStream()" [disabled]="published">{{!localStream?'Create Stream':'Release Stream'}}</button>
             <!-- publishInPrgs -->
             <button mat-raised-button color="primary" (click)="!published?publish():unpublish()" [disabled]="!joined||publishInPrgs">{{!published?'Publish':'Unpublish'}}
                 <span *ngIf="publishInPrgs" class="spinner-border text-light" role="status"></span></button> &nbsp;

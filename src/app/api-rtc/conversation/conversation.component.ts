@@ -8,7 +8,6 @@ import { WINDOW } from '../../windows-provider';
 import { ApiRtcService } from '../api-rtc.service';
 import { ServerService } from '../server.service';
 
-
 import { Stream } from '../stream';
 
 declare var apiCC: any;
@@ -21,7 +20,7 @@ declare var apiRTC: any;
 })
 export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
 
-  name = new FormControl('');
+  usernameFc = new FormControl('');
 
   convName:string = null;
   convBaseUrl: string;
@@ -117,12 +116,12 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       this.doUpdateMediaDevices(mediaDevices);
     });
 
-    this.audioIn_fc.valueChanges.subscribe(value => {
+    this.audioInFc.valueChanges.subscribe(value => {
       console.log("audioIn_fc", value);
       this.selectedAudioInDevice = value;
       this.doChangeStream();
 		});
-    this.video_fc.valueChanges.subscribe(value => {
+    this.videoFc.valueChanges.subscribe(value => {
       console.log("video_fc", value);
       this.selectedVideoDevice = value;
       this.doChangeStream();
@@ -130,13 +129,13 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   audioInDevices: Array<any>;
-  audioIn_fc = new FormControl('');
+  audioInFc = new FormControl('');
   selectedAudioInDevice = null;
 
   audioOutDevices: Array<any>;
 
   videoDevices: Array<any>;
-  video_fc = new FormControl('');
+  videoFc = new FormControl('');
   selectedVideoDevice = null;
 
   doUpdateMediaDevices(mediaDevices: any): void {
@@ -176,7 +175,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       this.convUrl = `${this.convBaseUrl}/${val}`;
     });
 
-    this.name.valueChanges.subscribe((selectedValue) => {
+    this.usernameFc.valueChanges.subscribe((selectedValue) => {
       console.log("name valueChanges:", selectedValue);
       this.userAgent.setUsername(selectedValue);
     });
@@ -194,7 +193,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       json => {
         this.jWT = json.token;
         console.log("JWT : ", json.token);
-        this.name.setValue(this.credentials.username);
+        this.usernameFc.setValue(this.credentials.username);
         this.register();
       },
       error => {
@@ -337,7 +336,9 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
         const stream: Stream = this.streamsByStreamId[amplitudeInfo.callId];
         stream.setSpeaking(amplitudeInfo.descriptor.isSpeaking);
       } else {
-        this.localStream.setSpeaking(amplitudeInfo.descriptor.isSpeaking);
+        if (this.localStream) { // I had to add this otherwise it crashed when localStream was released
+          this.localStream.setSpeaking(amplitudeInfo.descriptor.isSpeaking);
+        }
       }
     });
 
@@ -432,6 +433,13 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       });
   }
 
+  destroyStream() {
+    if (this.localStream){
+      this.localStream.getStream().release();
+      this.localStream = null;
+    }
+  }
+
   publish(): void {
     console.log("publish()");
 
@@ -458,7 +466,6 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       this.published = false;
     }
   }
-
 
   toggleScreenSharing(): void {
 
