@@ -53,6 +53,18 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   streamsByStreamId: Object = {};
   streamsByCallId: Object = {};
 
+  // Devices handling
+  audioInDevices: Array<any>;
+  audioInFc = new FormControl('');
+  selectedAudioInDevice = null;
+
+  // TODO : implement out devices selection
+  audioOutDevices: Array<any>;
+
+  videoDevices: Array<any>;
+  videoFc = new FormControl('');
+  selectedVideoDevice = null;
+
   // JSON Web Token
   jWT: string;
 
@@ -70,7 +82,12 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     private fb: FormBuilder) {
 
     this.userAgent = this.apiRtcService.createUserAgent();
-    this.convBaseUrl = `${this.window.location.protocol}//${this.window.location.host}/conversation`;
+    // This is wrong if application is hosted under a subpath
+    // this.convBaseUrl = `${this.window.location.protocol}//${this.window.location.host}/conversation`;
+    // prefer using :
+    this.convBaseUrl = `${this.window.location.href}`;
+
+    console.log("window.location", window.location);
 
     const mediaDevices = this.userAgent.getUserMediaDevices();
     console.log(JSON.stringify(mediaDevices));
@@ -83,7 +100,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   @HostListener('window:unload', ['$event'])
   unloadHandler(event) {
     console.log("unloadHandler");
-    this.doHangUp();
+    this.doDestroy();
   }
 
   // Use BEFORE unload to hangup (works for Firefox at least)
@@ -91,10 +108,11 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   @HostListener('window:beforeunload', ['$event'])
   beforeUnloadHandler(event) {
     console.log("beforeUnloadHandler");
-    this.doHangUp();
+    this.doDestroy();
   }
 
   ngOnInit(): void {
+    //
     this.onChanges();
     const _convname = this.route.snapshot.paramMap.get("convname");
     if (_convname) {
@@ -119,24 +137,14 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     this.audioInFc.valueChanges.subscribe(value => {
       console.log("audioIn_fc", value);
       this.selectedAudioInDevice = value;
-      this.doChangeStream();
+      this.doChangeDevice();
     });
     this.videoFc.valueChanges.subscribe(value => {
       console.log("video_fc", value);
       this.selectedVideoDevice = value;
-      this.doChangeStream();
+      this.doChangeDevice();
     });
   }
-
-  audioInDevices: Array<any>;
-  audioInFc = new FormControl('');
-  selectedAudioInDevice = null;
-
-  audioOutDevices: Array<any>;
-
-  videoDevices: Array<any>;
-  videoFc = new FormControl('');
-  selectedVideoDevice = null;
 
   doUpdateMediaDevices(mediaDevices: any): void {
     // Convert map values to array
@@ -145,10 +153,9 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     this.videoDevices = Object.values(mediaDevices.videoinput);
   }
 
-  doChangeStream(): void {
+  doChangeDevice(): void {
 
-
-    if (this.localStream && this.localStream.getStream()) {
+    if (this.localStream) {
 
       // first, unpublish and release current local stream
       this.conversation.unpublish(this.localStream.getStream());
@@ -162,7 +169,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       if (this.selectedVideoDevice) {
         options['videoInputId'] = this.selectedVideoDevice.id;
       }
-      // and recreate stream
+      // and recreate a new stream
       this.createStream(options)
         .then((stream) => {
           if (this.published) {
@@ -179,6 +186,10 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     // // Still Displays ngAfterViewInit {"audioinput":{},"audiooutput":{},"videoinput":{}}
   }
 
+  ngOnDestroy(): void {
+    this.doDestroy();
+  }
+
   onChanges(): void {
     this.convNameFc.valueChanges.subscribe(val => {
       this.convUrl = `${this.convBaseUrl}/${val}`;
@@ -188,10 +199,6 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       console.log("name valueChanges:", selectedValue);
       this.userAgent.setUsername(selectedValue);
     });
-  }
-
-  ngOnDestroy(): void {
-    this.doHangUp();
   }
 
   onCredentials(credentials: any): void {
@@ -211,8 +218,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       });
   }
 
-  private doHangUp(): void {
-    // TODO !: hangup shall not destroy ???
+  private doDestroy(): void {
     if (this.conversation) {
       this.conversation.destroy();
       this.conversation = null;
@@ -240,6 +246,11 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       console.log("Registration error", error);
       this.registrationError = error;
     });
+  }
+
+  unregister() {
+    this.userAgent.unregister();
+    this.session = null;
   }
 
   getOrcreateConversation(): void {
@@ -385,11 +396,8 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   destroy(): void {
-    if (this.conversation) {
-      console.info('Destroy conversation');
-      this.conversation.destroy();
-      this.conversation = null;
-    }
+    console.info('Destroy conversation');
+    this.doDestroy();
   }
 
   // if options are specified, this is because a specific device was selected

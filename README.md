@@ -33,5 +33,4 @@ ng serve --host 0.0.0.0 --ssl
 ## Deploy to 'docs' (for github pages deployment)
 
 ng build --prod --output-path docs --base-href /apizee/
-
-then : Run cp docs/index.html docs/404.html
+cp docs/index.html docs/404.html
