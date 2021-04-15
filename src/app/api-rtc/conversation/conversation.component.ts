@@ -22,7 +22,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
 
   usernameFc = new FormControl('');
 
-  convName:string = null;
+  convName: string = null;
   convBaseUrl: string;
   convUrl: string;
 
@@ -33,15 +33,15 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     convName: this.fb.control('', [Validators.required])
   });
 
-  registrationError:any  = null;
+  registrationError: any = null;
 
   // apiRTC objects
   userAgent: any;
-  session:any = null;
+  session: any = null;
   conversation: any = null;
 
   // Local user credentials
-  credentials:any = null;
+  credentials: any = null;
 
   // Local Stream
   localStream: Stream;
@@ -120,12 +120,12 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       console.log("audioIn_fc", value);
       this.selectedAudioInDevice = value;
       this.doChangeStream();
-		});
+    });
     this.videoFc.valueChanges.subscribe(value => {
       console.log("video_fc", value);
       this.selectedVideoDevice = value;
       this.doChangeStream();
-		});
+    });
   }
 
   audioInDevices: Array<any>;
@@ -145,22 +145,31 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     this.videoDevices = Object.values(mediaDevices.videoinput);
   }
 
-  doChangeStream() :void{
+  doChangeStream(): void {
 
-    // first release previous stream
-    if (this.localStream && this.localStream.getStream()){
 
+    if (this.localStream && this.localStream.getStream()) {
+
+      // first, unpublish and release current local stream
+      this.conversation.unpublish(this.localStream.getStream());
       this.localStream.getStream().release();
 
+      // get selected devices
       const options = {};
-      if (this.selectedAudioInDevice){
+      if (this.selectedAudioInDevice) {
         options['audioInputId'] = this.selectedAudioInDevice.id;
       }
-      if (this.selectedVideoDevice){
+      if (this.selectedVideoDevice) {
         options['videoInputId'] = this.selectedVideoDevice.id;
       }
-
-      this.createStream(options);
+      // and recreate stream
+      this.createStream(options)
+        .then((stream) => {
+          if (this.published) {
+            this.publish();
+          }
+        })
+        .catch(err => { console.error('createStream error', err); });
     }
   }
 
@@ -185,7 +194,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     this.doHangUp();
   }
 
-  onCredentials(credentials:any):void {
+  onCredentials(credentials: any): void {
     this.registrationError = null;
     this.credentials = credentials;
     // Authenticate to get a JWT
@@ -210,7 +219,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  register(){
+  register() {
     this.registrationError = null;
 
     const registerInformation = this.credentials ? {
@@ -270,8 +279,8 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
               console.error('subscribeToStream error', err);
             });
         }
-       }
-     });
+      }
+    });
 
     this.conversation.on('streamAdded', (stream: any) => {
       console.log('streamAdded, stream:', stream)
@@ -279,8 +288,8 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
 
       // TODO : does stream.getContact().getId() return the same as stream.getContact().getUserData().id ?
       // TODO : also store streams by user id ?
-        
-      const _stream:Stream = Stream.build(stream);
+
+      const _stream: Stream = Stream.build(stream);
       this.streams.push(_stream);
       this.streamsByStreamId[_stream.streamId] = _stream;
       this.streamsByCallId[_stream.callId] = _stream;
@@ -297,11 +306,11 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       delete this.streamsByStreamId[stream.streamId];
       delete this.streamsByCallId[stream.callId];
 
-      console.log("getAvailableStreamList:",this.conversation.getAvailableStreamList());
+      console.log("getAvailableStreamList:", this.conversation.getAvailableStreamList());
 
     }).on('contactJoined', contact => {
       console.log("Contact that has joined :", contact);
-     }).on('contactLeft', contact => {
+    }).on('contactLeft', contact => {
       console.log("Contact that has left :", contact);
     });
 
@@ -384,7 +393,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   // if options are specified, this is because a specific device was selected
-  createStream(options?:any): void {
+  createStream(options?: any): Promise<Object> {
     console.log("createStream()");
     // TODO : I was following tutorial at https://dev.apirtc.com/tutorials/conferencing/conf
     // but I was stucked here because I lacked to correct way to create a stream
@@ -414,32 +423,42 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
             alert("getUserMedia not supported by your web browser or Operating system version" + err);
           }); */
 
-    var default_createStreamOptions: any = {};
-    default_createStreamOptions.constraints = {
-      audio: true,
-      video: true
-    };
+    return new Promise((resolve, reject) => {
 
-    this.userAgent.createStream(options? options : default_createStreamOptions)
-      .then(stream => {
-        console.log('createStream :', stream);
+      var default_createStreamOptions: any = {};
+      default_createStreamOptions.constraints = {
+        audio: true,
+        video: true
+      };
 
-        this.localStream = Stream.build(stream);
+      this.userAgent.createStream(options ? options : default_createStreamOptions)
+        .then(stream => {
+          console.log('createStream :', stream);
 
-        // Attach stream
-        //this.localVideoRef.nativeElement.srcObject = stream;
-        // previous line CANNOT work because this stream is not the same as native one from webrtc
-        // so I had to do :
-        stream.attachToElement(this.localVideoRef.nativeElement);
-      }).catch(err => {
-        console.error('createStream error', err);
-      });
+          this.localStream = Stream.build(stream);
+
+          // Attach stream
+          //this.localVideoRef.nativeElement.srcObject = stream;
+          // previous line CANNOT work because this stream is not the same as native one from webrtc
+          // so I had to do :
+          stream.attachToElement(this.localVideoRef.nativeElement);
+
+          resolve(stream);
+        }).catch(err => {
+          console.error('createStream error', err);
+          reject(err);
+        });
+    });
   }
 
   destroyStream() {
-    if (this.localStream){
+    if (this.localStream) {
       this.localStream.getStream().release();
       this.localStream = null;
+
+      // TODO : detachFromElement is not provided, replaced by :
+      // TODO shall this be documented ? shall we provide a detachFromElement ?
+      this.localVideoRef.nativeElement.src = null;
     }
   }
 
@@ -515,9 +534,8 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 }
 
-
-        /*           createStream : 
-                  {…}
+/*           createStream :
+{…}
   audioInput: undefined
   callId: null
   contact: null
@@ -531,78 +549,79 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   userMediaStreamId: "4004898158847876"
   videoInput: undefined
   <prototype>: {…}
-  activateAIAnnotations: function value()​​
-  activateAILogs: function value()​​
-  activateAISnapshots: function value()​​
-  addInDiv: function value(e, t, i, n, a)​​
-  attachToElement: function value(e)​​
-  checkImageCaptureCompatibility: function value()​​
-  constructor: function d(e)​​
-  disableAudioAnalysis: function value()​​
-  enableAudioAnalysis: function value()​​
-  getCapabilities: function value()​​
-  getConstraints: function value()​​
-  getContact: function value()​​
-  getConversations: function value()​​
-  getData: function value()​​
-  getId: function value()​​
-  getLabels: function value()​​
-  getLocalMediaStreamTrack: function value()​​
-  getOwner: function value()​​
-  getSettings: function value()​​
-  getStreamAIE: function value()​​
-  getType: function value()​​
-  hasAudio: function value()​​
-  hasData: function value()​​
-  hasVideo: function value()​​
-  isAudioMuted: function value()​​
-  isScreensharing: function value()​​
-  isVideoMuted: function value()​​
-  muteAudio: function value()​​
-  muteVideo: function value()​​
-  pauseRecord: function value()​​
-  release: function value()​​
-  releaseAudio: function value()​​
-  releaseVideo: function value()​​
-  removeFromDiv: function value(e, t)​​
-  resumeRecord: function value()​​
-  setAspectRatio: function value(e)​​
-  setBrightness: function value(e)​​
-  setCapabilities: function value(e)​​
-  setCapability: function value(e, t)​​
-  setColorTemperature: function value(e)​​
-  setContrast: function value(e)​​
-  setExposureCompensation: function value(e)​​
-  setExposureMode: function value(e)​​
-  setExposureTime: function value(e)​​
-  setFacingMode: function value(e)​​
-  setFocusDistance: function value(e)​​
-  setFocusMode: function value(e)​​
-  setFrameRate: function value(e)​​
-  setHeight: function value(e)​​
-  setIso: function value(e)​​
-  setResizeMode: function value(e)​​
-  setSaturation: function value(e)​​
-  setSharpness: function value(e)​​
-  setTorch: function value(e)​​
-  setWhiteBalanceMode: function value(e)​​
-  setWidth: function value(e)​​
-  setZoom: function value(e)​​
-  startRecord: function value(e)​​
-  stopAIAnnotations: function value()​​
-  stopAILogs: function value()​​
-  stopAISnapshots: function value()​​
-  stopRecord: function value()​​
-  takePhoto: function value()​​
-  takeSnapshot: function value()​​
-  unmuteAudio: function value()​​
-  unmuteVideo: function value()​​
+  activateAIAnnotations: function value()
+  activateAILogs: function value()
+  activateAISnapshots: function value()
+  addInDiv: function value(e, t, i, n, a)
+  attachToElement: function value(e)
+  checkImageCaptureCompatibility: function value()
+  constructor: function d(e)
+  disableAudioAnalysis: function value()
+  enableAudioAnalysis: function value()
+  getCapabilities: function value()
+  getConstraints: function value()
+  getContact: function value()
+  getConversations: function value()
+  getData: function value()
+  getId: function value()
+  getLabels: function value()
+  getLocalMediaStreamTrack: function value()
+  getOwner: function value()
+  getSettings: function value()
+  getStreamAIE: function value()
+  getType: function value()
+  hasAudio: function value()
+  hasData: function value()
+  hasVideo: function value()
+  isAudioMuted: function value()
+  isScreensharing: function value()
+  isVideoMuted: function value()
+  muteAudio: function value()
+  muteVideo: function value()
+  pauseRecord: function value()
+  release: function value()
+  releaseAudio: function value()
+  releaseVideo: function value()
+  removeFromDiv: function value(e, t)
+  resumeRecord: function value()
+  setAspectRatio: function value(e)
+  setBrightness: function value(e)
+  setCapabilities: function value(e)
+  setCapability: function value(e, t)
+  setColorTemperature: function value(e)
+  setContrast: function value(e)
+  setExposureCompensation: function value(e)
+  setExposureMode: function value(e)
+  setExposureTime: function value(e)
+  setFacingMode: function value(e)
+  setFocusDistance: function value(e)
+  setFocusMode: function value(e)
+  setFrameRate: function value(e)
+  setHeight: function value(e)
+  setIso: function value(e)
+  setResizeMode: function value(e)
+  setSaturation: function value(e)
+  setSharpness: function value(e)
+  setTorch: function value(e)
+  setWhiteBalanceMode: function value(e)
+  setWidth: function value(e)
+  setZoom: function value(e)
+  startRecord: function value(e)
+  stopAIAnnotations: function value()
+  stopAILogs: function value()
+  stopAISnapshots: function value()
+  stopRecord: function value()
+  takePhoto: function value()
+  takeSnapshot: function value()
+  unmuteAudio: function value()
+  unmuteVideo: function value()
   <prototype>: {…}
-  ​
-  constructor: function e(t)​​​
-  on: function value(e, t)​​​
-  removeListener: function value(e, t)​​​
-  <prototype>: {…*/
+
+  constructor: function e(t)
+  on: function value(e, t)
+  removeListener: function value(e, t)
+  <prototype>: {…
+*/
 
 // Screen Share streamAdded
 //

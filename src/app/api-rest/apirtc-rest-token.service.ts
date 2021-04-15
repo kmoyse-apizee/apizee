@@ -24,7 +24,7 @@ export class ApirtcRestTokenService {
     this.baseUrl = `${this.apiUrl}/token`;
   }
 
-  
+
   // public setCachedToken(access_token: string): void {
   //   this.access_token = access_token;
   // }
