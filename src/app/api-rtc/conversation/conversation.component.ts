@@ -66,7 +66,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   selectedVideoDevice = null;
 
   // JSON Web Token
-  jWT: string;
+  token: string;
 
   get convNameFc() {
     return this.formGroup.get('convName') as FormControl;
@@ -201,19 +201,36 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  onCredentials(credentials: any): void {
+  onJWTAuth(credentials: any): void {
     this.registrationError = null;
     this.credentials = credentials;
     // Authenticate to get a JWT
-    this.serverService.login(this.credentials.username, this.credentials.password).subscribe(
+    this.serverService.loginJWToken(this.credentials.username, this.credentials.password).subscribe(
       json => {
-        this.jWT = json.token;
+        this.token = json.token;
         console.log("JWT : ", json.token);
         this.usernameFc.setValue(this.credentials.username);
-        this.register();
+        this.registerWithToken();
       },
       error => {
-        console.error('ConversationComponent::login|' + JSON.stringify(error));
+        console.error('ConversationComponent::onCredentials|' + JSON.stringify(error));
+        this.registrationError = error;
+      });
+  }
+
+  on3rdPartyAuth(credentials: any): void {
+    this.registrationError = null;
+    this.credentials = credentials;
+    // Authenticate to get a token
+    this.serverService.loginToken(this.credentials.username, this.credentials.password).subscribe(
+      json => {
+        this.token = json.token;
+        console.log("token : ", json.token);
+        this.usernameFc.setValue(this.credentials.username);
+        this.registerWithToken();
+      },
+      error => {
+        console.error('ConversationComponent::onCredentials|' + JSON.stringify(error));
         this.registrationError = error;
       });
   }
@@ -227,13 +244,20 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
 
   register() {
     this.registrationError = null;
+    this.userAgent.register().then((session: any) => {
+      this.session = session;
+    }).catch(error => {
+      console.log("Registration error", error);
+      this.registrationError = error;
+    });
+  }
 
+  registerWithToken() {
+    this.registrationError = null;
     const registerInformation = this.credentials ? {
       id: this.credentials.username,
-      token: this.jWT
+      token: this.token
     } : {};
-    //this.userAgent.register().then((session:any) => {
-    // OR
     this.userAgent.register(registerInformation).then((session: any) => {
       // TODO : if I don't use same registerInformation.id as the user id (username) that was used to create the token,
       // I get error :
@@ -242,7 +266,6 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       // This is misleading as we never heard about a channelId before !
       this.session = session;
     }).catch(error => {
-      // error
       console.log("Registration error", error);
       this.registrationError = error;
     });
@@ -251,6 +274,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   unregister() {
     this.userAgent.unregister();
     this.session = null;
+    this.token = null;
   }
 
   getOrcreateConversation(): void {

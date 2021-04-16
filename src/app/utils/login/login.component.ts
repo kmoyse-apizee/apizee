@@ -1,4 +1,4 @@
-import { Component, OnInit, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
 
 import { FormBuilder, Validators, FormControl } from '@angular/forms';
 
@@ -13,6 +13,8 @@ export class LoginComponent implements OnInit {
     username: ['', Validators.required],
     password: ['', Validators.required],
   });
+
+  @Input() btnText = "Login";
 
   @Output() credentials = new EventEmitter<Object>();
 

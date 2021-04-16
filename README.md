@@ -34,3 +34,7 @@ ng serve --host 0.0.0.0 --ssl
 
 ng build --prod --output-path docs --base-href /apizee/
 cp docs/index.html docs/404.html
+git add docs/*
+git status
+git commit -a -m "deploy"
+git push origin main

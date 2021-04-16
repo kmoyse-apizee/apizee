@@ -16,13 +16,29 @@ export class ServerService {
 
   }
 
-  public login(username: string, password: string): Observable<any | Error> {
+  public loginJWToken(username: string, password: string): Observable<any | Error> {
 
     const headers = new HttpHeaders({
       'Content-Type': 'application/json;charset=UTF-8',
     });
 
-    const url = `http://localhost:3000/login`;
+    const url = `http://localhost:3000/loginJWToken`;
+
+    return this.http.post(url,
+      { username: username, password: password }, { headers: headers })
+      .pipe(catchError(error => {
+        // rethrow to let client handle it
+        return throwError(handleError(error));
+      }));
+  }
+
+  public loginToken(username: string, password: string): Observable<any | Error> {
+
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json;charset=UTF-8',
+    });
+
+    const url = `http://localhost:3000/loginToken`;
 
     return this.http.post(url,
       { username: username, password: password }, { headers: headers })

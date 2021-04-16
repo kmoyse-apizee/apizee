@@ -12,6 +12,8 @@ node server.js
 
 Test : 
 
-curl -XPOST -d '{"username": "myUserAgentId", "password":"12345"}' -H 'content-type: application/json' localhost:3000/login
+curl -XPOST -d '{"username": "myUserAgentId", "password":"12345"}' -H 'content-type: application/json' localhost:3000/loginJWToken
+
+curl -XPOST -d '{"username": "myUserAgentId", "password":"12345"}' -H 'content-type: application/json' localhost:3000/loginToken
 
 
