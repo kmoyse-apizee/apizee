@@ -8,7 +8,7 @@ import { WINDOW } from '../../windows-provider';
 import { ApiRtcService } from '../api-rtc.service';
 import { ServerService } from '../server.service';
 
-import { Stream } from '../stream';
+import { StreamDecorator } from '../stream-decorator';
 
 declare var apiCC: any;
 declare var apiRTC: any;
@@ -19,6 +19,8 @@ declare var apiRTC: any;
   styleUrls: ['./conversation.component.css']
 })
 export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
+
+  apiKeyFc: FormControl;
 
   usernameFc = new FormControl('');
 
@@ -44,14 +46,14 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   credentials: any = null;
 
   // Local Stream
-  localStream: Stream;
+  localStreamHolder: StreamDecorator;
   published = false;
   publishInPrgs = false;
 
   // Peer Streams
-  streams: Array<Stream> = new Array();
-  streamsByStreamId: Object = {};
-  streamsByCallId: Object = {};
+  streamHolders: Array<StreamDecorator> = new Array();
+  streamHoldersById: Object = {};
+  //streamsByCallId: Object = {};
 
   // Devices handling
   audioInDevices: Array<any>;
@@ -80,6 +82,8 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     private apiRtcService: ApiRtcService,
     private serverService: ServerService,
     private fb: FormBuilder) {
+
+    this.apiKeyFc = new FormControl(this.apiRtcService.getApiKey());
 
     this.userAgent = this.apiRtcService.createUserAgent();
     // This is wrong if application is hosted under a subpath
@@ -155,11 +159,11 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
 
   doChangeDevice(): void {
 
-    if (this.localStream) {
+    if (this.localStreamHolder) {
 
       // first, unpublish and release current local stream
-      this.conversation.unpublish(this.localStream.getStream());
-      this.localStream.getStream().release();
+      this.conversation.unpublish(this.localStreamHolder.getStream());
+      this.localStreamHolder.getStream().release();
 
       // get selected devices
       const options = {};
@@ -319,35 +323,35 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.conversation.on('streamAdded', (stream: any) => {
       console.log('streamAdded, stream:', stream)
-      //stream.addInDiv('remote-container', 'remote-media-' + stream.streamId, {}, false);
+      //stream.addInDiv('remote-container', 'remote-media-' + stream.getId(), {}, false);
 
       // TODO : does stream.getContact().getId() return the same as stream.getContact().getUserData().id ?
       // TODO : also store streams by user id ?
 
-      const _stream: Stream = Stream.build(stream);
-      this.streams.push(_stream);
-      this.streamsByStreamId[_stream.streamId] = _stream;
-      this.streamsByCallId[_stream.callId] = _stream;
+      const streamHolder: StreamDecorator = StreamDecorator.build(stream);
+      this.streamHolders.push(streamHolder);
+      this.streamHoldersById[streamHolder.getId()] = streamHolder;
+      //this.streamsByCallId[streamHolder.getCallId()] = streamHolder;
     }).on('streamRemoved', (stream: any) => {
       console.log('streamRemoved:', stream)
-      //stream.removeFromDiv('remote-container', 'remote-media-' + stream.streamId);
-      for (var i = 0; i < this.streams.length; i++) {
-        if (this.streams[i].getStream()['streamId'] === stream.streamId) {
-          const removed = this.streams.splice(i, 1);
-          const removedStream = removed[0];
-          console.log("removedStream:", removedStream);
+      //stream.removeFromDiv('remote-container', 'remote-media-' + stream.getId());
+      for (var i = 0; i < this.streamHolders.length; i++) {
+        if (this.streamHolders[i].getId() === stream.getId()) {
+          const removed = this.streamHolders.splice(i, 1);
+          const removedStreamHolder = removed[0];
+          console.log("removedStream:", removedStreamHolder);
         }
       }
-      delete this.streamsByStreamId[stream.streamId];
-      delete this.streamsByCallId[stream.callId];
+      delete this.streamHoldersById[stream.getId()];
+      //delete this.streamsByCallId[stream.callId];
 
       console.log("getAvailableStreamList:", this.conversation.getAvailableStreamList());
 
     }).on('contactJoined', contact => {
-      console.log("Contact that has joined :", contact);
-    }).on('contactLeft', contact => {
-      console.log("Contact that has left :", contact);
-    });
+        console.log("Contact that has joined :", contact);
+      }).on('contactLeft', contact => {
+        console.log("Contact that has left :", contact);
+      });
 
     // STATS
     this.conversation.on('callStatsUpdate', callStats => {
@@ -356,20 +360,25 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
 
       if (callStats.stats.videoReceived || callStats.stats.audioReceived) {
         // "received" media is from peer streams
-        const stream: Stream = this.streamsByCallId[callStats.callId];
-        stream.setQosStat({
+
+        // this can be wrong because a the callId on a stream can change during Stream lifecycle
+        //const streamHolder: StreamDecorator = this.streamsByCallId[callStats.callId];
+        // TODO: waiting for a fix in apiRTC, workround here by using internal map Conversation#callIdToStreamId:
+        // FIXTHIS: once apiRTC bug https://apizee.atlassian.net/browse/APIRTC-873 is fixed, we can use callStats.streamId instead of erroneous callStats.callId
+        const streamHolder: StreamDecorator = this.streamHoldersById[this.conversation.callIdToStreamId[callStats.callId]];
+        streamHolder.setQosStat({
           videoReceived: callStats.stats.videoReceived,
           audioReceived: callStats.stats.audioReceived
         });
-        console.info("received", stream.getQosStat());
+        console.info("received", streamHolder.getQosStat());
       }
       else if (callStats.stats.videoSent || callStats.stats.audioSent) {
         // "sent" media is from local stream (to peers)
-        this.localStream.setQosStat({
+        this.localStreamHolder.setQosStat({
           videoSent: callStats.stats.videoSent,
           audioSent: callStats.stats.audioSent
         });
-        console.info("sent", this.localStream.getQosStat());
+        console.info("sent", this.localStreamHolder.getQosStat());
       }
     });
 
@@ -380,11 +389,11 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       if (amplitudeInfo.callId !== null) {
         // TODO :
         // There is a problem here, it seems the amplitudeInfo.callId is actually a streamId
-        const stream: Stream = this.streamsByStreamId[amplitudeInfo.callId];
-        stream.setSpeaking(amplitudeInfo.descriptor.isSpeaking);
+        const streamHolder: StreamDecorator = this.streamHoldersById[amplitudeInfo.callId];
+        streamHolder.setSpeaking(amplitudeInfo.descriptor.isSpeaking);
       } else {
-        if (this.localStream) { // I had to add this otherwise it crashed when localStream was released
-          this.localStream.setSpeaking(amplitudeInfo.descriptor.isSpeaking);
+        if (this.localStreamHolder) { // I had to add this otherwise it crashed when localStream was released
+          this.localStreamHolder.setSpeaking(amplitudeInfo.descriptor.isSpeaking);
         }
       }
     });
@@ -467,7 +476,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
         .then(stream => {
           console.log('createStream :', stream);
 
-          this.localStream = Stream.build(stream);
+          this.localStreamHolder = StreamDecorator.build(stream);
 
           // Attach stream
           //this.localVideoRef.nativeElement.srcObject = stream;
@@ -484,9 +493,9 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   destroyStream() {
-    if (this.localStream) {
-      this.localStream.getStream().release();
-      this.localStream = null;
+    if (this.localStreamHolder) {
+      this.localStreamHolder.getStream().release();
+      this.localStreamHolder = null;
 
       // TODO : detachFromElement is not provided, replaced by :
       // TODO shall this be documented ? shall we provide a detachFromElement ?
@@ -497,7 +506,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   publish(): void {
     console.log("publish()");
 
-    const stream = this.localStream.getStream();
+    const stream = this.localStreamHolder.getStream();
 
     if (this.conversation) {
       // Publish your own stream to the conversation
@@ -516,7 +525,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.conversation) {
       // https://apizee.atlassian.net/browse/APIRTC-863
       //this.conversation.unpublish(this.localStream.getStream(), null);
-      this.conversation.unpublish(this.localStream.getStream());
+      this.conversation.unpublish(this.localStreamHolder.getStream());
       this.published = false;
     }
   }

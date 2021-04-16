@@ -1,6 +1,6 @@
 import { Component, OnInit, Input, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 
-import { Stream } from '../stream';
+import { StreamDecorator } from '../stream-decorator';
 
 @Component({
   selector: 'app-peer',
@@ -10,7 +10,7 @@ import { Stream } from '../stream';
 export class PeerComponent implements OnInit, AfterViewInit {
 
   @Input() conversation: any;
-  @Input() stream: Stream;
+  @Input() streamHolder: StreamDecorator;
 
   name: string = null;
   subscribed: boolean = false;
@@ -27,13 +27,13 @@ export class PeerComponent implements OnInit, AfterViewInit {
     // remote stream is attached to DOM during ngAfterViewInit because @ViewChild is not bound before this stage
     //this.remoteVideoRef.nativeElement.srcObject = this.stream;
     //this.remoteVideoRef.nativeElement.muted = false;
-    this.stream.stream.attachToElement(this.remoteVideoRef.nativeElement);
+    this.streamHolder.getStream().attachToElement(this.remoteVideoRef.nativeElement);
   }
 
   toggleSubscribe() {
     if (!this.subscribed) {
       // TODO : plutot faire un output à ce component pour notifier l'appelant qui décidera de faire le un/subscribe ??
-      this.conversation.subscribeToStream(this.stream.streamId).then(stream => {
+      this.conversation.subscribeToStream(this.streamHolder.getId()).then(stream => {
         console.log('PeerComponent::subscribeToStream success:', stream);
         this.subscribed = true;
       }).catch(err => {
@@ -41,7 +41,7 @@ export class PeerComponent implements OnInit, AfterViewInit {
       });
     } else {
       // TODO : plutot faire un output à ce component pour notifier l'appelant qui décidera de faire le un/subscribe ??
-      this.conversation.unsubscribeToStream(this.stream.streamId);
+      this.conversation.unsubscribeToStream(this.streamHolder.getId());
       this.subscribed = false;
     }
   }

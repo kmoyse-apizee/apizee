@@ -1,12 +1,27 @@
 <div class="container-fluid">
 
+    <div class="container">
+        <div class="row">
+            <div class="col">
+                <h1>0. Create UserAgent</h1>
+                <p>Entry point to apiRTC is to create a <code>UserAgent</code>.</p>
+                <mat-form-field [style.width.%]="50" appearance="outline">
+                    <mat-label>apiKey</mat-label>
+                    <input matInput placeholder="apiKey" [formControl]="apiKeyFc">
+                    <mat-icon matSuffix>fingerprint</mat-icon>
+                    <mat-hint>Enter your apiKey</mat-hint>
+                </mat-form-field>
+            </div>
+        </div>
+    </div>
+
     <hr>
 
     <div class="container">
         <div class="row">
             <div class="col">
                 <h1>1. UserAgent registration</h1>
-                <p>First step is to register a <code>UserAgent</code> to get a <code>Session</code>.</p>
+                <p>Register a <code>UserAgent</code> to get a <code>Session</code>.</p>
             </div>
         </div>
         <div *ngIf="!session" class="row">
@@ -30,7 +45,8 @@
             </div>
             <div class="col">
                 <p>Authentication with third party server that generates a <strong>token</strong> and that ApiRTC's servers will query with this token during registration.</p>
-                <app-login [btnText]="'Register with 3rdParty server Auth'" (credentials)="on3rdPartyAuth($event)"></app-login>
+                <app-login [btnText]="'Register with 3rdParty server Auth'" (credentials)="on3rdPartyAuth($event)">
+                </app-login>
             </div>
         </div>
         <div *ngIf="session" class="alert alert-success clearfix" role="alert">Got <code>Session</code> <span *ngIf="token">&nbsp;with token &lt;<code>{{token}}</code>&gt;</span>
@@ -38,7 +54,7 @@
                         class="bi bi-box-arrow-left"></i>&nbsp;Unregister</button></div>
         </div>
         <br>
-        <p *ngIf="registrationError" class="alert alert-danger" role="alert">{{registrationError | json}}
+        <p *ngIf="registrationError" class="alert alert-danger" role="alert">{{registrationError | json}} Please check on <a href="https://cloud.apizee.com/enterprise/users-authentication">https://cloud.apizee.com/enterprise/users-authentication</a> that the correct authentication method is set.
         </p>
     </div>
 
@@ -47,7 +63,7 @@
     <div class="container">
         <div class="row">
             <div class="col">
-                <h1>2. The Conversation</h1>
+                <h1>2. Get or Create Conversation</h1>
             </div>
         </div>
         <div class="row">
@@ -87,7 +103,7 @@
 
             <div id="videos" class="row row-cols-1 row-cols-sm-2">
                 <div class="col mycard">
-                    <div id="{{localStream?.stream.streamId}}" class="embed-responsive embed-responsive-4by3">
+                    <div id="{{localStreamHolder?.stream.streamId}}" class="embed-responsive embed-responsive-4by3">
                         <video #localVideo muted autoplay playsinline></video>
                         <div class="mycard-text">
                             <!-- <h5 *ngIf="usernameFc.value">{{usernameFc.value}}</h5> -->
@@ -118,15 +134,14 @@
                                     </mat-form-field>
                                 </div>
                             </form>
-                            <app-audio-stats [stats]="localStream?.qosStat?.audioSent"></app-audio-stats>
-                            <app-video-stats [stats]="localStream?.qosStat?.videoSent"></app-video-stats>
+                            <app-audio-stats [stats]="localStreamHolder?.qosStat?.audioSent"></app-audio-stats>
+                            <app-video-stats [stats]="localStreamHolder?.qosStat?.videoSent"></app-video-stats>
                         </div>
                         <div class="mycard-over">
                             <pre>
-<code>streamId:{{localStream?.streamId}}</code>
-<code>callId:{{localStream?.callId}}</code>
+<code>streamId:{{localStreamHolder?.id}}</code>
                             </pre>
-                            <mat-icon *ngIf="localStream?.isSpeaking" matSuffix>record_voice_over</mat-icon>
+                            <mat-icon *ngIf="localStreamHolder?.isSpeaking" matSuffix>record_voice_over</mat-icon>
                         </div>
                     </div>
                 </div>
@@ -137,14 +152,14 @@
                     </div>
                 </div>
 
-                <div *ngFor="let stream of streams" class="col mycard">
-                    <app-peer [conversation]="conversation" [stream]="stream"></app-peer>
+                <div *ngFor="let streamHolder of streamHolders" class="col mycard">
+                    <app-peer [conversation]="conversation" [streamHolder]="streamHolder"></app-peer>
                 </div>
             </div>
         </div>
         <div class="card-footer">
 
-            <button mat-raised-button color="primary" (click)="!localStream?createStream():destroyStream()" [disabled]="published">{{!localStream?'Create Stream':'Release Stream'}}</button>
+            <button mat-raised-button color="primary" (click)="!localStreamHolder?createStream():destroyStream()" [disabled]="published">{{!localStreamHolder?'Create Stream':'Release Stream'}}</button>
             <!-- publishInPrgs -->
             <button mat-raised-button color="primary" (click)="!published?publish():unpublish()" [disabled]="!joined||publishInPrgs">{{!published?'Publish Stream':'Unpublish Stream'}}
                 <span *ngIf="publishInPrgs" class="spinner-border text-light" role="status"></span></button> &nbsp;
