@@ -5,12 +5,12 @@ import { ActivatedRoute } from "@angular/router";
 
 import { WINDOW } from '../../windows-provider';
 
-import { ApiRtcService } from '../api-rtc.service';
+//import { ApiRtcService } from '../api-rtc.service';
 import { ServerService } from '../server.service';
 
 import { StreamDecorator } from '../stream-decorator';
 
-declare var apiCC: any;
+//declare var apiCC: any;
 declare var apiRTC: any;
 
 @Component({
@@ -79,22 +79,19 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
 
   constructor(@Inject(WINDOW) public window: Window,
     private route: ActivatedRoute,
-    private apiRtcService: ApiRtcService,
+    //private apiRtcService: ApiRtcService,
     private serverService: ServerService,
     private fb: FormBuilder) {
 
-    this.apiKeyFc = new FormControl(this.apiRtcService.getApiKey());
+    // this.apiRtcService.getApiKey()
+    this.apiKeyFc = new FormControl('9669e2ae3eb32307853499850770b0c3');
 
-    this.userAgent = this.apiRtcService.createUserAgent();
     // This is wrong if application is hosted under a subpath
     // this.convBaseUrl = `${this.window.location.protocol}//${this.window.location.host}/conversation`;
     // prefer using :
     this.convBaseUrl = `${this.window.location.href}`;
 
     console.log("window.location", window.location);
-
-    const mediaDevices = this.userAgent.getUserMediaDevices();
-    console.log(JSON.stringify(mediaDevices));
   }
 
   // Note : beforeUnloadHandler alone does not work on android Chrome
@@ -124,19 +121,6 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       this.convName = _convname;
       this.convNameFc.setValue(_convname);
     }
-
-    // Media device selection
-    //
-    //const mediaDevices = this.userAgent.getUserMediaDevices();
-    //console.log(JSON.stringify(mediaDevices));
-    // TODO : understand why always empty:
-    // displays {"audioinput":{},"audiooutput":{},"videoinput":{}}
-    // Seems only this works :
-    this.userAgent.on("mediaDeviceChanged", updatedContacts => {
-      const mediaDevices = this.userAgent.getUserMediaDevices();
-      console.log("mediaDeviceChanged", JSON.stringify(mediaDevices));
-      this.doUpdateMediaDevices(mediaDevices);
-    });
 
     this.audioInFc.valueChanges.subscribe(value => {
       console.log("audioIn_fc", value);
@@ -197,6 +181,29 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   onChanges(): void {
     this.convNameFc.valueChanges.subscribe(val => {
       this.convUrl = `${this.convBaseUrl}/${val}`;
+    });
+  }
+
+  createUserAgent() {
+    this.userAgent = new apiRTC.UserAgent({
+      // format is like 'apzKey:9669e2ae3eb32307853499850770b0c3'
+      uri: 'apzkey:' + this.apiKeyFc.value
+    });
+
+    const mediaDevices = this.userAgent.getUserMediaDevices();
+    console.log(JSON.stringify(mediaDevices));
+
+    // Media device selection
+    //
+    //const mediaDevices = this.userAgent.getUserMediaDevices();
+    //console.log(JSON.stringify(mediaDevices));
+    // TODO : understand why always empty:
+    // displays {"audioinput":{},"audiooutput":{},"videoinput":{}}
+    // Seems only this works :
+    this.userAgent.on("mediaDeviceChanged", updatedContacts => {
+      const mediaDevices = this.userAgent.getUserMediaDevices();
+      console.log("mediaDeviceChanged", JSON.stringify(mediaDevices));
+      this.doUpdateMediaDevices(mediaDevices);
     });
 
     this.usernameFc.valueChanges.subscribe((selectedValue) => {
@@ -293,7 +300,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     // STATS
     // Call Stats monitoring is supported on Chrome and Firefox and will be added soon on Safari
     //console.log("apiCC", apiCC);
-    if ((apiCC.browser === 'Chrome') || (apiCC.browser === 'Firefox')) {
+    if ((apiRTC.browser === 'Chrome') || (apiRTC.browser === 'Firefox')) {
       this.userAgent.enableCallStatsMonitoring(true, { interval: 10000 });
       this.userAgent.enableActiveSpeakerDetecting(true, { threshold: 50 });
     }
@@ -348,10 +355,10 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       console.log("getAvailableStreamList:", this.conversation.getAvailableStreamList());
 
     }).on('contactJoined', contact => {
-        console.log("Contact that has joined :", contact);
-      }).on('contactLeft', contact => {
-        console.log("Contact that has left :", contact);
-      });
+      console.log("Contact that has joined :", contact);
+    }).on('contactLeft', contact => {
+      console.log("Contact that has left :", contact);
+    });
 
     // STATS
     this.conversation.on('callStatsUpdate', callStats => {

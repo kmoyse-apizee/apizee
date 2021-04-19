@@ -1,6 +1,9 @@
-import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, Inject, OnInit, ViewChild, ElementRef } from '@angular/core';
 
-import { ApiRtcService } from '../api-rtc.service';
+//import { ApiRtcService } from '../api-rtc.service';
+
+
+declare var apiRTC: any;
 
 @Component({
   selector: 'app-one-to-one',
@@ -25,9 +28,26 @@ export class OneToOneComponent implements OnInit {
 
   _call: any;
 
-  constructor(private apiRtcService: ApiRtcService) {
-    this.userAgent = this.apiRtcService.createUserAgent();
-    this.uuid = this.apiRtcService.uuidv4();
+  private uuidv4() {
+    return 'xxxx'.replace(/[xy]/g, function (c) {
+      var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+    // return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    // 	var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+    // 	return v.toString(16);
+    // });
+  }
+
+  constructor(
+    //private apiRtcService: ApiRtcService
+    @Inject('apiKey') private apiKey: string
+  ) {
+    this.userAgent = new apiRTC.UserAgent({
+      // format is like 'apzKey:9669e2ae3eb32307853499850770b0c3'
+      uri: 'apzkey:' + this.apiKey
+    });
+    this.uuid = this.uuidv4();
   }
 
   ngOnInit(): void {

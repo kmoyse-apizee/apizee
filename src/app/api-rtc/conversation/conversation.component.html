@@ -19,12 +19,16 @@
             <div class="col">
                 <h1>1. Create UserAgent</h1>
                 <p>Entry point to apiRTC is to create a <code>UserAgent</code>.</p>
-                <mat-form-field [style.width.%]="50" appearance="outline">
+                <mat-form-field [style.width.%]="40">
                     <mat-label>apiKey</mat-label>
                     <input matInput placeholder="apiKey" [formControl]="apiKeyFc">
                     <mat-icon matSuffix>fingerprint</mat-icon>
-                    <mat-hint>Enter your apiKey</mat-hint>
+                    <!-- <mat-hint>Enter your apiKey</mat-hint> -->
                 </mat-form-field>
+                &nbsp;
+                <button mat-raised-button color="primary" (click)="createUserAgent()" [disabled]="userAgent" title="Create UserAgent">new UserAgent&nbsp;<i class="bi bi-file-earmark-plus"></i></button>
+                <div *ngIf="userAgent" class="alert alert-success clearfix" role="alert"><code>UserAgent</code> created.
+                </div>
             </div>
         </div>
     </div>
@@ -41,7 +45,7 @@
         <div *ngIf="!session" class="row">
             <div class="col">
                 <p>Registering as guest is simple but less secured</p>
-                <button mat-raised-button color="primary" (click)="register()" title="Register as guest">Register as
+                <button mat-raised-button color="primary" (click)="register()" [disabled]="!userAgent" title="Register as guest">Register as
                     Guest&nbsp;<i class="bi bi-box-arrow-in-right"></i></button>
             </div>
             <div class="col">
@@ -91,11 +95,10 @@
                     </mat-form-field>&nbsp;
                     <button mat-raised-button color="primary" type="submit" [disabled]="!formGroup.valid||!session" title="Get Or Create Conversation">GetOrCreateConversation&nbsp;<i
                             class="bi bi-telephone-forward-fill"></i></button>
-
                 </form>
 
                 <p *ngIf="conversation">{{convUrl}}&nbsp;<button mat-raised-button color="primary" [cdkCopyToClipboard]="convUrl" title="Copy link"><i class="bi bi-share"></i></button>
-                    <button mat-raised-button color="primary" (click)="!joined?join():leave()" title="{{!joined?'Join':'Leave'}} Conversation">{{!joined?'Join':'Leave'}}</button>
+                    <button mat-raised-button color="primary" (click)="!joined?join():leave()" title="{{!joined?'Join':'Leave'}} Conversation">{{!joined?'Join':'Leave'}}</button> &nbsp;
                     <button mat-raised-button color="warn" (click)="destroy()" title="Destroy Conversation">Destroy</button>
                 </p>
             </div>
@@ -108,13 +111,21 @@
         <div class="row">
             <div class="col">
                 <h1>4. Streams</h1>
+                <p>
+                    <button mat-raised-button color="primary" (click)="!localStreamHolder?createStream():destroyStream()" [disabled]="!userAgent||published">{{!localStreamHolder?'Create Stream':'Release
+                        Stream'}}</button>
+                    <!-- publishInPrgs -->
+                    <button mat-raised-button color="primary" (click)="!published?publish():unpublish()" [disabled]="!localStreamHolder||!joined||publishInPrgs">{{!published?'Publish Stream':'Unpublish
+                        Stream'}}
+                        <span *ngIf="publishInPrgs" class="spinner-border text-light" role="status"></span></button> &nbsp;
+                    <button mat-raised-button color="primary" (click)="toggleScreenSharing()" [disabled]="!conversation">{{screenSharingStream?'Unshare':'Share'}} Screen</button>
+                </p>
             </div>
         </div>
     </div>
 
     <div class="card">
         <div class="card-body">
-
             <div id="videos" class="row row-cols-1 row-cols-sm-2">
                 <div class="col mycard">
                     <div id="{{localStreamHolder?.stream.streamId}}" class="embed-responsive embed-responsive-4by3">
@@ -171,14 +182,8 @@
                 </div>
             </div>
         </div>
-        <div class="card-footer">
-
-            <button mat-raised-button color="primary" (click)="!localStreamHolder?createStream():destroyStream()" [disabled]="published">{{!localStreamHolder?'Create Stream':'Release Stream'}}</button>
-            <!-- publishInPrgs -->
-            <button mat-raised-button color="primary" (click)="!published?publish():unpublish()" [disabled]="!joined||publishInPrgs">{{!published?'Publish Stream':'Unpublish Stream'}}
-                <span *ngIf="publishInPrgs" class="spinner-border text-light" role="status"></span></button> &nbsp;
-            <button mat-raised-button color="primary" (click)="toggleScreenSharing()" [disabled]="!conversation">{{screenSharingStream?'Unshare':'Share'}} Screen</button> &nbsp;
-        </div>
+        <!-- <div class="card-footer">
+        </div> -->
     </div>
 
 </div>
