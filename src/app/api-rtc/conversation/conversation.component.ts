@@ -140,6 +140,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     });
 
     // Audio/Video muting
+    //
     this.muteAudioFc.valueChanges.subscribe(value => {
       console.log("muteAudioFc#valueChanges", value);
       this.toggleAudioMute();
@@ -190,7 +191,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       this.createStream(options)
         .then((stream) => {
           if (this.published) {
-            this.publish();
+            this.publishStream();
           }
         })
         .catch(err => { console.error('createStream error', err); });
@@ -205,10 +206,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private doDestroy(): void {
-    if (this.conversation) {
-      this.conversation.destroy();
-      this.conversation = null;
-    }
+    this.destroyConversation();
   }
 
   /**
@@ -331,6 +329,9 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     this.token = null;
   }
 
+  /**
+   * 
+   */
   getOrcreateConversation(): void {
 
     // Create the conversation
@@ -411,11 +412,13 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       if (callStats.stats.videoReceived || callStats.stats.audioReceived) {
         // "received" media is from peer streams
 
+        console.info("callIdToStreamId", this.conversation.callIdToStreamId);
+
         // this can be wrong because a the callId on a stream can change during Stream lifecycle
         //const streamHolder: StreamDecorator = this.streamsByCallId[callStats.callId];
         // TODO: waiting for a fix in apiRTC, workround here by using internal map Conversation#callIdToStreamId:
         // FIXTHIS: once apiRTC bug https://apizee.atlassian.net/browse/APIRTC-873 is fixed, we can use callStats.streamId instead of erroneous callStats.callId
-        const streamHolder: StreamDecorator = this.streamHoldersById[this.conversation.callIdToStreamId[callStats.callId]];
+        const streamHolder: StreamDecorator = this.streamHoldersById[this.conversation.callIdToStreamId.get(callStats.callId)];
         streamHolder.setQosStat({
           videoReceived: callStats.stats.videoReceived,
           audioReceived: callStats.stats.audioReceived
@@ -478,42 +481,17 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  destroy(): void {
+  destroyConversation(): void {
     console.info('Destroy conversation');
-    this.doDestroy();
+    if (this.conversation) {
+      this.conversation.destroy();
+      this.conversation = null;
+    }
   }
 
   // if options are specified, this is because a specific device was selected
   createStream(options?: any): Promise<Object> {
-    console.log("createStream()");
-    // TODO : I was following tutorial at https://dev.apirtc.com/tutorials/conferencing/conf
-    // but I was stucked here because I lacked to correct way to create a stream
-    // The doc redirects to other tutorials but this is even less clear...
-    // I tried to create it with standard navigator.mediaDevices.getUserMedia
-    // but this is not creating the correct type of object thus conversation.publish(localStream, null);
-    // failed with error like [2021-03-18T15:50:36.537Z][ERROR]apiRTC(Conversation) publish() - No stream specified
-    // Frederic told me thet there was actually a link to the associated guthub code for the tutorial
-    // in it we can fins the correct way to create an expected apirtc stream.
-    // IDEA : ajouter un message avec un lien sur le github dès le début de la page du tuto !
-
-    /*       navigator.mediaDevices.getUserMedia({
-            video: true,
-            audio: true
-          }).then(localStream => {
-            this.localStream = localStream;
-            //this.localVideoRef.nativeElement.autoplay = true;
-            // Seems this has to be set by code to work :
-            this.localVideoRef.nativeElement.muted = true;
-            // Attach stream
-            this.localVideoRef.nativeElement.srcObject = localStream;
-    
-            //Publish your own stream to the conversation : localStream
-            this.conversation.publish(localStream, null);
-    
-          }).catch(err => {
-            alert("getUserMedia not supported by your web browser or Operating system version" + err);
-          }); */
-
+    console.log("createStream()", options);
     return new Promise((resolve, reject) => {
 
       var default_createStreamOptions: any = {};
@@ -531,7 +509,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
           // Attach stream
           //this.localVideoRef.nativeElement.srcObject = stream;
           // previous line CANNOT work because this stream is not the same as native one from webrtc
-          // so I had to do :
+          // instead do :
           stream.attachToElement(this.localVideoRef.nativeElement);
 
           resolve(stream);
@@ -567,7 +545,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  publish(): void {
+  publishStream(): void {
     console.log("publish()");
 
     const stream = this.localStreamHolder.getStream();
@@ -585,7 +563,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  unpublish(): void {
+  unpublishStream(): void {
     if (this.conversation) {
       // https://apizee.atlassian.net/browse/APIRTC-863
       //this.conversation.unpublish(this.localStream.getStream(), null);
@@ -638,146 +616,3 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 }
-
-/*           createStream :
-{…}
-  audioInput: undefined
-  callId: null
-  contact: null
-  data: MediaStream { id: "{f314a806-088f-4fd4-884a-d73265fb4bcb}", active: true, onaddtrack: null, … }
-  isRemote: false
-  mediaRecorder: null
-  publishedInConversations: Map { ft → "8178766209097722" }
-  recordedBlobs: Array []
-  streamId: 4004898158847876
-  type: "video"
-  userMediaStreamId: "4004898158847876"
-  videoInput: undefined
-  <prototype>: {…}
-  activateAIAnnotations: function value()
-  activateAILogs: function value()
-  activateAISnapshots: function value()
-  addInDiv: function value(e, t, i, n, a)
-  attachToElement: function value(e)
-  checkImageCaptureCompatibility: function value()
-  constructor: function d(e)
-  disableAudioAnalysis: function value()
-  enableAudioAnalysis: function value()
-  getCapabilities: function value()
-  getConstraints: function value()
-  getContact: function value()
-  getConversations: function value()
-  getData: function value()
-  getId: function value()
-  getLabels: function value()
-  getLocalMediaStreamTrack: function value()
-  getOwner: function value()
-  getSettings: function value()
-  getStreamAIE: function value()
-  getType: function value()
-  hasAudio: function value()
-  hasData: function value()
-  hasVideo: function value()
-  isAudioMuted: function value()
-  isScreensharing: function value()
-  isVideoMuted: function value()
-  muteAudio: function value()
-  muteVideo: function value()
-  pauseRecord: function value()
-  release: function value()
-  releaseAudio: function value()
-  releaseVideo: function value()
-  removeFromDiv: function value(e, t)
-  resumeRecord: function value()
-  setAspectRatio: function value(e)
-  setBrightness: function value(e)
-  setCapabilities: function value(e)
-  setCapability: function value(e, t)
-  setColorTemperature: function value(e)
-  setContrast: function value(e)
-  setExposureCompensation: function value(e)
-  setExposureMode: function value(e)
-  setExposureTime: function value(e)
-  setFacingMode: function value(e)
-  setFocusDistance: function value(e)
-  setFocusMode: function value(e)
-  setFrameRate: function value(e)
-  setHeight: function value(e)
-  setIso: function value(e)
-  setResizeMode: function value(e)
-  setSaturation: function value(e)
-  setSharpness: function value(e)
-  setTorch: function value(e)
-  setWhiteBalanceMode: function value(e)
-  setWidth: function value(e)
-  setZoom: function value(e)
-  startRecord: function value(e)
-  stopAIAnnotations: function value()
-  stopAILogs: function value()
-  stopAISnapshots: function value()
-  stopRecord: function value()
-  takePhoto: function value()
-  takeSnapshot: function value()
-  unmuteAudio: function value()
-  unmuteVideo: function value()
-  <prototype>: {…}
-
-  constructor: function e(t)
-  on: function value(e, t)
-  removeListener: function value(e, t)
-  <prototype>: {…
-*/
-
-// Screen Share streamAdded
-//
-// audioInput: null
-// callAudioActive: false
-// callAudioAvailable: true
-// callAudioMuted: false
-// callId: "1629628401784658"
-// callVideoActive: true
-// callVideoAvailable: true
-// callVideoMuted: false
-// contact: {…}
-  // enterprise: null
-  // fileTransfers: Array []
-  // groups: Array [ "default", "fty" ]
-  // previousMessages: Array []
-  // profile: null
-  // streams: Map(0)
-  // userData: {…}
-    // apiRTCVersion: "4.4.9"
-    // audioDevicePresent: "true"
-    // browser: "Firefox"
-    // browser_major_version: "87"
-    // browser_version: "87.0"
-    // dtlsCompliant: "true"
-    // id: "156276"
-    // isSimulated: "false"
-    // osName: "Ubuntu"
-    // userConfId: "guest-f78dc267-9bd91617779587187"
-    // username: "1"
-    // videoDevicePresent: "true"
-    // webRtcCompliant: "true"
-    // <prototype>: Object { … }
-  // <prototype>: Object { … }
-// data: MediaStream
-// active: true
-// id: "janus"
-// onaddtrack: function onaddtrack(e)​​
-// onremovetrack: function ()
-// <prototype>: MediaStreamPrototype { getAudioTracks: getAudioTracks(), getVideoTracks: getVideoTracks(), getTracks: getTracks(), … }
-// isRemote: true
-// mediaRecorder: null
-// publishedInConversations: Map(1)
-// size: 1
-// <entries>
-// <prototype>: Map.prototype { … }
-// recordedBlobs: []
-// length: 0
-// <prototype>: Array []
-// streamId: 2296099743439031
-// type: "video"
-// userMediaStreamId: null
-// videoInput: null
-// <prototype>: {…

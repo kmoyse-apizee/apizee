@@ -1,6 +1,6 @@
 <div class="container-fluid">
 
-    <!-- TODO : Shall we explain here how to load the apiRTC lib because this is a bit specific for angular so maybe woth explain it... -->
+    <!-- TODO : Shall we explain here how to load the apiRTC lib because this is a bit specific for angular so maybe worth explain it... -->
     <!-- <div class="container">
         <div class="row">
             <div class="col">
@@ -99,7 +99,7 @@
 
                 <p *ngIf="conversation">{{convUrl}}&nbsp;<button mat-raised-button color="primary" [cdkCopyToClipboard]="convUrl" title="Copy link"><i class="bi bi-share"></i></button>
                     <button mat-raised-button color="primary" (click)="!joined?join():leave()" title="{{!joined?'Join':'Leave'}} Conversation">{{!joined?'Join':'Leave'}}</button> &nbsp;
-                    <button mat-raised-button color="warn" (click)="destroy()" title="Destroy Conversation">Destroy</button>
+                    <button mat-raised-button color="warn" (click)="destroyConversation()" title="Destroy Conversation">Destroy Conversation</button>
                 </p>
             </div>
         </div>
@@ -115,7 +115,7 @@
                     <button mat-raised-button color="primary" (click)="!localStreamHolder?createStream():destroyStream()" [disabled]="!userAgent||published">{{!localStreamHolder?'Create Stream':'Release
                         Stream'}}</button>
                     <!-- publishInPrgs -->
-                    <button mat-raised-button color="primary" (click)="!published?publish():unpublish()" [disabled]="!localStreamHolder||!joined||publishInPrgs">{{!published?'Publish Stream':'Unpublish
+                    <button mat-raised-button color="primary" (click)="!published?publishStream():unpublishStream()" [disabled]="!localStreamHolder||!joined||publishInPrgs">{{!published?'Publish Stream':'Unpublish
                         Stream'}}
                         <span *ngIf="publishInPrgs" class="spinner-border text-light" role="status"></span></button> &nbsp;
                     <button mat-raised-button color="primary" (click)="toggleScreenSharing()" [disabled]="!conversation">{{screenSharingStream?'Unshare':'Share'}} Screen</button>
