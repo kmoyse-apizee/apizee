@@ -38,7 +38,7 @@
     <div class="container">
         <div class="row">
             <div class="col">
-                <h1>2. UserAgent registration</h1>
+                <h1>2. Register UserAgent</h1>
                 <p>Register a <code>UserAgent</code> to get a <code>Session</code>.</p>
             </div>
         </div>
@@ -110,7 +110,7 @@
     <div class="container">
         <div class="row">
             <div class="col">
-                <h1>4. Streams</h1>
+                <h1>4. Create/Publish/Receive/Display Streams</h1>
                 <p>
                     <button mat-raised-button color="primary" (click)="!localStreamHolder?createStream():destroyStream()" [disabled]="!userAgent||published">{{!localStreamHolder?'Create Stream':'Release
                         Stream'}}</button>
@@ -140,6 +140,16 @@
                                         <mat-icon matSuffix>sentiment_very_satisfied</mat-icon>
                                         <mat-hint>Enter your name</mat-hint>
                                     </mat-form-field>
+                                    <br>
+                                    <div>
+                                        <mat-slide-toggle [formControl]="muteAudioFc" [disabled]="!localStreamHolder">
+                                            Mute Audio
+                                        </mat-slide-toggle>
+                                        <br>
+                                        <mat-slide-toggle [formControl]="muteVideoFc" [disabled]="!localStreamHolder">
+                                            Mute Video
+                                        </mat-slide-toggle>
+                                    </div>
                                     <br>
                                     <mat-form-field appearance="fill">
                                         <mat-label>VideoIn</mat-label>

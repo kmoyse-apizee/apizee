@@ -55,6 +55,10 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   streamHoldersById: Object = {};
   //streamsByCallId: Object = {};
 
+  // Audio/Video Muting
+  muteAudioFc = new FormControl(false);
+  muteVideoFc = new FormControl(false);
+
   // Devices handling
   audioInDevices: Array<any>;
   audioInFc = new FormControl('');
@@ -135,15 +139,25 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       this.convUrl = `${this.convBaseUrl}/${val}`;
     });
 
+    // Audio/Video muting
+    this.muteAudioFc.valueChanges.subscribe(value => {
+      console.log("muteAudioFc#valueChanges", value);
+      this.toggleAudioMute();
+    });
+    this.muteVideoFc.valueChanges.subscribe(value => {
+      console.log("muteVideoFc#valueChanges", value);
+      this.toggleVideoMute();
+    });
+
     // Media device selection handling
     //
     this.audioInFc.valueChanges.subscribe(value => {
-      console.log("audioIn_fc", value);
+      console.log("audioInFc#valueChanges", value);
       this.selectedAudioInDevice = value;
       this.doChangeDevice();
     });
     this.videoFc.valueChanges.subscribe(value => {
-      console.log("video_fc", value);
+      console.log("videoFc#valueChanges", value);
       this.selectedVideoDevice = value;
       this.doChangeDevice();
     });
@@ -526,6 +540,20 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
           reject(err);
         });
     });
+  }
+
+  toggleAudioMute() {
+    if (this.localStreamHolder.getStream().isAudioMuted()) {
+      this.localStreamHolder.getStream().unmuteAudio();
+    }
+    else { this.localStreamHolder.getStream().muteAudio(); }
+  }
+
+  toggleVideoMute() {
+    if (this.localStreamHolder.getStream().isVideoMuted()) {
+      this.localStreamHolder.getStream().unmuteVideo();
+    }
+    else { this.localStreamHolder.getStream().muteVideo(); }
   }
 
   destroyStream() {
