@@ -22,9 +22,6 @@
         <li>the <strong>apiKey</strong></li>
     </ul> -->
 
-
-    <h1>Let's start coding</h1>
-
     <h2>ApiRTC Main Classes</h2>
 
     <ul>
@@ -36,9 +33,21 @@
         </li>
     </ul>
 
+    <h1>Let's start coding</h1>
+
+    <h2>Load ApiRTC library</h2>
+
+    <p>In order to user <strong>ApiRTC</strong>, please add :
+    </p>
+    <p><code>&lt;script type="text/javascript" src="https://cloud.apizee.com/apiRTC/apiRTC-latest.min.js"&gt;&lt;/script&gt;</code>
+    </p>
+    <!-- <code>&lt;head&gt;...&lt;/head&gt;</code> tags of <code>index.html</code> -->
+    <p>inside <code>.html</code> document.</p>
+    <p class="alert alert-info" role="alert">The <strong>ApiRTC</strong> api reference can be found at <a href="https://dev.apirtc.com/api/reference" target="_blank">https://dev.apirtc.com/api/reference</a></p>
+
     <h2>UserAgent</h2>
 
-    <p><code>UserAgent</code> is the entry point to <strong>apiRTC</strong>. It is instanciated using the
+    <p><code>UserAgent</code> is the entry point to <strong>ApiRTC</strong>. It is instanciated using the
         <strong>apiKey</strong> associated to your <strong>enterprise</strong> account on <a href="https://www.apirtc.com" target="_blank">https://www.apirtc.com</a>.
     </p>
 
@@ -51,7 +60,7 @@
         userAgent = new apiRTC.UserAgent(&#123;uri: 'apzkey:' + apiKey&#125;);
     </code></pre>
     <!-- 
-    <p><code>UserAgent</code> permet d'accèder aux fonctionnalités <strong>non-connectées</strong> d'apiRTC.</p>
+    <p><code>UserAgent</code> permet d'accèder aux fonctionnalités <strong>non-connectées</strong> d'<strong>ApiRTC</strong>.</p>
     <p>TODO : list non-connected features</p>
     <ul><li></li></ul> -->
 
@@ -71,7 +80,7 @@
 
     <h2>Session</h2>
 
-    <p>To use <strong>apiRTC</strong>'s connected features, a <code>userAgent</code> must register to get a
+    <p>To use <strong>ApiRTC</strong>'s connected features, a <code>userAgent</code> must register to get a
         <strong>session</strong>. This can be done with or without authentication.
     </p>
     <!-- <p>TODO: lister les modes d'authentification, ou faire un lien vers un chapitre dédié</p> -->
@@ -126,7 +135,7 @@
     </code></pre>
 
     <!-- TODO : All that is weird and should be simplified -->
-    <p>Subscribing to peers <strong>streams</strong> is done in two steps :</p>
+    <p>Subscribing to peer <strong>streams</strong> is done in two steps :</p>
     <ul>
         <li>
             Listening on <code>'streamListChanged'</code> event notifies of <strong>streams</strong> published to the
@@ -151,6 +160,8 @@
             stream.attachToElement(domElement)
         &#125;);
     </code></pre>
+
+    <p>At this stage, the application displays both yours and peers videos in the page !</p>
 
 
     <!-- TODO : provide a simple sample for each framework -->
