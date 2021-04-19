@@ -67,7 +67,7 @@
                 </app-login>
             </div>
         </div>
-        <div *ngIf="session" class="alert alert-success clearfix" role="alert">Got <code>Session</code> <span *ngIf="token">&nbsp;with token &lt;<code>{{token}}</code>&gt;</span>
+        <div *ngIf="session" class="alert alert-success clearfix" role="alert">Got <code>Session</code> with id &lt;<code>{{session.getId()}}</code>&gt;<span *ngIf="token">&nbsp;with token &lt;<code>{{token}}</code>&gt;</span>
             <div class="float-right"><button mat-raised-button color="warn" (click)="unregister()" title="Unregister"><i
                         class="bi bi-box-arrow-left"></i>&nbsp;Unregister</button></div>
         </div>
@@ -102,6 +102,14 @@
                     <button mat-raised-button color="warn" (click)="destroyConversation()" title="Destroy Conversation">Destroy Conversation</button>
                 </p>
             </div>
+        </div>
+        <div class="row" *ngIf="conversation">
+            <ul class="alert alert-success clearfix">
+                <li *ngFor="let contact of contactsById | keyvalue">
+                    {{contact.key}} --> {{contact.value.getUserData().username}}
+                </li>
+            </ul>
+
         </div>
     </div>
 

@@ -50,10 +50,13 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   published = false;
   publishInPrgs = false;
 
+  // Peer Contacts
+  contactsById: Map<string,Object> = new Map();
+
   // Peer Streams
   streamHolders: Array<StreamDecorator> = new Array();
+  // TODO : rework all ..ById as real JS Maps
   streamHoldersById: Object = {};
-  //streamsByCallId: Object = {};
 
   // Audio/Video Muting
   muteAudioFc = new FormControl(false);
@@ -295,6 +298,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     this.registrationError = null;
     this.userAgent.register().then((session: any) => {
       this.session = session;
+      console.log("Session:", session);
     }).catch(error => {
       console.log("Registration error", error);
       this.registrationError = error;
@@ -317,6 +321,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       //[2021-04-08T15:23:30.155Z][ERROR]apiRTC(UserAgent) register() - ApiRTC Initialization error : Channel Error : access token failure: invalid channelId
       // This is misleading as we never heard about a channelId before !
       this.session = session;
+      console.log("Session:", session);
     }).catch(error => {
       console.log("Registration error", error);
       this.registrationError = error;
@@ -399,31 +404,30 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       console.log("getAvailableStreamList:", this.conversation.getAvailableStreamList());
 
     }).on('contactJoined', contact => {
-      console.log("Contact that has joined :", contact);
+      console.log("on:contactJoined:", contact);
+      this.contactsById.set(contact.getUserData().id, contact);
     }).on('contactLeft', contact => {
-      console.log("Contact that has left :", contact);
+      console.log("on:contactLeft:", contact);
+      this.contactsById.delete(contact.getUserData().id);
     });
 
     // STATS
     this.conversation.on('callStatsUpdate', callStats => {
 
-      console.log("callStatsUpdate:", callStats);
+      console.log("on:callStatsUpdate:", callStats);
 
       if (callStats.stats.videoReceived || callStats.stats.audioReceived) {
         // "received" media is from peer streams
 
-        console.info("callIdToStreamId", this.conversation.callIdToStreamId);
-
-        // this can be wrong because a the callId on a stream can change during Stream lifecycle
+        // Below line can be wrong because a the callId on a stream can change during Stream lifecycle
         //const streamHolder: StreamDecorator = this.streamsByCallId[callStats.callId];
-        // TODO: waiting for a fix in apiRTC, workround here by using internal map Conversation#callIdToStreamId:
+        // TODO: waiting for a fix in apiRTC (to include streamId in callStats), workround here by using internal map Conversation#callIdToStreamId:
         // FIXTHIS: once apiRTC bug https://apizee.atlassian.net/browse/APIRTC-873 is fixed, we can use callStats.streamId instead of erroneous callStats.callId
         const streamHolder: StreamDecorator = this.streamHoldersById[this.conversation.callIdToStreamId.get(callStats.callId)];
         streamHolder.setQosStat({
           videoReceived: callStats.stats.videoReceived,
           audioReceived: callStats.stats.audioReceived
         });
-        console.info("received", streamHolder.getQosStat());
       }
       else if (callStats.stats.videoSent || callStats.stats.audioSent) {
         // "sent" media is from local stream (to peers)
@@ -431,7 +435,6 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
           videoSent: callStats.stats.videoSent,
           audioSent: callStats.stats.audioSent
         });
-        console.info("sent", this.localStreamHolder.getQosStat());
       }
     });
 
