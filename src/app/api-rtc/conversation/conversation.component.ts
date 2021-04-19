@@ -86,11 +86,6 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     // this.apiRtcService.getApiKey()
     this.apiKeyFc = new FormControl('9669e2ae3eb32307853499850770b0c3');
 
-    // This is wrong if application is hosted under a subpath
-    // this.convBaseUrl = `${this.window.location.protocol}//${this.window.location.host}/conversation`;
-    // prefer using :
-    this.convBaseUrl = `${this.window.location.href}`;
-
     console.log("window.location", window.location);
   }
 
@@ -113,15 +108,35 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    // Handle conversation name
     //
-    this.onChanges();
     const _convname = this.route.snapshot.paramMap.get("convname");
     if (_convname) {
       console.log("convname", _convname);
       this.convName = _convname;
       this.convNameFc.setValue(_convname);
+      // Recreate remove convname from current location url :
+      // use pathname: "/apizee/conversation/nnnnn"
+      const path = `${this.window.location.pathname}`.split('/');
+      // remove last element which is the convname
+      path.pop();
+      // and recreate base url
+      this.convBaseUrl = `${this.window.location.origin}` + path.join('/');
+      // and actual full url
+      this.convUrl = `${this.convBaseUrl}/${_convname}`;
+    } else {
+      // When no convname is provided then location.href is the expected url
+      // Note : This is important to NOT try using this.convBaseUrl = `${this.window.location.protocol}//${this.window.location.host}/conversation`;
+      // because 1. route can change and 2. this does not work if application is hosted under a path
+      this.convBaseUrl = `${this.window.location.href}`;
     }
 
+    this.convNameFc.valueChanges.subscribe(val => {
+      this.convUrl = `${this.convBaseUrl}/${val}`;
+    });
+
+    // Media device selection handling
+    //
     this.audioInFc.valueChanges.subscribe(value => {
       console.log("audioIn_fc", value);
       this.selectedAudioInDevice = value;
@@ -169,31 +184,30 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit() {
-    // const mediaDevices = this.userAgent.getUserMediaDevices();
-    // console.log("ngAfterViewInit",JSON.stringify(mediaDevices));
-    // // Still Displays ngAfterViewInit {"audioinput":{},"audiooutput":{},"videoinput":{}}
   }
 
   ngOnDestroy(): void {
     this.doDestroy();
   }
 
-  onChanges(): void {
-    this.convNameFc.valueChanges.subscribe(val => {
-      this.convUrl = `${this.convBaseUrl}/${val}`;
-    });
+  private doDestroy(): void {
+    if (this.conversation) {
+      this.conversation.destroy();
+      this.conversation = null;
+    }
   }
 
+  /**
+   * Entry point to ApiRTC : create a UserAgent
+   */
   createUserAgent() {
+
     this.userAgent = new apiRTC.UserAgent({
       // format is like 'apzKey:9669e2ae3eb32307853499850770b0c3'
       uri: 'apzkey:' + this.apiKeyFc.value
     });
 
-    const mediaDevices = this.userAgent.getUserMediaDevices();
-    console.log(JSON.stringify(mediaDevices));
-
-    // Media device selection
+    // Media device selection handling
     //
     //const mediaDevices = this.userAgent.getUserMediaDevices();
     //console.log(JSON.stringify(mediaDevices));
@@ -212,7 +226,15 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  onJWTAuth(credentials: any): void {
+  /**
+   * This method is called when user decides to use JSON Web Token authentication.
+   * A server request is made to an authentication server that has to provide a JSON Web Token.
+   * 
+   * ApiRTC cloud plateform has to be configured accordingly.
+   * 
+   * @param credentials 
+   */
+  doJWTAuth(credentials: any): void {
     this.registrationError = null;
     this.credentials = credentials;
     // Authenticate to get a JWT
@@ -229,7 +251,15 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       });
   }
 
-  on3rdPartyAuth(credentials: any): void {
+  /**
+   * This method is called when user decides to a 3rd party authentication server.
+   * A server request is made to an authentication server that has to provide an authentication token.
+   * 
+   * ApiRTC cloud plateform has to be configured accordingly.
+   * 
+   * @param credentials 
+   */
+  do3rdPartyAuth(credentials: any): void {
     this.registrationError = null;
     this.credentials = credentials;
     // Authenticate to get a token
@@ -246,13 +276,9 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       });
   }
 
-  private doDestroy(): void {
-    if (this.conversation) {
-      this.conversation.destroy();
-      this.conversation = null;
-    }
-  }
-
+  /**
+   * In order to access 'connected' features of ApiRTC, a session to ApiRTC's servers has to be obtained through register
+   */
   register() {
     this.registrationError = null;
     this.userAgent.register().then((session: any) => {
@@ -263,6 +289,9 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
+  /**
+   * Registration can be made with authentication token.
+   */
   registerWithToken() {
     this.registrationError = null;
     const registerInformation = this.credentials ? {
