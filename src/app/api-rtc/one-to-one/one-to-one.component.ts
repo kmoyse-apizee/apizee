@@ -1,8 +1,5 @@
 import { Component, Inject, OnInit, ViewChild, ElementRef } from '@angular/core';
 
-//import { ApiRtcService } from '../api-rtc.service';
-
-
 declare var apiRTC: any;
 
 @Component({
@@ -28,6 +25,8 @@ export class OneToOneComponent implements OnInit {
 
   _call: any;
 
+  private apiKey: string = '9669e2ae3eb32307853499850770b0c3'
+
   private uuidv4() {
     return 'xxxx'.replace(/[xy]/g, function (c) {
       var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
@@ -40,8 +39,8 @@ export class OneToOneComponent implements OnInit {
   }
 
   constructor(
-    //private apiRtcService: ApiRtcService
-    @Inject('apiKey') private apiKey: string
+    //private apiRtcService: ApiRtcService,
+    // @Inject('apiKey') private apiKey: string
   ) {
     this.userAgent = new apiRTC.UserAgent({
       // format is like 'apzKey:9669e2ae3eb32307853499850770b0c3'

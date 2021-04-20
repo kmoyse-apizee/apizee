@@ -1,14 +1,16 @@
 import { Component, OnDestroy, OnInit, AfterViewInit, ViewChild, ElementRef, HostListener } from '@angular/core';
 import { Inject } from '@angular/core';
-import { FormBuilder, FormArray, FormControl, Validators } from '@angular/forms';
+import { FormBuilder, FormControl, Validators } from '@angular/forms';
 import { ActivatedRoute } from "@angular/router";
 
 import { WINDOW } from '../../windows-provider';
 
-//import { ApiRtcService } from '../api-rtc.service';
-import { ServerService } from '../server.service';
+import { AuthServerService } from '../auth-server.service';
 
-import { StreamDecorator } from '../stream-decorator';
+import { MessageDecorator } from '../model/model.module';
+import { StreamDecorator } from '../model/model.module';
+
+import { PeerSubscribeEvent } from '../peer/peer.component';
 
 //declare var apiCC: any;
 declare var apiRTC: any;
@@ -31,9 +33,16 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   joined = false;
   screenSharingStream = null;
 
-  formGroup = this.fb.group({
+  conversationFormGroup = this.fb.group({
     convName: this.fb.control('', [Validators.required])
   });
+
+  messageFormGroup = this.fb.group({
+    message: this.fb.control('', [Validators.required])
+  });
+
+  // Simple Array of messages received on the conversation
+  messages: Array<MessageDecorator> = [];
 
   registrationError: any = null;
 
@@ -51,7 +60,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   publishInPrgs = false;
 
   // Peer Contacts
-  contactsById: Map<string,Object> = new Map();
+  contactsById: Map<string, Object> = new Map();
 
   // Peer Streams
   streamHolders: Array<StreamDecorator> = new Array();
@@ -78,7 +87,11 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   token: string;
 
   get convNameFc() {
-    return this.formGroup.get('convName') as FormControl;
+    return this.conversationFormGroup.get('convName') as FormControl;
+  }
+
+  get messageFc() {
+    return this.messageFormGroup.get('message') as FormControl;
   }
 
   @ViewChild("localVideo") localVideoRef: ElementRef;
@@ -87,7 +100,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   constructor(@Inject(WINDOW) public window: Window,
     private route: ActivatedRoute,
     //private apiRtcService: ApiRtcService,
-    private serverService: ServerService,
+    private serverService: AuthServerService,
     private fb: FormBuilder) {
 
     // this.apiRtcService.getApiKey()
@@ -370,6 +383,9 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
           this.conversation.subscribeToStream(streamInfo.streamId)
             .then(stream => {
               console.log('subscribeToStream success:', stream);
+              // Cannot do that here, the streamHolder may not yet be in streamHoldersById
+              //const streamHolder:StreamDecorator = this.streamHoldersById[stream.getId()];
+              //streamHolder.setSubscribed(true);
             }).catch(err => {
               console.error('subscribeToStream error', err);
             });
@@ -388,6 +404,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       this.streamHolders.push(streamHolder);
       this.streamHoldersById[streamHolder.getId()] = streamHolder;
       //this.streamsByCallId[streamHolder.getCallId()] = streamHolder;
+      streamHolder.setSubscribed(true);
     }).on('streamRemoved', (stream: any) => {
       console.log('streamRemoved:', stream)
       //stream.removeFromDiv('remote-container', 'remote-media-' + stream.getId());
@@ -403,7 +420,10 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
 
       console.log("getAvailableStreamList:", this.conversation.getAvailableStreamList());
 
-    }).on('contactJoined', contact => {
+    })
+
+    // Contacts
+    this.conversation.on('contactJoined', contact => {
       console.log("on:contactJoined:", contact);
       this.contactsById.set(contact.getUserData().id, contact);
     }).on('contactLeft', contact => {
@@ -411,7 +431,14 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       this.contactsById.delete(contact.getUserData().id);
     });
 
-    // STATS
+    // Messages
+    this.conversation.on('message', message => {
+      console.log("on:message:", message);
+      this.messages.push(MessageDecorator.buildFromMessage(message));
+      //this.contactsById.set(message.getSender().getId());
+    });
+
+    // Statistics
     this.conversation.on('callStatsUpdate', callStats => {
 
       console.log("on:callStatsUpdate:", callStats);
@@ -484,6 +511,15 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  sendMessage() {
+    const messageContent = this.messageFc.value;
+    this.conversation.sendMessage(messageContent).then((uuid) => {
+      console.log("sendMessage", uuid, messageContent);
+      this.messages.push(MessageDecorator.build(this.userAgent.getUsername(), messageContent));
+    })
+      .catch(err => { console.error('sendMessage error', err); });
+  }
+
   destroyConversation(): void {
     console.info('Destroy conversation');
     if (this.conversation) {
@@ -535,6 +571,20 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       this.localStreamHolder.getStream().unmuteVideo();
     }
     else { this.localStreamHolder.getStream().muteVideo(); }
+  }
+
+  onSubscribeToPeer(event: PeerSubscribeEvent) {
+    if (event.doSubscribe) {
+      console.log("subscribeToStream", event.streamHolder);
+      this.conversation.subscribeToStream(event.streamHolder.getId()).then(stream => {
+        console.log('subscribeToStream success:', stream);
+      }).catch(err => {
+        console.error('subscribeToStream error', err);
+      });
+    } else {
+      console.log("unsubscribeToStream", event.streamHolder);
+      this.conversation.unsubscribeToStream(event.streamHolder.getId());
+    }
   }
 
   destroyStream() {

@@ -67,7 +67,9 @@
                 </app-login>
             </div>
         </div>
-        <div *ngIf="session" class="alert alert-success clearfix" role="alert">Got <code>Session</code> with id &lt;<code>{{session.getId()}}</code>&gt;<span *ngIf="token">&nbsp;with token &lt;<code>{{token}}</code>&gt;</span>
+        <div *ngIf="session" class="alert alert-success clearfix" role="alert">Got <code>Session</code> with id &lt;
+            <code>{{session.getId()}}</code>&gt;<span *ngIf="token">&nbsp;with token
+                &lt;<code>{{token}}</code>&gt;</span>
             <div class="float-right"><button mat-raised-button color="warn" (click)="unregister()" title="Unregister"><i
                         class="bi bi-box-arrow-left"></i>&nbsp;Unregister</button></div>
         </div>
@@ -86,14 +88,14 @@
         </div>
         <div class="row">
             <div class="text-center">
-                <form *ngIf="!conversation" [formGroup]="formGroup" (ngSubmit)="getOrcreateConversation()">
+                <form *ngIf="!conversation" [formGroup]="conversationFormGroup" (ngSubmit)="getOrcreateConversation()">
                     <mat-form-field>
                         <mat-label>Nom de la conversation</mat-label>
                         <span matPrefix>{{convBaseUrl}}/</span>
                         <input type="text" matInput placeholder="abcd" formControlName="convName">
                         <!-- <mat-icon matSuffix>mode_edit</mat-icon> -->
                     </mat-form-field>&nbsp;
-                    <button mat-raised-button color="primary" type="submit" [disabled]="!formGroup.valid||!session" title="Get Or Create Conversation">GetOrCreateConversation&nbsp;<i
+                    <button mat-raised-button color="primary" type="submit" [disabled]="!conversationFormGroup.valid||!session" title="Get Or Create Conversation">GetOrCreateConversation&nbsp;<i
                             class="bi bi-telephone-forward-fill"></i></button>
                 </form>
 
@@ -109,7 +111,6 @@
                     {{contact.key}} --> {{contact.value.getUserData().username}}
                 </li>
             </ul>
-
         </div>
     </div>
 
@@ -132,76 +133,105 @@
         </div>
     </div>
 
-    <div class="card">
-        <div class="card-body">
-            <div id="videos" class="row row-cols-1 row-cols-sm-2">
-                <div class="col mycard">
-                    <div id="{{localStreamHolder?.stream.streamId}}" class="embed-responsive embed-responsive-4by3">
-                        <video #localVideo muted autoplay playsinline></video>
-                        <div class="mycard-text">
-                            <!-- <h5 *ngIf="usernameFc.value">{{usernameFc.value}}</h5> -->
-                            <form class="row row-cols-lg-auto g-3 align-items-center">
-                                <div class="col-12">
-                                    <mat-form-field appearance="outline">
-                                        <mat-label>Name</mat-label>
-                                        <input matInput placeholder="Name" [formControl]="usernameFc">
-                                        <mat-icon matSuffix>sentiment_very_satisfied</mat-icon>
-                                        <mat-hint>Enter your name</mat-hint>
-                                    </mat-form-field>
-                                    <br>
-                                    <div>
-                                        <mat-slide-toggle [formControl]="muteAudioFc" [disabled]="!localStreamHolder">
-                                            Mute Audio
-                                        </mat-slide-toggle>
-                                        <br>
-                                        <mat-slide-toggle [formControl]="muteVideoFc" [disabled]="!localStreamHolder">
-                                            Mute Video
-                                        </mat-slide-toggle>
-                                    </div>
-                                    <br>
-                                    <mat-form-field appearance="fill">
-                                        <mat-label>VideoIn</mat-label>
-                                        <mat-select [formControl]="videoFc">
-                                            <mat-option *ngFor="let device of videoDevices" [value]="device.id">
-                                                {{device.label}}
-                                            </mat-option>
-                                        </mat-select>
-                                    </mat-form-field>
-                                    <mat-form-field appearance="fill">
-                                        <mat-label>AudioIn</mat-label>
-                                        <mat-select [formControl]="audioInFc">
-                                            <mat-option *ngFor="let device of audioInDevices" [value]="device">
-                                                {{device.label}}
-                                            </mat-option>
-                                        </mat-select>
-                                    </mat-form-field>
+    <div class="row">
+        <div class="col">
+            <div class="card">
+                <div class="card-body">
+                    <div id="videos" class="row row-cols-1 row-cols-sm-2">
+                        <div class="col mycard">
+                            <div id="{{localStreamHolder?.stream.streamId}}" class="embed-responsive embed-responsive-4by3">
+                                <video #localVideo muted autoplay playsinline></video>
+                                <div class="mycard-text">
+                                    <!-- <h5 *ngIf="usernameFc.value">{{usernameFc.value}}</h5> -->
+                                    <form class="row row-cols-lg-auto g-3 align-items-center">
+                                        <div class="col-12">
+                                            <mat-form-field appearance="outline">
+                                                <mat-label>Name</mat-label>
+                                                <input matInput placeholder="Name" [formControl]="usernameFc">
+                                                <mat-icon matSuffix>sentiment_very_satisfied</mat-icon>
+                                                <mat-hint>Enter your name</mat-hint>
+                                            </mat-form-field>
+                                            <br>
+                                            <div>
+                                                <mat-slide-toggle [formControl]="muteAudioFc" [disabled]="!localStreamHolder">
+                                                    Mute Audio
+                                                </mat-slide-toggle>
+                                                <br>
+                                                <mat-slide-toggle [formControl]="muteVideoFc" [disabled]="!localStreamHolder">
+                                                    Mute Video
+                                                </mat-slide-toggle>
+                                            </div>
+                                            <br>
+                                            <mat-form-field appearance="fill">
+                                                <mat-label>VideoIn</mat-label>
+                                                <mat-select [formControl]="videoFc">
+                                                    <mat-option *ngFor="let device of videoDevices" [value]="device.id">
+                                                        {{device.label}}
+                                                    </mat-option>
+                                                </mat-select>
+                                            </mat-form-field>
+                                            <mat-form-field appearance="fill">
+                                                <mat-label>AudioIn</mat-label>
+                                                <mat-select [formControl]="audioInFc">
+                                                    <mat-option *ngFor="let device of audioInDevices" [value]="device">
+                                                        {{device.label}}
+                                                    </mat-option>
+                                                </mat-select>
+                                            </mat-form-field>
+                                        </div>
+                                    </form>
+                                    <app-audio-stats [stats]="localStreamHolder?.qosStat?.audioSent"></app-audio-stats>
+                                    <app-video-stats [stats]="localStreamHolder?.qosStat?.videoSent"></app-video-stats>
                                 </div>
-                            </form>
-                            <app-audio-stats [stats]="localStreamHolder?.qosStat?.audioSent"></app-audio-stats>
-                            <app-video-stats [stats]="localStreamHolder?.qosStat?.videoSent"></app-video-stats>
-                        </div>
-                        <div class="mycard-over">
-                            <pre>
+                                <div class="mycard-over">
+                                    <pre>
 <code>streamId:{{localStreamHolder?.id}}</code>
                             </pre>
-                            <mat-icon *ngIf="localStreamHolder?.isSpeaking" matSuffix>record_voice_over</mat-icon>
+                                    <mat-icon *ngIf="localStreamHolder?.isSpeaking" matSuffix>record_voice_over
+                                    </mat-icon>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col mycard" [hidden]="!screenSharingStream">
+                            <div id="{{screenSharingStream?.streamId}}" class="embed-responsive embed-responsive-4by3">
+                                <video #screenSharingVideo muted autoplay playsinline></video>
+                            </div>
+                        </div>
+
+                        <div *ngFor="let streamHolder of streamHolders" class="col mycard">
+                            <app-peer [streamHolder]="streamHolder" (onSubscribe)="onSubscribeToPeer($event)"></app-peer>
                         </div>
                     </div>
                 </div>
 
-                <div class="col mycard" [hidden]="!screenSharingStream">
-                    <div id="{{screenSharingStream?.streamId}}" class="embed-responsive embed-responsive-4by3">
-                        <video #screenSharingVideo muted autoplay playsinline></video>
+            </div>
+        </div>
+        <div class="col-3">
+            <!-- h-100 to force card to take all height -->
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Messages</h5>
+                    <div *ngFor="let message of messages">
+                        <!-- <span>{{message|json}}</span> -->
+                        <span><strong>{{message.username}}</strong> : {{message.content}}</span>
                     </div>
                 </div>
-
-                <div *ngFor="let streamHolder of streamHolders" class="col mycard">
-                    <app-peer [conversation]="conversation" [streamHolder]="streamHolder"></app-peer>
+                <div class="card-footer">
+                    <form [formGroup]="messageFormGroup" (ngSubmit)="sendMessage()">
+                        <mat-form-field>
+                            <mat-label>Message</mat-label>
+                            <!-- <span matPrefix>Send</span> -->
+                            <input type="text" matInput placeholder="abcd" formControlName="message">
+                            <!-- <mat-icon matSuffix>mode_edit</mat-icon> -->
+                        </mat-form-field>&nbsp;
+                        <button mat-raised-button color="primary" type="submit" [disabled]="!messageFormGroup.valid||!joined" title="Send Message">Send&nbsp;<i class="bi bi-chat-left"></i></button>
+                    </form>
                 </div>
             </div>
         </div>
-        <!-- <div class="card-footer">
-        </div> -->
     </div>
+
+    <hr>
 
 </div>

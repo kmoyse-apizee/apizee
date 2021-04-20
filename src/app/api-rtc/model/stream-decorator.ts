@@ -12,6 +12,8 @@ export class StreamDecorator {
 
     public isSpeaking = false;
 
+    public isSubscribed = false;
+
     constructor(stream: any, qosStat?: any) {
         this.stream = stream;
         this.id = stream.getId();
@@ -54,6 +56,10 @@ export class StreamDecorator {
 
     public setSpeaking(isSpeaking: boolean) {
         this.isSpeaking = isSpeaking;
+    }
+
+    public setSubscribed(isSubscribed: boolean) {
+        this.isSubscribed = isSubscribed;
     }
 
 }

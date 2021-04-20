@@ -10,7 +10,7 @@ import { handleError, Error } from '../misc';
 @Injectable({
   providedIn: 'root'
 })
-export class ServerService {
+export class AuthServerService {
 
   constructor(private http: HttpClient) {
 
