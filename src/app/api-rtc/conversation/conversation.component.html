@@ -132,7 +132,8 @@
                             class="bi bi-chat-quote"></i></button> &nbsp;
 
                 </p>
-                <div class="alert alert-success clearfix">
+                <div class="alert alert-success clearfix" *ngIf="joined">
+                    <h3>List of contacts :</h3>
                     <ul>
                         <li *ngFor="let kv of contactsById | keyvalue">
                             {{kv.key}} --> {{kv.value.username}}
