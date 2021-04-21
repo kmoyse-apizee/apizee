@@ -7,12 +7,10 @@ import { WINDOW } from '../../windows-provider';
 
 import { AuthServerService } from '../auth-server.service';
 
-import { MessageDecorator } from '../model/model.module';
-import { StreamDecorator } from '../model/model.module';
+import { ContactDecorator, MessageDecorator, StreamDecorator } from '../model/model.module';
 
 import { PeerSubscribeEvent } from '../peer/peer.component';
 
-//declare var apiCC: any;
 declare var apiRTC: any;
 
 @Component({
@@ -28,7 +26,6 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
 
   convName: string = null;
   convBaseUrl: string;
-  convUrl: string;
 
   joined = false;
   screenSharingStream = null;
@@ -60,12 +57,10 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   publishInPrgs = false;
 
   // Peer Contacts
-  contactsById: Map<string, Object> = new Map();
+  contactsById: Map<string, ContactDecorator> = new Map();
 
   // Peer Streams
-  streamHolders: Array<StreamDecorator> = new Array();
-  // TODO : rework all ..ById as real JS Maps
-  streamHoldersById: Object = {};
+  streamHoldersById: Map<string, StreamDecorator> = new Map();
 
   // Audio/Video Muting
   muteAudioFc = new FormControl(false);
@@ -94,16 +89,23 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.messageFormGroup.get('message') as FormControl;
   }
 
+
+  get convUrl(): string {
+    return `${this.convBaseUrl}/${this.convNameFc.value}`;
+  }
+
+  get convUrlWithApiKey(): string {
+    return `${this.convBaseUrl}/${this.convNameFc.value}?apiKey=${this.apiKeyFc.value}`;
+  }
+
   @ViewChild("localVideo") localVideoRef: ElementRef;
   @ViewChild("screenSharingVideo") screenSharingVideoRef: ElementRef;
 
   constructor(@Inject(WINDOW) public window: Window,
     private route: ActivatedRoute,
-    //private apiRtcService: ApiRtcService,
     private serverService: AuthServerService,
     private fb: FormBuilder) {
 
-    // this.apiRtcService.getApiKey()
     this.apiKeyFc = new FormControl('9669e2ae3eb32307853499850770b0c3');
 
     console.log("window.location", window.location);
@@ -128,7 +130,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    // Handle conversation name
+    // Handle conversation name from RESTFUL path
     //
     const _convname = this.route.snapshot.paramMap.get("convname");
     if (_convname) {
@@ -142,8 +144,6 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       path.pop();
       // and recreate base url
       this.convBaseUrl = `${this.window.location.origin}` + path.join('/');
-      // and actual full url
-      this.convUrl = `${this.convBaseUrl}/${_convname}`;
     } else {
       // When no convname is provided then location.href is the expected url
       // Note : This is important to NOT try using this.convBaseUrl = `${this.window.location.protocol}//${this.window.location.host}/conversation`;
@@ -151,8 +151,12 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       this.convBaseUrl = `${this.window.location.href}`;
     }
 
-    this.convNameFc.valueChanges.subscribe(val => {
-      this.convUrl = `${this.convBaseUrl}/${val}`;
+    // Handle apiKey, if provided as query parameter
+    //
+    this.route.queryParams.subscribe(params => {
+      if (params['apiKey']) {
+        this.apiKeyFc.setValue(params['apiKey']);
+      }
     });
 
     // Audio/Video muting
@@ -241,7 +245,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     //console.log(JSON.stringify(mediaDevices));
     // TODO : understand why always empty:
     // displays {"audioinput":{},"audiooutput":{},"videoinput":{}}
-    // Seems only this works :
+    // Seems working only inside on:mediaDeviceChanged block :
     this.userAgent.on("mediaDeviceChanged", updatedContacts => {
       const mediaDevices = this.userAgent.getUserMediaDevices();
       console.log("mediaDeviceChanged", JSON.stringify(mediaDevices));
@@ -359,14 +363,6 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     // TODO il existe aussi getOrCreateConference mais les deux retournent une Conference ou une Conversation en fonction du format du nom..
     // se faire expliquer !
 
-    // STATS
-    // Call Stats monitoring is supported on Chrome and Firefox and will be added soon on Safari
-    //console.log("apiCC", apiCC);
-    if ((apiRTC.browser === 'Chrome') || (apiRTC.browser === 'Firefox')) {
-      this.userAgent.enableCallStatsMonitoring(true, { interval: 10000 });
-      this.userAgent.enableActiveSpeakerDetecting(true, { threshold: 50 });
-    }
-
     this.session.on("contactListUpdate", updatedContacts => { //display a list of connected users
       console.log("MAIN - contactListUpdate", updatedContacts);
       if (this.conversation !== null) {
@@ -375,6 +371,8 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     })
 
+    // Streams
+    //
     this.conversation.on('streamListChanged', streamInfo => {
       console.log("streamListChanged :", streamInfo);
       //  USE subscribeToStream instead of subscribeToMedia?
@@ -401,46 +399,42 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       // TODO : also store streams by user id ?
 
       const streamHolder: StreamDecorator = StreamDecorator.build(stream);
-      this.streamHolders.push(streamHolder);
-      this.streamHoldersById[streamHolder.getId()] = streamHolder;
-      //this.streamsByCallId[streamHolder.getCallId()] = streamHolder;
+      console.log(streamHolder.getId() + "->", streamHolder);
+      this.streamHoldersById.set(streamHolder.getId(), streamHolder);
       streamHolder.setSubscribed(true);
     }).on('streamRemoved', (stream: any) => {
       console.log('streamRemoved:', stream)
-      //stream.removeFromDiv('remote-container', 'remote-media-' + stream.getId());
-      for (var i = 0; i < this.streamHolders.length; i++) {
-        if (this.streamHolders[i].getId() === stream.getId()) {
-          const removed = this.streamHolders.splice(i, 1);
-          const removedStreamHolder = removed[0];
-          console.log("removedStream:", removedStreamHolder);
-        }
-      }
-      delete this.streamHoldersById[stream.getId()];
-      //delete this.streamsByCallId[stream.callId];
-
+      // removing from the map will trigger corresponding angular component to be removed from the DOM
+      this.streamHoldersById.delete(stream.getId());
       console.log("getAvailableStreamList:", this.conversation.getAvailableStreamList());
-
     })
 
     // Contacts
+    //
     this.conversation.on('contactJoined', contact => {
       console.log("on:contactJoined:", contact);
-      this.contactsById.set(contact.getUserData().id, contact);
+      const contactHolder: ContactDecorator = ContactDecorator.build(contact);
+      this.contactsById.set(contactHolder.getId(), contactHolder);
     }).on('contactLeft', contact => {
       console.log("on:contactLeft:", contact);
-      this.contactsById.delete(contact.getUserData().id);
+      this.contactsById.delete(contact.getId());
     });
 
     // Messages
-    this.conversation.on('message', message => {
+    //
+    this.conversation.on('message', (message: any) => {
       console.log("on:message:", message);
       this.messages.push(MessageDecorator.buildFromMessage(message));
-      //this.contactsById.set(message.getSender().getId());
     });
 
-    // Statistics
-    this.conversation.on('callStatsUpdate', callStats => {
-
+    // QoS Statistics
+    //
+    if ((apiRTC.browser === 'Chrome') || (apiRTC.browser === 'Firefox')) {
+      // TODO : safari ??
+      this.userAgent.enableCallStatsMonitoring(true, { interval: 10000 });
+      this.userAgent.enableActiveSpeakerDetecting(true, { threshold: 50 });
+    }
+    this.conversation.on('callStatsUpdate', (callStats: any) => {
       console.log("on:callStatsUpdate:", callStats);
 
       if (callStats.stats.videoReceived || callStats.stats.audioReceived) {
@@ -450,7 +444,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
         //const streamHolder: StreamDecorator = this.streamsByCallId[callStats.callId];
         // TODO: waiting for a fix in apiRTC (to include streamId in callStats), workround here by using internal map Conversation#callIdToStreamId:
         // FIXTHIS: once apiRTC bug https://apizee.atlassian.net/browse/APIRTC-873 is fixed, we can use callStats.streamId instead of erroneous callStats.callId
-        const streamHolder: StreamDecorator = this.streamHoldersById[this.conversation.callIdToStreamId.get(callStats.callId)];
+        const streamHolder: StreamDecorator = this.streamHoldersById.get(String(this.conversation.callIdToStreamId.get(callStats.callId)));
         streamHolder.setQosStat({
           videoReceived: callStats.stats.videoReceived,
           audioReceived: callStats.stats.audioReceived
@@ -465,14 +459,18 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     });
 
-    this.conversation.on('audioAmplitude', amplitudeInfo => {
-
+    // Speaker detection
+    //
+    this.conversation.on('audioAmplitude', (amplitudeInfo: any) => {
       console.log("on:audioAmplitude", amplitudeInfo);
 
       if (amplitudeInfo.callId !== null) {
         // TODO :
         // There is a problem here, it seems the amplitudeInfo.callId is actually a streamId
-        const streamHolder: StreamDecorator = this.streamHoldersById[amplitudeInfo.callId];
+        const streamHolder: StreamDecorator = this.streamHoldersById.get(amplitudeInfo.callId);
+        if (!streamHolder) {
+          console.log("UNDEFINED ? amplitudeInfo.callId=" + amplitudeInfo.callId, amplitudeInfo, this.streamHoldersById)
+        }
         streamHolder.setSpeaking(amplitudeInfo.descriptor.isSpeaking);
       } else {
         if (this.localStreamHolder) { // I had to add this otherwise it crashed when localStream was released

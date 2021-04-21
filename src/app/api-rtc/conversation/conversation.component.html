@@ -99,16 +99,16 @@
                             class="bi bi-telephone-forward-fill"></i></button>
                 </form>
 
-                <p *ngIf="conversation">{{convUrl}}&nbsp;<button mat-raised-button color="primary" [cdkCopyToClipboard]="convUrl" title="Copy link"><i class="bi bi-share"></i></button>
-                    <button mat-raised-button color="primary" (click)="!joined?join():leave()" title="{{!joined?'Join':'Leave'}} Conversation">{{!joined?'Join':'Leave'}}</button> &nbsp;
+                <p *ngIf="conversation">{{convUrl}}&nbsp;<button mat-raised-button color="primary" [cdkCopyToClipboard]="convUrlWithApiKey" title="Copy to clipboard">Copy link&nbsp;<i class="bi bi-clipboard"></i></button>&nbsp;
+                    <button mat-raised-button color="primary" (click)="!joined?join():leave()" title="{{!joined?'Join':'Leave'}} Conversation">{{!joined?'Join':'Leave'}}&nbsp;<i class="bi bi-chat-quote"></i></button> &nbsp;
                     <button mat-raised-button color="warn" (click)="destroyConversation()" title="Destroy Conversation">Destroy Conversation</button>
                 </p>
             </div>
         </div>
         <div class="row" *ngIf="conversation">
             <ul class="alert alert-success clearfix">
-                <li *ngFor="let contact of contactsById | keyvalue">
-                    {{contact.key}} --> {{contact.value.getUserData().username}}
+                <li *ngFor="let kv of contactsById | keyvalue">
+                    {{kv.key}} --> {{kv.value.username}}
                 </li>
             </ul>
         </div>
@@ -199,9 +199,14 @@
                             </div>
                         </div>
 
-                        <div *ngFor="let streamHolder of streamHolders" class="col mycard">
+                        <!-- <div *ngFor="let streamHolder of streamHolders" class="col mycard">
                             <app-peer [streamHolder]="streamHolder" (onSubscribe)="onSubscribeToPeer($event)"></app-peer>
+                        </div> -->
+
+                        <div *ngFor="let kv of streamHoldersById | keyvalue" class="col mycard">
+                            <app-peer [streamHolder]="kv.value" (onSubscribe)="onSubscribeToPeer($event)"></app-peer>
                         </div>
+
                     </div>
                 </div>
 
@@ -225,7 +230,8 @@
                             <input type="text" matInput placeholder="abcd" formControlName="message">
                             <!-- <mat-icon matSuffix>mode_edit</mat-icon> -->
                         </mat-form-field>&nbsp;
-                        <button mat-raised-button color="primary" type="submit" [disabled]="!messageFormGroup.valid||!joined" title="Send Message">Send&nbsp;<i class="bi bi-chat-left"></i></button>
+                        <button mat-raised-button color="primary" type="submit" [disabled]="!messageFormGroup.valid||!joined" title="Send Message">Send&nbsp;<i
+                                class="bi bi-chat-left"></i></button>
                     </form>
                 </div>
             </div>

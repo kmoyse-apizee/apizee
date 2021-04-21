@@ -16,7 +16,15 @@ export class StreamDecorator {
 
     constructor(stream: any, qosStat?: any) {
         this.stream = stream;
-        this.id = stream.getId();
+
+        console.log("StreamDecorator: typeof stream.streamId :", typeof stream.streamId)
+        console.log("StreamDecorator: typeof stream.getId() :", typeof stream.getId())
+
+        if (typeof stream.getId() === "number") {
+            console.log("stream.getId() is actually a number, not a string !!!", typeof stream.getId())
+        }
+
+        this.id = String(stream.getId());
         //this.callId = stream.callId;
         this.qosStat = qosStat && qosStat || undefined;
     }

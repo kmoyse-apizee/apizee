@@ -9,7 +9,6 @@ export class MessageDecorator {
 
     private message: any;
 
-
     constructor(message?: any, username?: string, content?: string) {
         if (message) {
             this.message = message;
