@@ -258,6 +258,10 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
+  nullifyUserAgent() {
+    this.userAgent = null;
+  }
+
   /**
    * This method is called when user decides to use JSON Web Token authentication.
    * A server request is made to an authentication server that has to provide a JSON Web Token.
@@ -521,8 +525,19 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   destroyConversation(): void {
     console.info('Destroy conversation');
     if (this.conversation) {
-      this.conversation.destroy();
-      this.conversation = null;
+      if (this.joined) {
+        this.conversation.leave()
+          .then(() => {
+            this.joined = false;
+            this.conversation.destroy();
+            this.conversation = null;
+          })
+          .catch(err => { console.error('Conversation leave error', err); });
+      }
+      else {
+        this.conversation.destroy();
+        this.conversation = null;
+      }
     }
   }
 

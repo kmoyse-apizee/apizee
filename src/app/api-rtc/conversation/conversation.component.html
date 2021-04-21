@@ -28,6 +28,9 @@
                 &nbsp;
                 <button mat-raised-button color="primary" (click)="createUserAgent()" [disabled]="userAgent" title="Create UserAgent">new UserAgent&nbsp;<i class="bi bi-file-earmark-plus"></i></button>
                 <div *ngIf="userAgent" class="alert alert-success clearfix" role="alert"><code>UserAgent</code> created.
+                    <span class="float-right"><button mat-raised-button color="warn" (click)="nullifyUserAgent()"
+                            [disabled]="session" title="Set to null"><i
+                                class="bi bi-trash"></i>&nbsp;Trash</button></span>
                 </div>
             </div>
         </div>
@@ -42,7 +45,7 @@
                 <p>Register a <code>UserAgent</code> to get a <code>Session</code>.</p>
             </div>
         </div>
-        <div *ngIf="!session" class="row">
+        <div class="row" *ngIf="!session">
             <div class="col">
                 <p>Registering as guest is simple but less secured</p>
                 <button mat-raised-button color="primary" (click)="register()" [disabled]="!userAgent" title="Register as guest">Register as
@@ -67,15 +70,25 @@
                 </app-login>
             </div>
         </div>
-        <div *ngIf="session" class="alert alert-success clearfix" role="alert">Got <code>Session</code> with id &lt;
-            <code>{{session.getId()}}</code>&gt;<span *ngIf="token">&nbsp;with token
-                &lt;<code>{{token}}</code>&gt;</span>
-            <div class="float-right"><button mat-raised-button color="warn" (click)="unregister()" title="Unregister"><i
-                        class="bi bi-box-arrow-left"></i>&nbsp;Unregister</button></div>
+        <div class="row" *ngIf="session">
+            <div class="col">
+                <div class="alert alert-success clearfix" role="alert">Got <code>Session</code> with id &lt;
+                    <code>{{session.getId()}}</code>&gt;<span *ngIf="token">&nbsp;with token
+                        &lt;<code>{{token}}</code>&gt;</span>
+                    <span class="float-right"><button mat-raised-button color="warn" (click)="unregister()"
+                            [disabled]="conversation" title="Unregister"><i
+                                class="bi bi-box-arrow-left"></i>&nbsp;Unregister</button></span>
+                </div>
+            </div>
         </div>
         <br>
         <p *ngIf="registrationError" class="alert alert-danger" role="alert">{{registrationError | json}} Please check on <a href="https://cloud.apizee.com/enterprise/users-authentication">https://cloud.apizee.com/enterprise/users-authentication</a> that the correct authentication method is set.
         </p>
+        <div class="row" *ngIf="!session">
+            <div class="col">
+                <p class="alert alert-warning" role="alert"><strong>Note</strong> : You need to configure your <strong>apiRTC</strong> account according to desired authentication.</p>
+            </div>
+        </div>
     </div>
 
     <hr>
@@ -83,7 +96,7 @@
     <div class="container">
         <div class="row">
             <div class="col">
-                <h1>3. Get or Create Conversation</h1>
+                <h1>3. Get or Create, and Join Conversation</h1>
             </div>
         </div>
         <div class="row">
@@ -99,18 +112,34 @@
                             class="bi bi-telephone-forward-fill"></i></button>
                 </form>
 
-                <p *ngIf="conversation">{{convUrl}}&nbsp;<button mat-raised-button color="primary" [cdkCopyToClipboard]="convUrlWithApiKey" title="Copy to clipboard">Copy link&nbsp;<i class="bi bi-clipboard"></i></button>&nbsp;
-                    <button mat-raised-button color="primary" (click)="!joined?join():leave()" title="{{!joined?'Join':'Leave'}} Conversation">{{!joined?'Join':'Leave'}}&nbsp;<i class="bi bi-chat-quote"></i></button> &nbsp;
-                    <button mat-raised-button color="warn" (click)="destroyConversation()" title="Destroy Conversation">Destroy Conversation</button>
-                </p>
             </div>
         </div>
         <div class="row" *ngIf="conversation">
-            <ul class="alert alert-success clearfix">
-                <li *ngFor="let kv of contactsById | keyvalue">
-                    {{kv.key}} --> {{kv.value.username}}
-                </li>
-            </ul>
+            <div class="col">
+                <div class="alert alert-success" role="alert">
+                    <p class="clearfix">Created <code>Conversation</code> at url {{convUrl}}
+                        <span class="float-right"><button mat-raised-button color="primary"
+                                [cdkCopyToClipboard]="convUrlWithApiKey" title="Copy to clipboard">Copy link&nbsp;<i
+                                    class="bi bi-clipboard"></i></button></span>
+                    </p>
+                    <p class="clearfix"><span class="float-right">
+                            <button mat-raised-button color="warn" (click)="destroyConversation()"
+                                title="Destroy Conversation">Destroy Conversation</button></span>
+                    </p>
+                </div>
+                <p>
+                    <button mat-raised-button color="{{joined?'accent':'primary'}}" (click)="!joined?join():leave()" title="{{!joined?'Join':'Leave'}} Conversation">{{!joined?'Join':'Leave'}}&nbsp;<i
+                            class="bi bi-chat-quote"></i></button> &nbsp;
+
+                </p>
+                <div class="alert alert-success clearfix">
+                    <ul>
+                        <li *ngFor="let kv of contactsById | keyvalue">
+                            {{kv.key}} --> {{kv.value.username}}
+                        </li>
+                    </ul>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -121,13 +150,13 @@
             <div class="col">
                 <h1>4. Create/Publish/Receive/Display Streams</h1>
                 <p>
-                    <button mat-raised-button color="primary" (click)="!localStreamHolder?createStream():destroyStream()" [disabled]="!userAgent||published">{{!localStreamHolder?'Create Stream':'Release
+                    <button mat-raised-button color="{{localStreamHolder?'accent':'primary'}}" (click)="!localStreamHolder?createStream():destroyStream()" [disabled]="!userAgent||published">{{!localStreamHolder?'Create Stream':'Release
                         Stream'}}</button>
                     <!-- publishInPrgs -->
-                    <button mat-raised-button color="primary" (click)="!published?publishStream():unpublishStream()" [disabled]="!localStreamHolder||!joined||publishInPrgs">{{!published?'Publish Stream':'Unpublish
+                    <button mat-raised-button color="{{published?'accent':'primary'}}" (click)="!published?publishStream():unpublishStream()" [disabled]="!localStreamHolder||!joined||publishInPrgs">{{!published?'Publish Stream':'Unpublish
                         Stream'}}
                         <span *ngIf="publishInPrgs" class="spinner-border text-light" role="status"></span></button> &nbsp;
-                    <button mat-raised-button color="primary" (click)="toggleScreenSharing()" [disabled]="!conversation">{{screenSharingStream?'Unshare':'Share'}} Screen</button>
+                    <button mat-raised-button color="{{screenSharingStream?'accent':'primary'}}" (click)="toggleScreenSharing()" [disabled]="!conversation">{{screenSharingStream?'Unshare':'Share'}} Screen</button>
                 </p>
             </div>
         </div>
