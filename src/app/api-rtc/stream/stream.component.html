@@ -1,0 +1,22 @@
+<div id="{{streamHolder.id}}" class="embed-responsive embed-responsive-4by3">
+    <app-stream-video *ngIf="streamHolder.stream" [stream]="streamHolder.stream"></app-stream-video>
+    <div class="mycard-text">
+        <!-- TODO should be handled by parent component (contact level) -->
+        <h5>{{streamHolder.streamInfo.contact.userData.username}}</h5>
+        <!-- <p>{{stream.qosStat | json}}</p> -->
+        <app-audio-stats [stats]="streamHolder.qosStat?.audioReceived"></app-audio-stats>
+        <app-video-stats [stats]="streamHolder.qosStat?.videoReceived"></app-video-stats>
+        <button mat-raised-button color="primary" (click)="toggleSubscribe()">{{streamHolder.stream?'Unsubscribe':'Subscribe'}}</button>
+    </div>
+    <div class="mycard-over">
+        <p>
+            <span class="badge badge-info">streamId:{{streamHolder.id}}</span>
+        </p>
+        <p *ngIf="streamHolder.isSpeaking">
+            <span class="badge badge-success">
+                <mat-icon matSuffix>record_voice_over
+                </mat-icon>
+            </span>
+        </p>
+    </div>
+</div>

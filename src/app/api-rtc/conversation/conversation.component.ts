@@ -9,7 +9,7 @@ import { AuthServerService } from '../auth-server.service';
 
 import { ContactDecorator, MessageDecorator, StreamDecorator } from '../model/model.module';
 
-import { PeerSubscribeEvent } from '../peer/peer.component';
+import { StreamSubscribeEvent } from '../stream/stream.component';
 
 declare var apiRTC: any;
 
@@ -376,6 +376,28 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+
+  // Helper methods
+  /*
+   * Because apiRTC events of contactJoin may appear AFTER a StreamListChanged with a stream from such contact
+  * I need to make sure 
+  * Note : how can we make this thread safe ?
+  * => a response from stackoverflow seem to indicate there is nothing to worry about
+  * Other than HTML5 web workers (which are very tightly controlled and not apparently what you are asking about),
+  *  Javascript in the browser is single threaded so regular Javascript programming does not have thread safety issues.
+  *  One thread of execution will finish before the next one is started. No two pieces of Javascript are running at exactly the same time.
+   */
+  getOrCreateContactHolder(contact: any): ContactDecorator {
+    const contactId = String(contact.getId());
+    if (this.contactHoldersById.has(contactId)) {
+      return this.contactHoldersById.get(contactId);
+    } else {
+      const contactHolder: ContactDecorator = ContactDecorator.build(contact);
+      this.contactHoldersById.set(contactHolder.getId(), contactHolder);
+      return contactHolder;
+    }
+  }
+
   /***************************************************************************
     ApiRTC Conversation
    */
@@ -391,9 +413,13 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.session.on("contactListUpdate", updatedContacts => { //display a list of connected users
       console.log("MAIN - contactListUpdate", updatedContacts);
+      // TODO: should we also prefer this list update rather than contactJoined/Left to handle list of contacts 
+      // like we do for streams with streamListChanged ?
       if (this.conversation !== null) {
         let contactList = this.conversation.getContacts();
         console.info("contactList  conversation.getContacts() :", contactList);
+
+
       }
     })
 
@@ -401,37 +427,55 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     //
     this.conversation.on('streamListChanged', streamInfo => {
       console.log("streamListChanged :", streamInfo);
+
+      const streamId = String(streamInfo.streamId);
+
       //  USE subscribeToStream instead of subscribeToMedia?
       if (streamInfo.listEventType === 'added') {
         if (streamInfo.isRemote === true) {
+          console.log('adding Stream:', streamId);
+          const streamHolder: StreamDecorator = StreamDecorator.build(streamInfo);
+          console.log(streamHolder.getId() + "->", streamHolder);
+          this.streamHoldersById.set(streamHolder.getId(), streamHolder);
+          const contactHolder: ContactDecorator = this.getOrCreateContactHolder(streamInfo.contact);
+          console.log("typeof streamInfo.contact.getId()", typeof streamInfo.contact.getId());
+          contactHolder.addStream(streamHolder);
+
           this.conversation.subscribeToStream(streamInfo.streamId)
             .then(stream => {
               console.log('subscribeToStream success:', stream);
               // Cannot do that here, the streamHolder may not yet be in streamHoldersById
+              // TODO : this is something we should think about in an api redesign ?
               //const streamHolder:StreamDecorator = this.streamHoldersById[stream.getId()];
               //streamHolder.setSubscribed(true);
             }).catch(err => {
               console.error('subscribeToStream error', err);
             });
         }
+      } else if (streamInfo.listEventType === 'removed') {
+        if (streamInfo.isRemote === true) {
+
+          console.log('removing Stream:', streamId);
+          this.streamHoldersById.delete(streamId);
+          const contactHolder = this.contactHoldersById.get(streamInfo.contact.getId());
+          contactHolder.removeStream(streamId);
+        }
       }
     });
 
     this.conversation.on('streamAdded', (stream: any) => {
-      console.log('streamAdded, stream:', stream)
-      //stream.addInDiv('remote-container', 'remote-media-' + stream.getId(), {}, false);
+      console.log('streamAdded, stream:', stream);
+      // streamAdded actually means that the stream is availabe (?)
+      const streamHolder: StreamDecorator = this.streamHoldersById.get(String(stream.getId()));
+      // streamHolder.setSubscribed(true);
+      streamHolder.setStream(stream);
 
-      // TODO : does stream.getContact().getId() return the same as stream.getContact().getUserData().id ?
-      // TODO : also store streams by user id ?
-
-      const streamHolder: StreamDecorator = StreamDecorator.build(stream);
-      console.log(streamHolder.getId() + "->", streamHolder);
-      this.streamHoldersById.set(streamHolder.getId(), streamHolder);
-      streamHolder.setSubscribed(true);
     }).on('streamRemoved', (stream: any) => {
-      console.log('streamRemoved:', stream)
-      // removing from the map will trigger corresponding angular component to be removed from the DOM
-      this.streamHoldersById.delete(stream.getId());
+      console.log('on:streamRemoved:', stream)
+
+      const streamHolder: StreamDecorator = this.streamHoldersById.get(String(stream.getId()));
+      streamHolder.setStream(null);
+
       console.log("getAvailableStreamList:", this.conversation.getAvailableStreamList());
     })
 
@@ -439,8 +483,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     //
     this.conversation.on('contactJoined', contact => {
       console.log("on:contactJoined:", contact);
-      const contactHolder: ContactDecorator = ContactDecorator.build(contact);
-      this.contactHoldersById.set(contactHolder.getId(), contactHolder);
+      const contactHolder: ContactDecorator = this.getOrCreateContactHolder(contact);
     }).on('contactLeft', contact => {
       console.log("on:contactLeft:", contact);
       this.contactHoldersById.delete(contact.getId());
@@ -495,6 +538,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
         // There is a problem here, it seems the amplitudeInfo.callId is actually a streamId
         const streamHolder: StreamDecorator = this.streamHoldersById.get(amplitudeInfo.callId);
         if (!streamHolder) {
+          // TODO : is this a bug ? even after having unscribscribed to a stream I still receive audioAmplitude events corresponding to it 
           console.log("UNDEFINED ? amplitudeInfo.callId=" + amplitudeInfo.callId, amplitudeInfo, this.streamHoldersById)
         }
         streamHolder.setSpeaking(amplitudeInfo.descriptor.isSpeaking);
@@ -586,8 +630,8 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
         .then(stream => {
           console.log('createStream :', stream);
 
-          this.localStreamHolder = StreamDecorator.build(stream);
-
+          this.localStreamHolder = StreamDecorator.build({ streamId: String(stream.getId()), isRemote: false, type: 'regular' });
+          this.localStreamHolder.setStream(stream);
           // Attach stream
           //this.localVideoRef.nativeElement.srcObject = stream;
           // previous line CANNOT work because this stream is not the same as native one from webrtc
@@ -616,16 +660,16 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     else { this.localStreamHolder.getStream().muteVideo(); }
   }
 
-  onSubscribeToPeer(event: PeerSubscribeEvent) {
+  onStreamSubscribe(event: StreamSubscribeEvent) {
     if (event.doSubscribe) {
-      console.log("subscribeToStream", event.streamHolder);
+      console.log("onStreamSubscribe", event.streamHolder);
       this.conversation.subscribeToStream(event.streamHolder.getId()).then(stream => {
-        console.log('subscribeToStream success:', stream);
+        console.log('onStreamSubscribe success:', stream);
       }).catch(err => {
-        console.error('subscribeToStream error', err);
+        console.error('onStreamSubscribe error', err);
       });
     } else {
-      console.log("unsubscribeToStream", event.streamHolder);
+      console.log("onStreamSubscribe", event.streamHolder);
       this.conversation.unsubscribeToStream(event.streamHolder.getId());
     }
   }

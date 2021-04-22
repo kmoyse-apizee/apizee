@@ -87,7 +87,8 @@
         <div class="row" *ngIf="!session">
             <div class="col">
                 <p class="alert alert-warning" role="alert"><strong>Note</strong> : You need to configure your
-                    <strong>apiRTC</strong> account according to desired authentication.</p>
+                    <strong>apiRTC</strong> account according to desired authentication.
+                </p>
             </div>
         </div>
     </div>
@@ -120,8 +121,8 @@
                 <div class="alert alert-success" role="alert">
                     <p class="clearfix">Created <code>Conversation</code> at url {{conversationUrl}}
                         <span class="float-right"><button mat-raised-button color="primary"
-                                [cdkCopyToClipboard]="conversationUrlWithApiKey" title="Copy to clipboard">Copy link&nbsp;<i
-                                    class="bi bi-clipboard"></i></button></span>
+                                [cdkCopyToClipboard]="conversationUrlWithApiKey" title="Copy to clipboard">Copy
+                                link&nbsp;<i class="bi bi-clipboard"></i></button></span>
                     </p>
                     <p class="clearfix"><span class="float-right">
                             <button mat-raised-button color="warn" (click)="destroyConversation()"
@@ -215,11 +216,15 @@
                                     <app-video-stats [stats]="localStreamHolder?.qosStat?.videoSent"></app-video-stats>
                                 </div>
                                 <div class="mycard-over">
-                                    <pre>
-<code>streamId:{{localStreamHolder?.id}}</code>
-                            </pre>
-                                    <mat-icon *ngIf="localStreamHolder?.isSpeaking" matSuffix>record_voice_over
-                                    </mat-icon>
+                                    <p *ngIf="localStreamHolder">
+                                        <span class="badge badge-info">streamId:{{localStreamHolder.id}}</span>
+                                    </p>
+                                    <p *ngIf="localStreamHolder?.isSpeaking">
+                                        <span class="badge badge-success">
+                                            <mat-icon matSuffix>record_voice_over
+                                            </mat-icon>
+                                        </span>
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -233,11 +238,16 @@
                         </div>
 
                         <!-- <div *ngFor="let streamHolder of streamHolders" class="col mycard">
-                            <app-peer [streamHolder]="streamHolder" (onSubscribe)="onSubscribeToPeer($event)"></app-peer>
+                            <app-peer [streamHolder]="streamHolder" (onSubscribe)="onStreamSubscribe($event)"></app-peer>
                         </div> -->
 
-                        <div *ngFor="let kv of streamHoldersById | keyvalue" class="col mycard">
-                            <app-peer [streamHolder]="kv.value" (onSubscribe)="onSubscribeToPeer($event)"></app-peer>
+                        <!-- <div *ngFor="let kv of streamHoldersById | keyvalue" class="col mycard">
+                            <app-peer [streamHolder]="kv.value" (onSubscribe)="onStreamSubscribe($event)"></app-peer>
+                        </div> -->
+
+                        <div *ngFor="let kv of contactHoldersById | keyvalue" class="col mycard">
+                            <app-peer [contactHolder]="kv.value" (onStreamSubscribe)="onStreamSubscribe($event)">
+                            </app-peer>
                         </div>
 
                     </div>

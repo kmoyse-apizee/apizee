@@ -25,9 +25,11 @@ export { OneToOneComponent } from './one-to-one/one-to-one.component';
 import { WINDOW_PROVIDERS } from '../windows-provider';
 import { AudioStatsComponent } from './audio-stats/audio-stats.component';
 import { VideoStatsComponent } from './video-stats/video-stats.component';
+import { StreamComponent } from './stream/stream.component';
+import { StreamVideoComponent } from './stream-video/stream-video.component';
 
 @NgModule({
-  declarations: [ConversationComponent, PeerComponent, OneToOneComponent, AudioStatsComponent, VideoStatsComponent],
+  declarations: [ConversationComponent, PeerComponent, OneToOneComponent, AudioStatsComponent, VideoStatsComponent, StreamComponent, StreamVideoComponent],
   imports: [
     CommonModule,
     FormsModule, ReactiveFormsModule,

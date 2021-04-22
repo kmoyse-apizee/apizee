@@ -10,7 +10,8 @@ export class ContactDecorator {
 
     constructor(contact?: any) {
         this.contact = contact;
-        this.id = contact.getId();
+        console.log("typeof contact.getId()", typeof contact.getId());
+        this.id = String(contact.getId());
     }
 
     public static build(contact: any): ContactDecorator {
@@ -25,7 +26,7 @@ export class ContactDecorator {
         return this.id;
     }
 
-    public getStreamsById(): Map<string, StreamDecorator> {
+    public getStreamHoldersById(): Map<string, StreamDecorator> {
         return this.streamHoldersById;
     }
 

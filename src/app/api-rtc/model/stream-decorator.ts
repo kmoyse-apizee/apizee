@@ -6,25 +6,25 @@ export class StreamDecorator {
     // The call Id might change dugring Stream life
     // so this is not good to store it
     //public readonly callId: string;
-    public readonly stream: any;
+    public readonly streamInfo: any;
+    public stream: any;
 
     public qosStat: any;
 
     public isSpeaking = false;
 
-    public isSubscribed = false;
+    constructor(streamInfo: any, qosStat?: any) {
+        this.streamInfo = streamInfo;
 
-    constructor(stream: any, qosStat?: any) {
-        this.stream = stream;
+        console.log("StreamDecorator: typeof streamInfo.streamId :", typeof streamInfo.streamId)
+        // => number
+        this.id = String(streamInfo.streamId);
 
-        console.log("StreamDecorator: typeof stream.streamId :", typeof stream.streamId)
-        console.log("StreamDecorator: typeof stream.getId() :", typeof stream.getId())
-
-        if (typeof stream.getId() === "number") {
-            console.log("stream.getId() is actually a number, not a string !!!", typeof stream.getId())
-        }
-
-        this.id = String(stream.getId());
+        //console.log("StreamDecorator: typeof stream.getId() :", typeof stream.getId())
+        // if (typeof stream.getId() === "number") {
+        //     console.log("stream.getId() is actually a number, not a string !!!", typeof stream.getId())
+        // }
+        
         //this.callId = stream.callId;
         this.qosStat = qosStat && qosStat || undefined;
     }
@@ -48,6 +48,9 @@ export class StreamDecorator {
     //     return this.callId;
     // }
 
+    public setStream(stream: any) {
+        this.stream = stream;
+    }
     public getStream(): any {
         return this.stream;
     }
@@ -64,10 +67,6 @@ export class StreamDecorator {
 
     public setSpeaking(isSpeaking: boolean) {
         this.isSpeaking = isSpeaking;
-    }
-
-    public setSubscribed(isSubscribed: boolean) {
-        this.isSubscribed = isSubscribed;
     }
 
 }
