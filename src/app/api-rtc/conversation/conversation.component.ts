@@ -25,6 +25,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // FormControl/Group objects
   //
+  // TODO : do not provide a default apiKey
   apiKeyFc: FormControl = new FormControl('9669e2ae3eb32307853499850770b0c3');
 
   usernameFc: FormControl = new FormControl('');
@@ -195,40 +196,6 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  doUpdateMediaDevices(mediaDevices: any): void {
-    // Convert map values to array
-    this.audioInDevices = Object.values(mediaDevices.audioinput);
-    this.audioOutDevices = Object.values(mediaDevices.audiooutput);
-    this.videoDevices = Object.values(mediaDevices.videoinput);
-  }
-
-  doChangeDevice(): void {
-
-    if (this.localStreamHolder) {
-
-      // first, unpublish and release current local stream
-      this.conversation.unpublish(this.localStreamHolder.getStream());
-      this.localStreamHolder.getStream().release();
-
-      // get selected devices
-      const options = {};
-      if (this.selectedAudioInDevice) {
-        options['audioInputId'] = this.selectedAudioInDevice.id;
-      }
-      if (this.selectedVideoDevice) {
-        options['videoInputId'] = this.selectedVideoDevice.id;
-      }
-      // and recreate a new stream
-      this.createStream(options)
-        .then((stream) => {
-          if (this.published) {
-            this.publishStream();
-          }
-        })
-        .catch(err => { console.error('createStream error', err); });
-    }
-  }
-
   ngAfterViewInit() {
   }
 
@@ -240,9 +207,10 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     this.destroyConversation();
   }
 
-  /**
-   * Entry point to ApiRTC : create a UserAgent
+  /***************************************************************************
+    ApiRTC UserAgent
    */
+
   createUserAgent() {
 
     this.userAgent = new apiRTC.UserAgent({
@@ -272,6 +240,10 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   nullifyUserAgent() {
     this.userAgent = null;
   }
+
+  /***************************************************************************
+    ApiRTC Authentication and registration
+   */
 
   /**
    * This method is called when user decides to use JSON Web Token authentication.
@@ -366,9 +338,48 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     this.token = null;
   }
 
-  /**
-   * 
+  /***************************************************************************
+    Handle Media device change
    */
+
+  doUpdateMediaDevices(mediaDevices: any): void {
+    // Convert map values to array
+    this.audioInDevices = Object.values(mediaDevices.audioinput);
+    this.audioOutDevices = Object.values(mediaDevices.audiooutput);
+    this.videoDevices = Object.values(mediaDevices.videoinput);
+  }
+
+  doChangeDevice(): void {
+
+    if (this.localStreamHolder) {
+
+      // first, unpublish and release current local stream
+      this.conversation.unpublish(this.localStreamHolder.getStream());
+      this.localStreamHolder.getStream().release();
+
+      // get selected devices
+      const options = {};
+      if (this.selectedAudioInDevice) {
+        options['audioInputId'] = this.selectedAudioInDevice.id;
+      }
+      if (this.selectedVideoDevice) {
+        options['videoInputId'] = this.selectedVideoDevice.id;
+      }
+      // and recreate a new stream
+      this.createStream(options)
+        .then((stream) => {
+          if (this.published) {
+            this.publishStream();
+          }
+        })
+        .catch(err => { console.error('createStream error', err); });
+    }
+  }
+
+  /***************************************************************************
+    ApiRTC Conversation
+   */
+
   getOrcreateConversation(): void {
 
     // Create the conversation
@@ -524,15 +535,6 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  sendMessage() {
-    const messageContent = this.messageFc.value;
-    this.conversation.sendMessage(messageContent).then((uuid) => {
-      console.log("sendMessage", uuid, messageContent);
-      this.messages.push(MessageDecorator.build(this.userAgent.getUsername(), messageContent));
-    })
-      .catch(err => { console.error('sendMessage error', err); });
-  }
-
   destroyConversation(): void {
     console.info('Destroy conversation');
     if (this.conversation) {
@@ -551,6 +553,23 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     }
   }
+
+  /***************************************************************************
+    ApiRTC Messages
+   */
+
+  sendMessage() {
+    const messageContent = this.messageFc.value;
+    this.conversation.sendMessage(messageContent).then((uuid) => {
+      console.log("sendMessage", uuid, messageContent);
+      this.messages.push(MessageDecorator.build(this.userAgent.getUsername(), messageContent));
+    })
+      .catch(err => { console.error('sendMessage error', err); });
+  }
+
+  /***************************************************************************
+    ApiRTC Streams
+   */
 
   // if options are specified, this is because a specific device was selected
   createStream(options?: any): Promise<Object> {
