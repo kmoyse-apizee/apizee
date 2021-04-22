@@ -86,7 +86,8 @@
         </p>
         <div class="row" *ngIf="!session">
             <div class="col">
-                <p class="alert alert-warning" role="alert"><strong>Note</strong> : You need to configure your <strong>apiRTC</strong> account according to desired authentication.</p>
+                <p class="alert alert-warning" role="alert"><strong>Note</strong> : You need to configure your
+                    <strong>apiRTC</strong> account according to desired authentication.</p>
             </div>
         </div>
     </div>
@@ -104,8 +105,8 @@
                 <form *ngIf="!conversation" [formGroup]="conversationFormGroup" (ngSubmit)="getOrcreateConversation()">
                     <mat-form-field>
                         <mat-label>Nom de la conversation</mat-label>
-                        <span matPrefix>{{convBaseUrl}}/</span>
-                        <input type="text" matInput placeholder="abcd" formControlName="convName">
+                        <span matPrefix>{{conversationBaseUrl}}/</span>
+                        <input type="text" matInput placeholder="abcd" formControlName="conversationName">
                         <!-- <mat-icon matSuffix>mode_edit</mat-icon> -->
                     </mat-form-field>&nbsp;
                     <button mat-raised-button color="primary" type="submit" [disabled]="!conversationFormGroup.valid||!session" title="Get Or Create Conversation">GetOrCreateConversation&nbsp;<i
@@ -117,9 +118,9 @@
         <div class="row" *ngIf="conversation">
             <div class="col">
                 <div class="alert alert-success" role="alert">
-                    <p class="clearfix">Created <code>Conversation</code> at url {{convUrl}}
+                    <p class="clearfix">Created <code>Conversation</code> at url {{conversationUrl}}
                         <span class="float-right"><button mat-raised-button color="primary"
-                                [cdkCopyToClipboard]="convUrlWithApiKey" title="Copy to clipboard">Copy link&nbsp;<i
+                                [cdkCopyToClipboard]="conversationUrlWithApiKey" title="Copy to clipboard">Copy link&nbsp;<i
                                     class="bi bi-clipboard"></i></button></span>
                     </p>
                     <p class="clearfix"><span class="float-right">
@@ -135,7 +136,7 @@
                 <div class="alert alert-success clearfix" *ngIf="joined">
                     <h3>List of contacts :</h3>
                     <ul>
-                        <li *ngFor="let kv of contactsById | keyvalue">
+                        <li *ngFor="let kv of contactHoldersById | keyvalue">
                             {{kv.key}} --> {{kv.value.username}}
                         </li>
                     </ul>
@@ -223,6 +224,8 @@
                             </div>
                         </div>
 
+                        <!-- [hidden] does not seen to work, the div is still visible 
+                        anyways this is a bad way to handle it...-->
                         <div class="col mycard" [hidden]="!screenSharingStream">
                             <div id="{{screenSharingStream?.streamId}}" class="embed-responsive embed-responsive-4by3">
                                 <video #screenSharingVideo muted autoplay playsinline></video>

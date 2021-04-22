@@ -7,7 +7,7 @@ import { ApiRestComponent } from './api-rest/api-rest.module';
 
 const routes: Routes = [
   { path: 'conversation', component: ConversationComponent },
-  { path: 'conversation/:convname', component: ConversationComponent },
+  { path: 'conversation/:conversationName', component: ConversationComponent },
   { path: 'doc', component: DocumentationComponent },
   { path: 'onetoone', component: OneToOneComponent },
   { path: 'apirest', component: ApiRestComponent },

@@ -20,18 +20,17 @@ declare var apiRTC: any;
 })
 export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
 
-  apiKeyFc: FormControl;
+  @ViewChild("localVideo") localVideoRef: ElementRef;
+  @ViewChild("screenSharingVideo") screenSharingVideoRef: ElementRef;
 
-  usernameFc = new FormControl('');
+  // FormControl/Group objects
+  //
+  apiKeyFc: FormControl = new FormControl('9669e2ae3eb32307853499850770b0c3');
 
-  convName: string = null;
-  convBaseUrl: string;
-
-  joined = false;
-  screenSharingStream = null;
+  usernameFc: FormControl = new FormControl('');
 
   conversationFormGroup = this.fb.group({
-    convName: this.fb.control('', [Validators.required])
+    conversationName: this.fb.control('', [Validators.required])
   });
 
   messageFormGroup = this.fb.group({
@@ -43,10 +42,19 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
 
   registrationError: any = null;
 
+  // Conversation urls
+  //
+  conversationBaseUrl: string;
+  conversationUrl: string;
+  conversationUrlWithApiKey: string;
+
   // apiRTC objects
   userAgent: any;
   session: any = null;
   conversation: any = null;
+
+  joined = false;
+  screenSharingStream = null;
 
   // Local user credentials
   credentials: any = null;
@@ -57,7 +65,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   publishInPrgs = false;
 
   // Peer Contacts
-  contactsById: Map<string, ContactDecorator> = new Map();
+  contactHoldersById: Map<string, ContactDecorator> = new Map();
 
   // Peer Streams
   streamHoldersById: Map<string, StreamDecorator> = new Map();
@@ -71,42 +79,31 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   audioInFc = new FormControl('');
   selectedAudioInDevice = null;
 
-  // TODO : implement out devices selection
-  audioOutDevices: Array<any>;
-
   videoDevices: Array<any>;
   videoFc = new FormControl('');
   selectedVideoDevice = null;
 
-  // JSON Web Token
+  // TODO : implement out devices selection
+  audioOutDevices: Array<any>;
+
+  // Authentication Token (JSON or other)
   token: string;
 
-  get convNameFc() {
-    return this.conversationFormGroup.get('convName') as FormControl;
+
+  // Convenient FormControl getters
+  //
+  get conversationNameFc() {
+    return this.conversationFormGroup.get('conversationName') as FormControl;
   }
 
   get messageFc() {
     return this.messageFormGroup.get('message') as FormControl;
   }
 
-
-  get convUrl(): string {
-    return `${this.convBaseUrl}/${this.convNameFc.value}`;
-  }
-
-  get convUrlWithApiKey(): string {
-    return `${this.convBaseUrl}/${this.convNameFc.value}?apiKey=${this.apiKeyFc.value}`;
-  }
-
-  @ViewChild("localVideo") localVideoRef: ElementRef;
-  @ViewChild("screenSharingVideo") screenSharingVideoRef: ElementRef;
-
   constructor(@Inject(WINDOW) public window: Window,
-    private route: ActivatedRoute,
-    private serverService: AuthServerService,
+    private activatedRoute: ActivatedRoute,
+    private authServerService: AuthServerService,
     private fb: FormBuilder) {
-
-    this.apiKeyFc = new FormControl('9669e2ae3eb32307853499850770b0c3');
 
     console.log("window.location", window.location);
   }
@@ -129,31 +126,44 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     this.doDestroy();
   }
 
+  buildConversationUrls() {
+    this.conversationUrl = `${this.conversationBaseUrl}/${this.conversationNameFc.value}`;
+    this.conversationUrlWithApiKey = `${this.conversationBaseUrl}/${this.conversationNameFc.value}?apiKey=${this.apiKeyFc.value}`;
+  }
+
   ngOnInit(): void {
     // Handle conversation name from RESTFUL path
     //
-    const _convname = this.route.snapshot.paramMap.get("convname");
-    if (_convname) {
-      console.log("convname", _convname);
-      this.convName = _convname;
-      this.convNameFc.setValue(_convname);
-      // Recreate remove convname from current location url :
+    const _conversationName = this.activatedRoute.snapshot.paramMap.get("conversationName");
+    if (_conversationName) {
+      this.conversationNameFc.setValue(_conversationName);
+      // Recreate remove conversationName from current location url :
       // use pathname: "/apizee/conversation/nnnnn"
       const path = `${this.window.location.pathname}`.split('/');
-      // remove last element which is the convname
+      // remove last element which is the conversationName
       path.pop();
       // and recreate base url
-      this.convBaseUrl = `${this.window.location.origin}` + path.join('/');
+      this.conversationBaseUrl = `${this.window.location.origin}` + path.join('/');
     } else {
-      // When no convname is provided then location.href is the expected url
+      // When no conversationName is provided then location.href is the expected url
       // Note : This is important to NOT try using this.convBaseUrl = `${this.window.location.protocol}//${this.window.location.host}/conversation`;
       // because 1. route can change and 2. this does not work if application is hosted under a path
-      this.convBaseUrl = `${this.window.location.href}`;
+      this.conversationBaseUrl = `${this.window.location.href}`;
     }
+
+    // Handle conversation url when its inputs change
+    //
+    this.buildConversationUrls();
+    this.conversationNameFc.valueChanges.subscribe(value => {
+      this.buildConversationUrls();
+    });
+    this.apiKeyFc.valueChanges.subscribe(value => {
+      this.buildConversationUrls();
+    });
 
     // Handle apiKey, if provided as query parameter
     //
-    this.route.queryParams.subscribe(params => {
+    this.activatedRoute.queryParams.subscribe(params => {
       if (params['apiKey']) {
         this.apiKeyFc.setValue(params['apiKey']);
       }
@@ -274,7 +284,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     this.registrationError = null;
     this.credentials = credentials;
     // Authenticate to get a JWT
-    this.serverService.loginJWToken(this.credentials.username, this.credentials.password).subscribe(
+    this.authServerService.loginJWToken(this.credentials.username, this.credentials.password).subscribe(
       json => {
         this.token = json.token;
         console.log("JWT : ", json.token);
@@ -299,7 +309,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     this.registrationError = null;
     this.credentials = credentials;
     // Authenticate to get a token
-    this.serverService.loginToken(this.credentials.username, this.credentials.password).subscribe(
+    this.authServerService.loginToken(this.credentials.username, this.credentials.password).subscribe(
       json => {
         this.token = json.token;
         console.log("token : ", json.token);
@@ -363,7 +373,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     // Create the conversation
     // TODO : the tutorials use getConversation but logs and code actually say it is deprecated
     // in favor to getOrCreateConversation(name, options = {})
-    this.conversation = this.session.getOrCreateConversation(this.convNameFc.value);
+    this.conversation = this.session.getOrCreateConversation(this.conversationNameFc.value);
     // TODO il existe aussi getOrCreateConference mais les deux retournent une Conference ou une Conversation en fonction du format du nom..
     // se faire expliquer !
 
@@ -418,10 +428,10 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     this.conversation.on('contactJoined', contact => {
       console.log("on:contactJoined:", contact);
       const contactHolder: ContactDecorator = ContactDecorator.build(contact);
-      this.contactsById.set(contactHolder.getId(), contactHolder);
+      this.contactHoldersById.set(contactHolder.getId(), contactHolder);
     }).on('contactLeft', contact => {
       console.log("on:contactLeft:", contact);
-      this.contactsById.delete(contact.getId());
+      this.contactHoldersById.delete(contact.getId());
     });
 
     // Messages
@@ -678,6 +688,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     } else {
       this.conversation.unpublish(this.screenSharingStream);
       this.screenSharingStream.release();
+      // TODO : Handle display/ undisplay properly : aybe we should link this to the window of a peer
       this.screenSharingStream = null;
     }
   }
