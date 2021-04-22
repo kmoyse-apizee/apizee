@@ -132,13 +132,13 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    // Handle conversation name from RESTFUL path
+    // Handle conversation name and url from RESTFUL path
     //
     const _conversationName = this.activatedRoute.snapshot.paramMap.get("conversationName");
     if (_conversationName) {
       this.conversationNameFc.setValue(_conversationName);
       // Recreate remove conversationName from current location url :
-      // use pathname: "/apizee/conversation/nnnnn"
+      // use pathname that looks like "/path/to/conversationName"
       const path = `${this.window.location.pathname}`.split('/');
       // remove last element which is the conversationName
       path.pop();
@@ -151,9 +151,10 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       this.conversationBaseUrl = `${this.window.location.href}`;
     }
 
+    this.buildConversationUrls();
+
     // Handle conversation url when its inputs change
     //
-    this.buildConversationUrls();
     this.conversationNameFc.valueChanges.subscribe(value => {
       this.buildConversationUrls();
     });
