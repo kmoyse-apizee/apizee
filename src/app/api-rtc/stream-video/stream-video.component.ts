@@ -7,7 +7,7 @@ import { Component, OnInit, Input, ViewChild, ElementRef, AfterViewInit } from '
 })
 export class StreamVideoComponent implements OnInit, AfterViewInit {
 
-  @ViewChild("video") remoteVideoRef: ElementRef;
+  @ViewChild("video") videoRef: ElementRef;
 
   @Input() stream: any;
 
@@ -21,7 +21,7 @@ export class StreamVideoComponent implements OnInit, AfterViewInit {
     // remote stream is attached to DOM during ngAfterViewInit because @ViewChild is not bound before this stage
     //this.remoteVideoRef.nativeElement.srcObject = this.stream;
     //this.remoteVideoRef.nativeElement.muted = false;
-    this.stream.attachToElement(this.remoteVideoRef.nativeElement);
+    this.stream.attachToElement(this.videoRef.nativeElement);
   }
 
 }

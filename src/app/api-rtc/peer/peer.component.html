@@ -1,4 +1,8 @@
-<div *ngFor="let kv of streamHoldersById | keyvalue">
-    <app-stream [streamHolder]="kv.value" (onSubscribe)="emitStreamSubscribe($event)">
-    </app-stream>
+<div class="mycard h-100">
+    <p class="text-center">{{_contactHolder.username}}</p>
+    <p>{{streamHoldersById.size}}</p>
+    <div *ngFor="let kv of streamHoldersById | keyvalue">
+        <app-stream [streamHolder]="kv.value" (onSubscribe)="emitStreamSubscribe($event)">
+        </app-stream>
+    </div>
 </div>

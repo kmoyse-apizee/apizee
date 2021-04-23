@@ -3,7 +3,7 @@
     <div class="mycard-text">
         <!-- TODO should be handled by parent component (contact level) -->
         <h5>{{streamHolder.streamInfo.contact.userData.username}}</h5>
-        <!-- <p>{{stream.qosStat | json}}</p> -->
+
         <app-audio-stats [stats]="streamHolder.qosStat?.audioReceived"></app-audio-stats>
         <app-video-stats [stats]="streamHolder.qosStat?.videoReceived"></app-video-stats>
         <button mat-raised-button color="primary" (click)="toggleSubscribe()">{{streamHolder.stream?'Unsubscribe':'Subscribe'}}</button>

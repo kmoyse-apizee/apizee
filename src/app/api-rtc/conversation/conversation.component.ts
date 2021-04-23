@@ -398,6 +398,8 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+
+
   /***************************************************************************
     ApiRTC Conversation
    */
@@ -411,7 +413,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     // TODO il existe aussi getOrCreateConference mais les deux retournent une Conference ou une Conversation en fonction du format du nom..
     // se faire expliquer !
 
-    this.session.on("contactListUpdate", updatedContacts => { //display a list of connected users
+    this.session.on('contactListUpdate', updatedContacts => { //display a list of connected users
       console.log("MAIN - contactListUpdate", updatedContacts);
       // TODO: should we also prefer this list update rather than contactJoined/Left to handle list of contacts 
       // like we do for streams with streamListChanged ?
@@ -419,6 +421,24 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
         let contactList = this.conversation.getContacts();
         console.info("contactList  conversation.getContacts() :", contactList);
 
+        for (var contact of updatedContacts.userDataChanged) {
+          const contactId = String(contact.getId());
+
+          //const contactHolder: ContactDecorator = this.contactHoldersById.get(contactId); // Fails because 'contactListUpdate' is also fired first when a new contact comes in the Session
+          // so we need to actually create the contact and this very moment...
+          // TODO update the HTML do display contacts after register rather than after join.
+          //const contactHolder: ContactDecorator = this.getOrCreateContactHolder(contact); // not a good idea finaly : my application only wants to see contacts that joined the conversation
+          // if this is a creation then it would not be usefull to update, but we do it in case of it was just a get...
+          // TODO: but events should be reworked to avoid that kind of trick
+          //
+          // just check if we have created this contact already (because it has joined the conversation) and update it. Otherwise just ignore it
+          // TODO : Note that we may consider this as a security hole : all client application get nnotified of users connected with same apiKey
+          // but not necessarily having joined the same conversation...
+          const contactHolder: ContactDecorator = this.getOrCreateContactHolder(contact);
+          if (contactHolder) {
+            contactHolder.updateData(contact);
+          }
+        }
 
       }
     })
@@ -428,7 +448,13 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     this.conversation.on('streamListChanged', streamInfo => {
       console.log("streamListChanged :", streamInfo);
 
+      // The streamListChanged event is usefull to maintain a list of streams published on a conversation.
+      // The event carries a streamInfo Object, which is not an actual apiRTC.Stream, that provides information
+      // on what actually happened (streamInfo.listEventType : added or removed) to which stream (streamInfo.streamId),
+      // and who the streams belongs to (streamInfo.contact).
+
       const streamId = String(streamInfo.streamId);
+      const contactId = String(streamInfo.contact.getId());
 
       //  USE subscribeToStream instead of subscribeToMedia?
       if (streamInfo.listEventType === 'added') {
@@ -457,24 +483,44 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
 
           console.log('removing Stream:', streamId);
           this.streamHoldersById.delete(streamId);
-          const contactHolder = this.contactHoldersById.get(streamInfo.contact.getId());
+          const contactHolder = this.contactHoldersById.get(contactId);
           contactHolder.removeStream(streamId);
+          if (contactHolder.getStreamHoldersById().size === 0) {
+            // Remove contact if it has no more streams
+            this.contactHoldersById.delete(contactId);
+          }
         }
       }
     });
 
     this.conversation.on('streamAdded', (stream: any) => {
       console.log('streamAdded, stream:', stream);
-      // streamAdded actually means that the stream is availabe (?)
+      // 'streamAdded' actually means that a stream is published by a peer and thus is ready to be displayed.
+      // The event comes with a Stream object that can be attached to DOM
+      // TODO : ask to rename this event ?
+      //
+      // Get our object
       const streamHolder: StreamDecorator = this.streamHoldersById.get(String(stream.getId()));
-      // streamHolder.setSubscribed(true);
       streamHolder.setStream(stream);
 
     }).on('streamRemoved', (stream: any) => {
       console.log('on:streamRemoved:', stream)
-
+      // 'streamRemoved' actually means that a stream is no more readable : either because :
+      // - peer left,
+      // - or peer decided to unpublish this stream,
+      // - or we decided to unsubscribe to this stream. (in which case we won't receive a 'streamListChanged' with listEventType==='removed' event)
+      // TODO : rename this event ?
+      //
+      // Get our object representing to notion of a peer stream and just set its apiRTC stream to null : the
+      // component will remove the video tag from the DOM.
+      // But we don't remove our object because the associated component may stay there, associated to a contact,
+      // with button allowing us to re-subscribe.
+      // Our object may only be removed if 'streamListChanged' says it should.
       const streamHolder: StreamDecorator = this.streamHoldersById.get(String(stream.getId()));
-      streamHolder.setStream(null);
+      // Warn : our object may already have been removed by 'streamListChanged' handler
+      if (streamHolder) {
+        streamHolder.setStream(null);
+      }
 
       console.log("getAvailableStreamList:", this.conversation.getAvailableStreamList());
     })
@@ -620,10 +666,11 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     console.log("createStream()", options);
     return new Promise((resolve, reject) => {
 
+      //var default_createStreamOptions: any = { enhancedAudioActivated: true }; // => FAILS on chrome
       var default_createStreamOptions: any = {};
       default_createStreamOptions.constraints = {
         audio: true,
-        video: true
+        video: true,
       };
 
       this.userAgent.createStream(options ? options : default_createStreamOptions)

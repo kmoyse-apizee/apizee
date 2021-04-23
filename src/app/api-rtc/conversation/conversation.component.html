@@ -245,7 +245,7 @@
                             <app-peer [streamHolder]="kv.value" (onSubscribe)="onStreamSubscribe($event)"></app-peer>
                         </div> -->
 
-                        <div *ngFor="let kv of contactHoldersById | keyvalue" class="col mycard">
+                        <div *ngFor="let kv of contactHoldersById | keyvalue" class="col">
                             <app-peer [contactHolder]="kv.value" (onStreamSubscribe)="onStreamSubscribe($event)">
                             </app-peer>
                         </div>
