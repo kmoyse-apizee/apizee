@@ -72,8 +72,7 @@
         </div>
         <div class="row" *ngIf="session">
             <div class="col">
-                <div class="alert alert-success clearfix" role="alert">Got <code>Session</code> with id &lt;
-                    <code>{{session.getId()}}</code>&gt;<span *ngIf="token">&nbsp;with token
+                <div class="alert alert-success clearfix" role="alert">Got <code>Session</code> with id &lt;<code>{{session.getId()}}</code>&gt;<span *ngIf="token">&nbsp;with token
                         &lt;<code>{{token}}</code>&gt;</span>
                     <span class="float-right"><button mat-raised-button color="warn" (click)="unregister()"
                             [disabled]="conversation" title="Unregister"><i
@@ -119,7 +118,7 @@
         <div class="row" *ngIf="conversation">
             <div class="col">
                 <div class="alert alert-success" role="alert">
-                    <p class="clearfix">Created <code>Conversation</code> at url {{conversationUrl}}
+                    <p class="clearfix">Created <code>Conversation</code>. Others can join at url <a href="{{conversationUrl}}" target="_blank">{{conversationUrl}}</a>
                         <span class="float-right"><button mat-raised-button color="primary"
                                 [cdkCopyToClipboard]="conversationUrlWithApiKey" title="Copy to clipboard">Copy
                                 link&nbsp;<i class="bi bi-clipboard"></i></button></span>
@@ -130,17 +129,25 @@
                     </p>
                 </div>
                 <p>
+                    <mat-form-field appearance="outline">
+                        <mat-label>Name</mat-label>
+                        <input matInput placeholder="Name" [formControl]="usernameFc">
+                        <mat-icon matSuffix>sentiment_very_satisfied</mat-icon>
+                        <mat-hint>Enter your name</mat-hint>
+                    </mat-form-field>
+                    <br>
                     <button mat-raised-button color="{{joined?'accent':'primary'}}" (click)="!joined?join():leave()" title="{{!joined?'Join':'Leave'}} Conversation">{{!joined?'Join':'Leave'}}&nbsp;<i
                             class="bi bi-chat-quote"></i></button> &nbsp;
 
                 </p>
                 <div class="alert alert-success clearfix" *ngIf="joined">
-                    <h3>List of contacts :</h3>
-                    <ul>
+                    <h3>List of contacts in this conversation :</h3>
+                    <ul *ngIf="contactHoldersById.size > 0; else elseBlock_Alone">
                         <li *ngFor="let kv of contactHoldersById | keyvalue">
                             {{kv.key}} --> {{kv.value.username}}
                         </li>
                     </ul>
+                    <ng-template #elseBlock_Alone>No one joined yet.</ng-template>
                 </div>
             </div>
         </div>
@@ -170,64 +177,63 @@
             <div class="card">
                 <div class="card-body">
                     <div id="videos" class="row row-cols-1 row-cols-sm-2">
-                        <div class="col mycard">
-                            <div id="{{localStreamHolder?.stream.streamId}}" class="embed-responsive embed-responsive-4by3">
-                                <video #localVideo muted autoplay playsinline></video>
-                                <div class="mycard-text">
-                                    <!-- <h5 *ngIf="usernameFc.value">{{usernameFc.value}}</h5> -->
-                                    <form class="row row-cols-lg-auto g-3 align-items-center">
-                                        <div class="col-12">
-                                            <mat-form-field appearance="outline">
-                                                <mat-label>Name</mat-label>
-                                                <input matInput placeholder="Name" [formControl]="usernameFc">
-                                                <mat-icon matSuffix>sentiment_very_satisfied</mat-icon>
-                                                <mat-hint>Enter your name</mat-hint>
-                                            </mat-form-field>
-                                            <br>
-                                            <div>
-                                                <mat-slide-toggle [formControl]="muteAudioFc" [disabled]="!localStreamHolder">
-                                                    Mute Audio
-                                                </mat-slide-toggle>
+                        <div class="col" *ngIf="localStreamHolder">
+                            <app-stream [streamHolder]="localStreamHolder" [isLocal]="true" [audioInDevices]="audioInDevices" [videoDevices]="videoDevices" (onAudioMute)="toggleAudioMute()" (onVideoMute)="toggleVideoMute()" (onAudioInSelected)="selectedAudioInDevice=$event;doChangeDevices()"
+                                (onVideoSelected)="selectedVideoDevice=$event;doChangeDevices()">
+                            </app-stream>
+                        </div>
+                        <!-- <div class="col">
+                            <div class="mycard">
+                                <div id="{{localStreamHolder?.stream.streamId}}" class="embed-responsive embed-responsive-4by3">
+                                    <video #localVideo muted autoplay playsinline></video>
+                                    <div class="mycard-text">
+                                        <form class="row row-cols-lg-auto g-3 align-items-center">
+                                            <div class="col-12">
+                                                <div>
+                                                    <mat-slide-toggle [formControl]="muteAudioFc" [disabled]="!localStreamHolder">
+                                                        Mute Audio
+                                                    </mat-slide-toggle>
+                                                    <br>
+                                                    <mat-slide-toggle [formControl]="muteVideoFc" [disabled]="!localStreamHolder">
+                                                        Mute Video
+                                                    </mat-slide-toggle>
+                                                </div>
                                                 <br>
-                                                <mat-slide-toggle [formControl]="muteVideoFc" [disabled]="!localStreamHolder">
-                                                    Mute Video
-                                                </mat-slide-toggle>
+                                                <mat-form-field appearance="fill">
+                                                    <mat-label>VideoIn</mat-label>
+                                                    <mat-select [formControl]="videoFc">
+                                                        <mat-option *ngFor="let device of videoDevices" [value]="device.id">
+                                                            {{device.label}}
+                                                        </mat-option>
+                                                    </mat-select>
+                                                </mat-form-field>
+                                                <mat-form-field appearance="fill">
+                                                    <mat-label>AudioIn</mat-label>
+                                                    <mat-select [formControl]="audioInFc">
+                                                        <mat-option *ngFor="let device of audioInDevices" [value]="device">
+                                                            {{device.label}}
+                                                        </mat-option>
+                                                    </mat-select>
+                                                </mat-form-field>
                                             </div>
-                                            <br>
-                                            <mat-form-field appearance="fill">
-                                                <mat-label>VideoIn</mat-label>
-                                                <mat-select [formControl]="videoFc">
-                                                    <mat-option *ngFor="let device of videoDevices" [value]="device.id">
-                                                        {{device.label}}
-                                                    </mat-option>
-                                                </mat-select>
-                                            </mat-form-field>
-                                            <mat-form-field appearance="fill">
-                                                <mat-label>AudioIn</mat-label>
-                                                <mat-select [formControl]="audioInFc">
-                                                    <mat-option *ngFor="let device of audioInDevices" [value]="device">
-                                                        {{device.label}}
-                                                    </mat-option>
-                                                </mat-select>
-                                            </mat-form-field>
-                                        </div>
-                                    </form>
-                                    <app-audio-stats [stats]="localStreamHolder?.qosStat?.audioSent"></app-audio-stats>
-                                    <app-video-stats [stats]="localStreamHolder?.qosStat?.videoSent"></app-video-stats>
-                                </div>
-                                <div class="mycard-over">
-                                    <p *ngIf="localStreamHolder">
-                                        <span class="badge badge-info">streamId:{{localStreamHolder.id}}</span>
-                                    </p>
-                                    <p *ngIf="localStreamHolder?.isSpeaking">
-                                        <span class="badge badge-success">
+                                        </form>
+                                        <app-audio-stats [stats]="localStreamHolder?.qosStat?.audioSent"></app-audio-stats>
+                                        <app-video-stats [stats]="localStreamHolder?.qosStat?.videoSent"></app-video-stats>
+                                    </div>
+                                    <div class="mycard-over">
+                                        <p *ngIf="localStreamHolder">
+                                            <span class="badge badge-info">streamId:{{localStreamHolder.id}}</span>
+                                        </p>
+                                        <p *ngIf="localStreamHolder?.isSpeaking">
+                                            <span class="badge badge-success">
                                             <mat-icon matSuffix>record_voice_over
                                             </mat-icon>
                                         </span>
-                                    </p>
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        </div> -->
 
                         <!-- [hidden] does not seen to work, the div is still visible 
                         anyways this is a bad way to handle it...-->

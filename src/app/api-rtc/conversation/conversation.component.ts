@@ -20,7 +20,6 @@ declare var apiRTC: any;
 })
 export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
 
-  @ViewChild("localVideo") localVideoRef: ElementRef;
   @ViewChild("screenSharingVideo") screenSharingVideoRef: ElementRef;
 
   // FormControl/Group objects
@@ -66,30 +65,23 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   publishInPrgs = false;
 
   // Peer Contacts
+  // Keep here only contacts that joined the conversation
   contactHoldersById: Map<string, ContactDecorator> = new Map();
 
   // Peer Streams
   streamHoldersById: Map<string, StreamDecorator> = new Map();
 
-  // Audio/Video Muting
-  muteAudioFc = new FormControl(false);
-  muteVideoFc = new FormControl(false);
-
-  // Devices handling
-  audioInDevices: Array<any>;
-  audioInFc = new FormControl('');
-  selectedAudioInDevice = null;
-
-  videoDevices: Array<any>;
-  videoFc = new FormControl('');
-  selectedVideoDevice = null;
-
-  // TODO : implement out devices selection
-  audioOutDevices: Array<any>;
-
   // Authentication Token (JSON or other)
   token: string;
 
+  // Devices handling
+  audioInDevices: Array<any>;
+  videoDevices: Array<any>;
+  // TODO : implement out devices selection
+  audioOutDevices: Array<any>;
+
+  selectedAudioInDevice = null;
+  selectedVideoDevice = null;
 
   // Convenient FormControl getters
   //
@@ -170,30 +162,6 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
         this.apiKeyFc.setValue(params['apiKey']);
       }
     });
-
-    // Audio/Video muting
-    //
-    this.muteAudioFc.valueChanges.subscribe(value => {
-      console.log("muteAudioFc#valueChanges", value);
-      this.toggleAudioMute();
-    });
-    this.muteVideoFc.valueChanges.subscribe(value => {
-      console.log("muteVideoFc#valueChanges", value);
-      this.toggleVideoMute();
-    });
-
-    // Media device selection handling
-    //
-    this.audioInFc.valueChanges.subscribe(value => {
-      console.log("audioInFc#valueChanges", value);
-      this.selectedAudioInDevice = value;
-      this.doChangeDevice();
-    });
-    this.videoFc.valueChanges.subscribe(value => {
-      console.log("videoFc#valueChanges", value);
-      this.selectedVideoDevice = value;
-      this.doChangeDevice();
-    });
   }
 
   ngAfterViewInit() {
@@ -260,12 +228,12 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     this.authServerService.loginJWToken(this.credentials.username, this.credentials.password).subscribe(
       json => {
         this.token = json.token;
-        console.log("JWT : ", json.token);
+        console.log("doJWTAuth, JWT:", json.token);
         this.usernameFc.setValue(this.credentials.username);
         this.registerWithToken();
       },
       error => {
-        console.error('ConversationComponent::onCredentials|' + JSON.stringify(error));
+        console.error('ConversationComponent::doJWTAuth', error);
         this.registrationError = error;
       });
   }
@@ -285,12 +253,12 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     this.authServerService.loginToken(this.credentials.username, this.credentials.password).subscribe(
       json => {
         this.token = json.token;
-        console.log("token : ", json.token);
+        console.log("do3rdPartyAuth, token:", json.token);
         this.usernameFc.setValue(this.credentials.username);
         this.registerWithToken();
       },
       error => {
-        console.error('ConversationComponent::onCredentials|' + JSON.stringify(error));
+        console.error('ConversationComponent::do3rdPartyAuth', error);
         this.registrationError = error;
       });
   }
@@ -303,8 +271,10 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     this.userAgent.register().then((session: any) => {
       this.session = session;
       console.log("Session:", session);
+      this.usernameFc.setValue(this.userAgent.getUsername());
+      this.doListenSessionEvents();
     }).catch(error => {
-      console.log("Registration error", error);
+      console.log("ConversationComponent::register", error);
       this.registrationError = error;
     });
   }
@@ -326,6 +296,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       // This is misleading as we never heard about a channelId before !
       this.session = session;
       console.log("Session:", session);
+      this.doListenSessionEvents();
     }).catch(error => {
       console.log("Registration error", error);
       this.registrationError = error;
@@ -336,6 +307,57 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     this.userAgent.unregister();
     this.session = null;
     this.token = null;
+  }
+
+  // Helper methods
+  /*
+   * Because apiRTC events of contactJoin may appear AFTER a StreamListChanged with a stream from such contact
+  * I need to make sure 
+  * Note : how can we make this thread safe ?
+  * => a response from stackoverflow seem to indicate there is nothing to worry about
+  * Other than HTML5 web workers (which are very tightly controlled and not apparently what you are asking about),
+  *  Javascript in the browser is single threaded so regular Javascript programming does not have thread safety issues.
+  *  One thread of execution will finish before the next one is started. No two pieces of Javascript are running at exactly the same time.
+   */
+  getOrCreateContactHolder(contact: any): ContactDecorator {
+    const contactId = String(contact.getId());
+    if (this.contactHoldersById.has(contactId)) {
+      return this.contactHoldersById.get(contactId);
+    } else {
+      const contactHolder: ContactDecorator = ContactDecorator.build(contact);
+      this.contactHoldersById.set(contactHolder.getId(), contactHolder);
+      return contactHolder;
+    }
+  }
+
+  doListenSessionEvents(): void {
+    this.session.on('contactListUpdate', updatedContacts => { //display a list of connected users
+      console.log("MAIN - contactListUpdate", updatedContacts);
+      // TODO: should we also prefer this list update rather than contactJoined/Left to handle list of contacts 
+      // like we do for streams with streamListChanged ?
+      // if (this.conversation !== null) {
+      //   let contactList = this.conversation.getContacts();
+      //   console.info("contactList  conversation.getContacts() :", contactList);
+
+      for (var contact of updatedContacts.userDataChanged) {
+        const contactId = String(contact.getId());
+
+        //const contactHolder: ContactDecorator = this.contactHoldersById.get(contactId); // Fails because 'contactListUpdate' is also fired first when a new contact comes in the Session
+        // so we need to actually create the contact and this very moment...
+        //const contactHolder: ContactDecorator = this.getOrCreateContactHolder(contact); // not a good idea finaly : my application only wants to see contacts that joined the conversation
+        // if this is a creation then it would not be usefull to update, but we do it in case of it was just a get...
+        // TODO: but events should be reworked to avoid that kind of trick
+        // Finally, just check if we have created this contact already (because it has joined the conversation) and update it. Otherwise just ignore it
+        // TODO : Note that we may consider this as a security hole : all client application get notified of users connected with same apiKey
+        // but not necessarily having joined the same conversation...
+        const contactHolder: ContactDecorator = this.contactHoldersById.get(contactId);
+        if (contactHolder) {
+          contactHolder.updateData(contact);
+        }
+      }
+
+      // }
+    })
   }
 
   /***************************************************************************
@@ -349,7 +371,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     this.videoDevices = Object.values(mediaDevices.videoinput);
   }
 
-  doChangeDevice(): void {
+  doChangeDevices(): void {
 
     if (this.localStreamHolder) {
 
@@ -376,30 +398,6 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-
-  // Helper methods
-  /*
-   * Because apiRTC events of contactJoin may appear AFTER a StreamListChanged with a stream from such contact
-  * I need to make sure 
-  * Note : how can we make this thread safe ?
-  * => a response from stackoverflow seem to indicate there is nothing to worry about
-  * Other than HTML5 web workers (which are very tightly controlled and not apparently what you are asking about),
-  *  Javascript in the browser is single threaded so regular Javascript programming does not have thread safety issues.
-  *  One thread of execution will finish before the next one is started. No two pieces of Javascript are running at exactly the same time.
-   */
-  getOrCreateContactHolder(contact: any): ContactDecorator {
-    const contactId = String(contact.getId());
-    if (this.contactHoldersById.has(contactId)) {
-      return this.contactHoldersById.get(contactId);
-    } else {
-      const contactHolder: ContactDecorator = ContactDecorator.build(contact);
-      this.contactHoldersById.set(contactHolder.getId(), contactHolder);
-      return contactHolder;
-    }
-  }
-
-
-
   /***************************************************************************
     ApiRTC Conversation
    */
@@ -412,36 +410,6 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     this.conversation = this.session.getOrCreateConversation(this.conversationNameFc.value);
     // TODO il existe aussi getOrCreateConference mais les deux retournent une Conference ou une Conversation en fonction du format du nom..
     // se faire expliquer !
-
-    this.session.on('contactListUpdate', updatedContacts => { //display a list of connected users
-      console.log("MAIN - contactListUpdate", updatedContacts);
-      // TODO: should we also prefer this list update rather than contactJoined/Left to handle list of contacts 
-      // like we do for streams with streamListChanged ?
-      if (this.conversation !== null) {
-        let contactList = this.conversation.getContacts();
-        console.info("contactList  conversation.getContacts() :", contactList);
-
-        for (var contact of updatedContacts.userDataChanged) {
-          const contactId = String(contact.getId());
-
-          //const contactHolder: ContactDecorator = this.contactHoldersById.get(contactId); // Fails because 'contactListUpdate' is also fired first when a new contact comes in the Session
-          // so we need to actually create the contact and this very moment...
-          // TODO update the HTML do display contacts after register rather than after join.
-          //const contactHolder: ContactDecorator = this.getOrCreateContactHolder(contact); // not a good idea finaly : my application only wants to see contacts that joined the conversation
-          // if this is a creation then it would not be usefull to update, but we do it in case of it was just a get...
-          // TODO: but events should be reworked to avoid that kind of trick
-          //
-          // just check if we have created this contact already (because it has joined the conversation) and update it. Otherwise just ignore it
-          // TODO : Note that we may consider this as a security hole : all client application get nnotified of users connected with same apiKey
-          // but not necessarily having joined the same conversation...
-          const contactHolder: ContactDecorator = this.getOrCreateContactHolder(contact);
-          if (contactHolder) {
-            contactHolder.updateData(contact);
-          }
-        }
-
-      }
-    })
 
     // Streams
     //
@@ -485,10 +453,10 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
           this.streamHoldersById.delete(streamId);
           const contactHolder = this.contactHoldersById.get(contactId);
           contactHolder.removeStream(streamId);
-          if (contactHolder.getStreamHoldersById().size === 0) {
-            // Remove contact if it has no more streams
-            this.contactHoldersById.delete(contactId);
-          }
+          // if (contactHolder.getStreamHoldersById().size === 0) {
+          //   // Remove contact if it has no more streams
+          //   this.contactHoldersById.delete(contactId);
+          // }
         }
       }
     });
@@ -550,7 +518,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       this.userAgent.enableActiveSpeakerDetecting(true, { threshold: 50 });
     }
     this.conversation.on('callStatsUpdate', (callStats: any) => {
-      console.log("on:callStatsUpdate:", callStats);
+      //console.log("on:callStatsUpdate:", callStats);
 
       if (callStats.stats.videoReceived || callStats.stats.audioReceived) {
         // "received" media is from peer streams
@@ -577,7 +545,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     // Speaker detection
     //
     this.conversation.on('audioAmplitude', (amplitudeInfo: any) => {
-      console.log("on:audioAmplitude", amplitudeInfo);
+      //console.log("on:audioAmplitude", amplitudeInfo);
 
       if (amplitudeInfo.callId !== null) {
         // TODO :
@@ -679,11 +647,6 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
 
           this.localStreamHolder = StreamDecorator.build({ streamId: String(stream.getId()), isRemote: false, type: 'regular' });
           this.localStreamHolder.setStream(stream);
-          // Attach stream
-          //this.localVideoRef.nativeElement.srcObject = stream;
-          // previous line CANNOT work because this stream is not the same as native one from webrtc
-          // instead do :
-          stream.attachToElement(this.localVideoRef.nativeElement);
 
           resolve(stream);
         }).catch(err => {
@@ -725,10 +688,6 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.localStreamHolder) {
       this.localStreamHolder.getStream().release();
       this.localStreamHolder = null;
-
-      // TODO : detachFromElement is not provided, replaced by :
-      // TODO shall this be documented ? shall we provide a detachFromElement ?
-      this.localVideoRef.nativeElement.src = null;
     }
   }
 
