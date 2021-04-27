@@ -23,6 +23,13 @@ export class StreamComponent implements OnInit, OnDestroy {
   @Input() streamHolder: StreamDecorator;
   @Input() isLocal: boolean;
 
+  @Input() set audioMuted(audioMuted: boolean) {
+    this.muteAudioFc.setValue(audioMuted);
+  }
+  @Input() set videoMuted(videoMuted: boolean) {
+    this.muteVideoFc.setValue(videoMuted);
+  }
+
   _audioInDevices: Array<any>;
   @Input() set audioInDevices(audioInDevices: Array<any>) {
     this._audioInDevices = audioInDevices;

@@ -5,7 +5,7 @@
             <!-- TODO should be handled by parent component (contact level) -->
             <!-- <h5>{{streamHolder.streamInfo.contact.userData.username}}</h5> -->
 
-            <div *ngIf="isLocal; else elseBlock_remote">
+            <div *ngIf="isLocal; else elseBlock_isRemote">
                 <form class="row row-cols-lg-auto g-3 align-items-center">
                     <div class="col-12">
                         <div>
@@ -22,7 +22,6 @@
                         <mat-form-field appearance="fill">
                             <mat-label>VideoIn</mat-label>
                             <mat-select [formControl]="videoFc">
-                                <!-- device.id -->
                                 <mat-option *ngFor="let device of _videoDevices" [value]="device">
                                     {{device.label}}
                                 </mat-option>
@@ -41,7 +40,7 @@
                 <app-audio-stats [stats]="streamHolder.qosStat?.audioSent"></app-audio-stats>
                 <app-video-stats [stats]="streamHolder.qosStat?.videoSent"></app-video-stats>
             </div>
-            <ng-template #elseBlock_remote>
+            <ng-template #elseBlock_isRemote>
                 <app-audio-stats [stats]="streamHolder.qosStat?.audioReceived"></app-audio-stats>
                 <app-video-stats [stats]="streamHolder.qosStat?.videoReceived"></app-video-stats>
                 <button *ngIf="!isLocal" mat-raised-button color="primary" (click)="toggleSubscribe()">{{streamHolder.stream?'Unsubscribe':'Subscribe'}}</button>

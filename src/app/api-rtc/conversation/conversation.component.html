@@ -47,8 +47,8 @@
         </div>
         <div class="row" *ngIf="!session">
             <div class="col">
-                <p>Registering as guest is simple but less secured</p>
-                <button mat-raised-button color="primary" (click)="register()" [disabled]="!userAgent" title="Register as guest">Register as
+                <p>Registering as guest is simple but less secured.</p>
+                <button mat-raised-button color="primary" (click)="register()" [disabled]="!userAgent||registerInPrgs" title="Register as guest">Register as
                     Guest&nbsp;<i class="bi bi-box-arrow-in-right"></i></button>
             </div>
             <div class="col">
@@ -56,7 +56,7 @@
             </div>
             <div class="col">
                 <p>Using your own authentication server that provides a <strong>Json Web Token</strong> allows to register the <code>UserAgent</code> with ApiRTC's servers in a more secure way.</p>
-                <app-login [btnText]="'Register with JWT Auth'" (credentials)="doJWTAuth($event)"></app-login>
+                <app-login [btnText]="'Register with JWT Auth'" (credentials)="registerWithJWTAuth($event)"></app-login>
                 <!-- <p *ngIf="token" class="text-success">Got token &lt;<code>{{token}}</code>&gt;</p>
                 <button mat-raised-button color="primary" (click)="registerWithToken()" [disabled]="!token" title="Register with token">Register with token
                     &nbsp;<i class="bi bi-box-arrow-in-right"></i></button> -->
@@ -66,13 +66,14 @@
             </div>
             <div class="col">
                 <p>Authentication with third party server that generates a <strong>token</strong> and that ApiRTC's servers will query with this token during registration.</p>
-                <app-login [btnText]="'Register with 3rdParty server Auth'" (credentials)="do3rdPartyAuth($event)">
+                <app-login [btnText]="'Register with 3rdParty server Auth'" (credentials)="registerWith3rdPartyAuth($event)">
                 </app-login>
             </div>
         </div>
         <div class="row" *ngIf="session">
             <div class="col">
-                <div class="alert alert-success clearfix" role="alert">Got <code>Session</code> with id &lt;<code>{{session.getId()}}</code>&gt;<span *ngIf="token">&nbsp;with token
+                <div class="alert alert-success clearfix" role="alert">Got <code>Session</code> with id &lt;
+                    <code>{{session.getId()}}</code>&gt;<span *ngIf="token">&nbsp;with token
                         &lt;<code>{{token}}</code>&gt;</span>
                     <span class="float-right"><button mat-raised-button color="warn" (click)="unregister()"
                             [disabled]="conversation" title="Unregister"><i
@@ -136,7 +137,7 @@
                         <mat-hint>Enter your name</mat-hint>
                     </mat-form-field>
                     <br>
-                    <button mat-raised-button color="{{joined?'accent':'primary'}}" (click)="!joined?join():leave()" title="{{!joined?'Join':'Leave'}} Conversation">{{!joined?'Join':'Leave'}}&nbsp;<i
+                    <button mat-raised-button color="{{joined?'accent':'primary'}}" (click)="!joined?join():leave()" [disabled]="joinInPrgs" title="{{!joined?'Join':'Leave'}} Conversation">{{!joined?'Join':'Leave'}}&nbsp;<i
                             class="bi bi-chat-quote"></i></button> &nbsp;
 
                 </p>
@@ -149,6 +150,9 @@
                     </ul>
                     <ng-template #elseBlock_Alone>No one joined yet.</ng-template>
                 </div>
+
+                <p *ngIf="joinError" class="alert alert-danger" role="alert">{{joinError | json}}
+                </p>
             </div>
         </div>
     </div>
@@ -166,7 +170,8 @@
                     <button mat-raised-button color="{{published?'accent':'primary'}}" (click)="!published?publishStream():unpublishStream()" [disabled]="!localStreamHolder||!joined||publishInPrgs">{{!published?'Publish Stream':'Unpublish
                         Stream'}}
                         <span *ngIf="publishInPrgs" class="spinner-border text-light" role="status"></span></button> &nbsp;
-                    <button mat-raised-button color="{{screenSharingStream?'accent':'primary'}}" (click)="toggleScreenSharing()" [disabled]="!conversation">{{screenSharingStream?'Unshare':'Share'}} Screen</button>
+                    <button mat-raised-button color="{{screenSharingStream?'accent':'primary'}}" (click)="toggleScreenSharing()" [disabled]="!joined">{{screenSharingStream?'Unshare':'Share'}}
+                        Screen</button>
                 </p>
             </div>
         </div>
@@ -178,7 +183,7 @@
                 <div class="card-body">
                     <div id="videos" class="row row-cols-1 row-cols-sm-2">
                         <div class="col" *ngIf="localStreamHolder">
-                            <app-stream [streamHolder]="localStreamHolder" [isLocal]="true" [audioInDevices]="audioInDevices" [videoDevices]="videoDevices" (onAudioMute)="toggleAudioMute()" (onVideoMute)="toggleVideoMute()" (onAudioInSelected)="selectedAudioInDevice=$event;doChangeDevices()"
+                            <app-stream [streamHolder]="localStreamHolder" [isLocal]="true" [audioMuted]="false" [videoMuted]="false" [audioInDevices]="audioInDevices" [videoDevices]="videoDevices" (onAudioMute)="toggleAudioMute()" (onVideoMute)="toggleVideoMute()" (onAudioInSelected)="selectedAudioInDevice=$event;doChangeDevices()"
                                 (onVideoSelected)="selectedVideoDevice=$event;doChangeDevices()">
                             </app-stream>
                         </div>
@@ -242,14 +247,6 @@
                                 <video #screenSharingVideo muted autoplay playsinline></video>
                             </div>
                         </div>
-
-                        <!-- <div *ngFor="let streamHolder of streamHolders" class="col mycard">
-                            <app-peer [streamHolder]="streamHolder" (onSubscribe)="onStreamSubscribe($event)"></app-peer>
-                        </div> -->
-
-                        <!-- <div *ngFor="let kv of streamHoldersById | keyvalue" class="col mycard">
-                            <app-peer [streamHolder]="kv.value" (onSubscribe)="onStreamSubscribe($event)"></app-peer>
-                        </div> -->
 
                         <div *ngFor="let kv of contactHoldersById | keyvalue" class="col">
                             <app-peer [contactHolder]="kv.value" (onStreamSubscribe)="onStreamSubscribe($event)">

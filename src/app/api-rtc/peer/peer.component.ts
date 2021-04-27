@@ -14,6 +14,8 @@ export class PeerComponent implements OnInit {
 
   streamHoldersById: Map<String, StreamDecorator>;
 
+  activeIndex = 0;
+
   _contactHolder: ContactDecorator;
   @Input() set contactHolder(contactHolder: ContactDecorator) {
     this._contactHolder = contactHolder;
@@ -30,4 +32,15 @@ export class PeerComponent implements OnInit {
   emitStreamSubscribe(event: StreamSubscribeEvent) {
     this.onStreamSubscribe.emit(event);
   }
+
+  prev() {
+    this.activeIndex = ((this.activeIndex === 0 ? this.streamHoldersById.size : this.activeIndex) - 1) % this.streamHoldersById.size;
+  }
+  next() {
+    this.activeIndex = (this.activeIndex + 1) % this.streamHoldersById.size;
+  }
+  navTo(index: number) {
+    this.activeIndex = index;
+  }
+
 }

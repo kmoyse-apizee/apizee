@@ -40,7 +40,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   // Simple Array of messages received on the conversation
   messages: Array<MessageDecorator> = [];
 
-  registrationError: any = null;
+
 
   // Conversation urls
   //
@@ -53,14 +53,21 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   session: any = null;
   conversation: any = null;
 
+
+  registerInPrgs = false;
+  registrationError: any = null;
+
+  joinInPrgs = false;
+  joinError: any = null;
   joined = false;
-  screenSharingStream = null;
 
   // Local user credentials
   credentials: any = null;
 
-  // Local Stream
+  // Local Streams
   localStreamHolder: StreamDecorator;
+  screenSharingStream = null;
+
   published = false;
   publishInPrgs = false;
 
@@ -211,7 +218,25 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
 
   /***************************************************************************
     ApiRTC Authentication and registration
-   */
+  *
+  * In order to access 'connected' features of ApiRTC, a session to ApiRTC's servers has to be obtained through register
+  */
+  register() {
+    this.registrationError = null;
+    this.registerInPrgs = true;
+    this.userAgent.register().then((session: any) => {
+      this.session = session;
+      console.log("Session:", session);
+      this.usernameFc.setValue(this.userAgent.getUsername());
+      this.doListenSessionEvents();
+      this.registerInPrgs = false;
+      this.registrationError = null;
+    }).catch(error => {
+      console.log("ConversationComponent::register", error);
+      this.registerInPrgs = false;
+      this.registrationError = error;
+    });
+  }
 
   /**
    * This method is called when user decides to use JSON Web Token authentication.
@@ -221,8 +246,9 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
    * 
    * @param credentials 
    */
-  doJWTAuth(credentials: any): void {
+  registerWithJWTAuth(credentials: any): void {
     this.registrationError = null;
+    this.registerInPrgs = true;
     this.credentials = credentials;
     // Authenticate to get a JWT
     this.authServerService.loginJWToken(this.credentials.username, this.credentials.password).subscribe(
@@ -230,10 +256,13 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
         this.token = json.token;
         console.log("doJWTAuth, JWT:", json.token);
         this.usernameFc.setValue(this.credentials.username);
-        this.registerWithToken();
+        this.doRegisterWithToken();
+        this.registerInPrgs = false;
+        this.registrationError = null;
       },
       error => {
         console.error('ConversationComponent::doJWTAuth', error);
+        this.registerInPrgs = false;
         this.registrationError = error;
       });
   }
@@ -246,8 +275,9 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
    * 
    * @param credentials 
    */
-  do3rdPartyAuth(credentials: any): void {
+  registerWith3rdPartyAuth(credentials: any): void {
     this.registrationError = null;
+    this.registerInPrgs = true;
     this.credentials = credentials;
     // Authenticate to get a token
     this.authServerService.loginToken(this.credentials.username, this.credentials.password).subscribe(
@@ -255,39 +285,27 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
         this.token = json.token;
         console.log("do3rdPartyAuth, token:", json.token);
         this.usernameFc.setValue(this.credentials.username);
-        this.registerWithToken();
+        this.doRegisterWithToken();
+        this.registerInPrgs = false;
+        this.registrationError = null;
       },
       error => {
         console.error('ConversationComponent::do3rdPartyAuth', error);
+        this.registerInPrgs = false;
         this.registrationError = error;
       });
   }
 
   /**
-   * In order to access 'connected' features of ApiRTC, a session to ApiRTC's servers has to be obtained through register
-   */
-  register() {
-    this.registrationError = null;
-    this.userAgent.register().then((session: any) => {
-      this.session = session;
-      console.log("Session:", session);
-      this.usernameFc.setValue(this.userAgent.getUsername());
-      this.doListenSessionEvents();
-    }).catch(error => {
-      console.log("ConversationComponent::register", error);
-      this.registrationError = error;
-    });
-  }
-
-  /**
    * Registration can be made with authentication token.
    */
-  registerWithToken() {
+  doRegisterWithToken() {
     this.registrationError = null;
     const registerInformation = this.credentials ? {
       id: this.credentials.username,
       token: this.token
     } : {};
+
     this.userAgent.register(registerInformation).then((session: any) => {
       // TODO : if I don't use same registerInformation.id as the user id (username) that was used to create the token,
       // I get error :
@@ -297,6 +315,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       this.session = session;
       console.log("Session:", session);
       this.doListenSessionEvents();
+      this.registrationError = null;
     }).catch(error => {
       console.log("Registration error", error);
       this.registrationError = error;
@@ -566,31 +585,37 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   join(): void {
-    if (this.conversation) {
-      // Join the conversation
-      this.conversation.join()
-        .then(response => {
-          //Conversation joined
-          this.joined = true;
-          console.info('Conversation joined', response);
-        }).catch(err => {
-          console.error('Conversation join error', err);
-        });
-    }
+    this.joinError = null;
+    this.joinInPrgs = true;
+    this.conversation.join()
+      .then(response => {
+        console.info('Conversation joined', response);
+        this.joined = true;
+        this.joinInPrgs = false;
+      }).catch(err => {
+        console.error('Conversation join error', err);
+        this.joinInPrgs = false;
+        this.joinError = err;
+      });
   }
 
   leave(): void {
-    if (this.conversation) {
-      this.conversation.leave()
-        .then(() => {
-          this.joined = false;
-          console.info('Conversation left');
-          // do not destroy otherwise you cannot join back !
-          // this.conversation.destroy();
-          // this.conversation = null;
-        })
-        .catch(err => { console.error('Conversation leave error', err); });
-    }
+    this.joinError = null;
+    this.joinInPrgs = true;
+    this.conversation.leave()
+      .then(() => {
+        console.info('Conversation left');
+        this.joined = false;
+        this.joinInPrgs = false;
+        // do not destroy otherwise you cannot join back !
+        // this.conversation.destroy();
+        // this.conversation = null;
+      })
+      .catch(err => {
+        console.error('Conversation leave error', err);
+        this.joinInPrgs = false;
+        this.joinError = err;
+      });
   }
 
   destroyConversation(): void {
@@ -618,6 +643,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
 
   sendMessage() {
     const messageContent = this.messageFc.value;
+    this.messageFc.setValue('');
     this.conversation.sendMessage(messageContent).then((uuid) => {
       console.log("sendMessage", uuid, messageContent);
       this.messages.push(MessageDecorator.build(this.userAgent.getUsername(), messageContent));
