@@ -40,8 +40,6 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   // Simple Array of messages received on the conversation
   messages: Array<MessageDecorator> = [];
 
-
-
   // Conversation urls
   //
   conversationBaseUrl: string;
@@ -52,14 +50,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   userAgent: any;
   session: any = null;
   conversation: any = null;
-
-
-  registerInPrgs = false;
-  registrationError: any = null;
-
-  joinInPrgs = false;
-  joinError: any = null;
-  joined = false;
+  recordInfos: Array<any> = [];
 
   // Local user credentials
   credentials: any = null;
@@ -67,6 +58,17 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   // Local Streams
   localStreamHolder: StreamDecorator;
   screenSharingStream = null;
+
+  // Template helper attributes
+  recording = false;
+  recordingError = null;
+
+  registerInPrgs = false;
+  registrationError: any = null;
+
+  joinInPrgs = false;
+  joinError: any = null;
+  joined = false;
 
   published = false;
   publishInPrgs = false;
@@ -443,7 +445,6 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       const streamId = String(streamInfo.streamId);
       const contactId = String(streamInfo.contact.getId());
 
-      //  USE subscribeToStream instead of subscribeToMedia?
       if (streamInfo.listEventType === 'added') {
         if (streamInfo.isRemote === true) {
           console.log('adding Stream:', streamId);
@@ -582,6 +583,13 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     });
 
+    // Recording
+    //
+    this.conversation.on('recordingAvailable', (recordingInfo: any) => {
+      console.log("on:recordingAvailable", recordingInfo);
+      this.recordInfos.push(recordingInfo);
+    });
+
   }
 
   join(): void {
@@ -611,11 +619,39 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
         // this.conversation.destroy();
         // this.conversation = null;
       })
-      .catch(err => {
+      .catch((err: any) => {
         console.error('Conversation leave error', err);
         this.joinInPrgs = false;
         this.joinError = err;
       });
+  }
+
+  toggleRecording() {
+    this.recordingError = null;
+    this.recording = !this.recording;
+    console.log("toggleRecord", this.recording);
+    if (this.recording) {
+      this.conversation.startRecording()
+        .then((recordingInfo: any) => {
+          console.info('startRecording', recordingInfo);
+        })
+        .catch((err: any) => {
+          console.error('startRecording', err);
+          console.error('startRecording', JSON.stringify({ message: err.error.message }));
+          this.recordingError = err;
+          this.recording = false;
+        });
+    }
+    else {
+      this.conversation.stopRecording()
+        .then((recordingInfo: any) => {
+          console.info('stopRecording', recordingInfo);
+        })
+        .catch((err: any) => {
+          console.error('stopRecording', err);
+          this.recordingError = err;
+        });
+    }
   }
 
   destroyConversation(): void {

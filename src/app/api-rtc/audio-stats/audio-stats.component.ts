@@ -75,7 +75,7 @@ export class AudioStatsComponent implements OnInit {
     this.bitRateKbps = Math.round(this.bitRate / 1000);
     this.packetLossRatio = stats.packetLossRatio;
 
-    console.log("AudioStatsComponent", stats)
+    //console.log("AudioStatsComponent", stats)
   };
 
   constructor() { }

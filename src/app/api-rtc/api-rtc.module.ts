@@ -10,6 +10,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatListModule } from '@angular/material/list';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSelectModule } from '@angular/material/select';
+import { MatChipsModule } from '@angular/material/chips';
 import { ClipboardModule } from '@angular/cdk/clipboard';
 
 import { UtilsModule } from '../utils/utils.module';
@@ -36,7 +37,7 @@ import { StreamVideoComponent } from './stream-video/stream-video.component';
     HttpClientModule,
 
     MatFormFieldModule, MatInputModule, MatIconModule, MatButtonModule,
-    MatListModule, MatSlideToggleModule, MatSelectModule,
+    MatListModule, MatSlideToggleModule, MatSelectModule, MatChipsModule,
     ClipboardModule,
 
     UtilsModule

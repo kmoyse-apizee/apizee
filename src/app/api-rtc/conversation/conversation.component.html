@@ -102,57 +102,78 @@
             </div>
         </div>
         <div class="row">
-            <div class="text-center">
-                <form *ngIf="!conversation" [formGroup]="conversationFormGroup" (ngSubmit)="getOrcreateConversation()">
-                    <mat-form-field>
-                        <mat-label>Nom de la conversation</mat-label>
-                        <span matPrefix>{{conversationBaseUrl}}/</span>
-                        <input type="text" matInput placeholder="abcd" formControlName="conversationName">
-                        <!-- <mat-icon matSuffix>mode_edit</mat-icon> -->
-                    </mat-form-field>&nbsp;
-                    <button mat-raised-button color="primary" type="submit" [disabled]="!conversationFormGroup.valid||!session" title="Get Or Create Conversation">GetOrCreateConversation&nbsp;<i
-                            class="bi bi-telephone-forward-fill"></i></button>
-                </form>
-
+            <div class="col">
+                <div class="text-center">
+                    <form *ngIf="!conversation" [formGroup]="conversationFormGroup" (ngSubmit)="getOrcreateConversation()">
+                        <mat-form-field>
+                            <mat-label>Nom de la conversation</mat-label>
+                            <span matPrefix>{{conversationBaseUrl}}/</span>
+                            <input type="text" matInput placeholder="abcd" formControlName="conversationName">
+                            <!-- <mat-icon matSuffix>mode_edit</mat-icon> -->
+                        </mat-form-field>&nbsp;
+                        <button mat-raised-button color="primary" type="submit" [disabled]="!conversationFormGroup.valid||!session" title="Get Or Create Conversation">GetOrCreateConversation&nbsp;<i
+                                class="bi bi-telephone-forward-fill"></i></button>
+                    </form>
+                </div>
             </div>
         </div>
         <div class="row" *ngIf="conversation">
             <div class="col">
-                <div class="alert alert-success" role="alert">
-                    <p class="clearfix">Created <code>Conversation</code>. Others can join at url <a href="{{conversationUrl}}" target="_blank">{{conversationUrl}}</a>
-                        <span class="float-right"><button mat-raised-button color="primary"
-                                [cdkCopyToClipboard]="conversationUrlWithApiKey" title="Copy to clipboard">Copy
-                                link&nbsp;<i class="bi bi-clipboard"></i></button></span>
-                    </p>
-                    <p class="clearfix"><span class="float-right">
-                            <button mat-raised-button color="warn" (click)="destroyConversation()"
-                                title="Destroy Conversation">Destroy Conversation</button></span>
-                    </p>
+                <div class="row">
+                    <div class="col">
+                        <div class="alert alert-success" role="alert">
+                            <p class="clearfix">Created <code>Conversation</code>. Others can join at url <a href="{{conversationUrl}}" target="_blank">{{conversationUrl}}</a>
+                                <span class="float-right"><button mat-raised-button color="primary"
+                                        [cdkCopyToClipboard]="conversationUrlWithApiKey" title="Copy to clipboard">Copy
+                                        link&nbsp;<i class="bi bi-clipboard"></i></button></span>
+                            </p>
+                            <p class="clearfix"><span class="float-right">
+                                    <button mat-raised-button color="warn" (click)="destroyConversation()"
+                                        title="Destroy Conversation">Destroy Conversation</button></span>
+                            </p>
+                        </div>
+                    </div>
                 </div>
-                <p>
-                    <mat-form-field appearance="outline">
-                        <mat-label>Name</mat-label>
-                        <input matInput placeholder="Name" [formControl]="usernameFc">
-                        <mat-icon matSuffix>sentiment_very_satisfied</mat-icon>
-                        <mat-hint>Enter your name</mat-hint>
-                    </mat-form-field>
-                    <br>
-                    <button mat-raised-button color="{{joined?'accent':'primary'}}" (click)="!joined?join():leave()" [disabled]="joinInPrgs" title="{{!joined?'Join':'Leave'}} Conversation">{{!joined?'Join':'Leave'}}&nbsp;<i
-                            class="bi bi-chat-quote"></i></button> &nbsp;
+                <div class="row">
+                    <div class="col">
+                        <p>
+                            <mat-form-field appearance="outline">
+                                <mat-label>Name</mat-label>
+                                <input matInput placeholder="Name" [formControl]="usernameFc">
+                                <mat-icon matSuffix>sentiment_very_satisfied</mat-icon>
+                                <mat-hint>Enter your name</mat-hint>
+                            </mat-form-field>
+                            <br>
+                            <button mat-raised-button color="{{joined?'accent':'primary'}}" (click)="!joined?join():leave()" [disabled]="joinInPrgs" title="{{!joined?'Join':'Leave'}} Conversation">{{!joined?'Join':'Leave'}}&nbsp;<i
+                                    class="bi bi-chat-quote"></i></button>
 
-                </p>
-                <div class="alert alert-success clearfix" *ngIf="joined">
-                    <h3>List of contacts in this conversation :</h3>
-                    <ul *ngIf="contactHoldersById.size > 0; else elseBlock_Alone">
-                        <li *ngFor="let kv of contactHoldersById | keyvalue">
-                            {{kv.key}} --> {{kv.value.username}}
-                        </li>
-                    </ul>
-                    <ng-template #elseBlock_Alone>No one joined yet.</ng-template>
+                        </p>
+                        <div class="alert alert-success clearfix" *ngIf="joined">
+                            <h3>List of contacts in this conversation :</h3>
+                            <ul *ngIf="contactHoldersById.size > 0; else elseBlock_Alone">
+                                <li *ngFor="let kv of contactHoldersById | keyvalue">
+                                    {{kv.key}} --> {{kv.value.username}}
+                                </li>
+                            </ul>
+                            <ng-template #elseBlock_Alone>No one joined yet.</ng-template>
+                        </div>
+
+                        <p *ngIf="joinError" class="alert alert-danger" role="alert">{{joinError | json}}
+                        </p>
+                    </div>
+                    <div class="col">
+                        <p>
+                            <button mat-stroked-button color="warn" (click)="toggleRecording()" [disabled]="!joined" title="{{!recording?'Record':'Stop Recording'}} Conversation">{{!recording?'Record':'Stop
+                                Recording'}}&nbsp;<i class="bi bi-record-circle"></i></button>
+                        </p>
+                        <p *ngIf="recordingError" class="alert alert-danger" role="alert">code:{{recordingError.code}}, message:{{recordingError.error.message}}
+                        </p>
+                        <mat-chip-list aria-label="Fish selection">
+                            <mat-chip *ngFor="let recordInfo of recordInfos"><a href="{{recordInfo.mediaURL}}" target="_blank">{{recordInfo.recordedFileName}}&nbsp;<i
+                                        class="bi bi-cloud-download"></i></a></mat-chip>
+                        </mat-chip-list>
+                    </div>
                 </div>
-
-                <p *ngIf="joinError" class="alert alert-danger" role="alert">{{joinError | json}}
-                </p>
             </div>
         </div>
     </div>
@@ -167,7 +188,8 @@
                     <button mat-raised-button color="{{localStreamHolder?'accent':'primary'}}" (click)="!localStreamHolder?createStream():destroyStream()" [disabled]="!userAgent||published">{{!localStreamHolder?'Create Stream':'Release
                         Stream'}}</button>
                     <!-- publishInPrgs -->
-                    <button mat-raised-button color="{{published?'accent':'primary'}}" (click)="!published?publishStream():unpublishStream()" [disabled]="!localStreamHolder||!joined||publishInPrgs">{{!published?'Publish Stream':'Unpublish
+                    <button mat-raised-button color="{{published?'accent':'primary'}}" (click)="!published?publishStream():unpublishStream()" [disabled]="!localStreamHolder||!joined||publishInPrgs">{{!published?'Publish
+                        Stream':'Unpublish
                         Stream'}}
                         <span *ngIf="publishInPrgs" class="spinner-border text-light" role="status"></span></button> &nbsp;
                     <button mat-raised-button color="{{screenSharingStream?'accent':'primary'}}" (click)="toggleScreenSharing()" [disabled]="!joined">{{screenSharingStream?'Unshare':'Share'}}
