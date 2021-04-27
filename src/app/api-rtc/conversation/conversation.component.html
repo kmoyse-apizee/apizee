@@ -161,17 +161,44 @@
                         <p *ngIf="joinError" class="alert alert-danger" role="alert">{{joinError | json}}
                         </p>
                     </div>
-                    <div class="col">
-                        <p>
-                            <button mat-stroked-button color="warn" (click)="toggleRecording()" [disabled]="!joined" title="{{!recording?'Record':'Stop Recording'}} Conversation">{{!recording?'Record':'Stop
-                                Recording'}}&nbsp;<i class="bi bi-record-circle"></i></button>
-                        </p>
-                        <p *ngIf="recordingError" class="alert alert-danger" role="alert">code:{{recordingError.code}}, message:{{recordingError.error.message}}
-                        </p>
-                        <mat-chip-list aria-label="Fish selection">
-                            <mat-chip *ngFor="let recordInfo of recordInfos"><a href="{{recordInfo.mediaURL}}" target="_blank">{{recordInfo.recordedFileName}}&nbsp;<i
-                                        class="bi bi-cloud-download"></i></a></mat-chip>
-                        </mat-chip-list>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <hr>
+    <div class="container">
+        <div class="row">
+            <div class="col">
+                <h1>4. Exchange text messages and files</h1>
+                <!-- h-100 to force card to take all height -->
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Messages</h5>
+                        <div *ngFor="let message of messages">
+                            <!-- <span>{{message|json}}</span> -->
+                            <span><strong>{{message.username}}</strong> : <span
+                                    [innerHTML]="message.content"></span></span>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <form [formGroup]="messageFormGroup" (ngSubmit)="sendMessage()">
+                            <mat-form-field>
+                                <mat-label>Message</mat-label>
+                                <!-- <span matPrefix>Send</span> -->
+                                <input type="text" matInput placeholder="abcd" formControlName="message">
+                                <!-- <mat-icon matSuffix>mode_edit</mat-icon> -->
+                            </mat-form-field>&nbsp;
+                            <button mat-raised-button color="primary" type="submit" [disabled]="!messageFormGroup.valid||!joined" title="Send Message">Send&nbsp;<i
+                                    class="bi bi-chat-left"></i></button>
+                        </form>
+                        <form [formGroup]="fileFormGroup" (ngSubmit)="sendFile()">
+
+                            <input type="file" formControlName="file" (change)="selectFile($event)" />
+                            <button mat-raised-button color="primary" type="submit" [disabled]="!fileFormGroup.valid||!joined" title="Send File">Send&nbsp;<i
+                                    class="bi bi-upload"></i></button>
+                            <mat-progress-bar mode="determinate" [value]="uploadProgressPercentage"></mat-progress-bar>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -183,7 +210,11 @@
     <div class="container">
         <div class="row">
             <div class="col">
-                <h1>4. Create/Publish/Receive/Display Streams</h1>
+                <h1>5. Create/Publish/Receive/Display Streams</h1>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
                 <p>
                     <button mat-raised-button color="{{localStreamHolder?'accent':'primary'}}" (click)="!localStreamHolder?createStream():destroyStream()" [disabled]="!userAgent||published">{{!localStreamHolder?'Create Stream':'Release
                         Stream'}}</button>
@@ -195,6 +226,18 @@
                     <button mat-raised-button color="{{screenSharingStream?'accent':'primary'}}" (click)="toggleScreenSharing()" [disabled]="!joined">{{screenSharingStream?'Unshare':'Share'}}
                         Screen</button>
                 </p>
+            </div>
+            <div class="col">
+                <p>
+                    <button mat-stroked-button color="warn" (click)="toggleRecording()" [disabled]="!joined" title="{{!recording?'Record':'Stop Recording'}} Conversation">{{!recording?'Record':'Stop
+                        Recording'}}&nbsp;<i class="bi bi-record-circle"></i></button>
+                </p>
+                <p *ngIf="recordingError" class="alert alert-danger" role="alert">code:{{recordingError.code}}, message:{{recordingError.error.message}}
+                </p>
+                <mat-chip-list aria-label="Fish selection">
+                    <mat-chip *ngFor="let recordInfo of recordInfos"><a href="{{recordInfo.mediaURL}}" target="_blank">{{recordInfo.recordedFileName}}&nbsp;<i
+                                class="bi bi-cloud-download"></i></a></mat-chip>
+                </mat-chip-list>
             </div>
         </div>
     </div>
@@ -280,30 +323,7 @@
 
             </div>
         </div>
-        <div class="col-3">
-            <!-- h-100 to force card to take all height -->
-            <div class="card h-100">
-                <div class="card-body">
-                    <h5 class="card-title">Messages</h5>
-                    <div *ngFor="let message of messages">
-                        <!-- <span>{{message|json}}</span> -->
-                        <span><strong>{{message.username}}</strong> : {{message.content}}</span>
-                    </div>
-                </div>
-                <div class="card-footer">
-                    <form [formGroup]="messageFormGroup" (ngSubmit)="sendMessage()">
-                        <mat-form-field>
-                            <mat-label>Message</mat-label>
-                            <!-- <span matPrefix>Send</span> -->
-                            <input type="text" matInput placeholder="abcd" formControlName="message">
-                            <!-- <mat-icon matSuffix>mode_edit</mat-icon> -->
-                        </mat-form-field>&nbsp;
-                        <button mat-raised-button color="primary" type="submit" [disabled]="!messageFormGroup.valid||!joined" title="Send Message">Send&nbsp;<i
-                                class="bi bi-chat-left"></i></button>
-                    </form>
-                </div>
-            </div>
-        </div>
+
     </div>
 
     <hr>

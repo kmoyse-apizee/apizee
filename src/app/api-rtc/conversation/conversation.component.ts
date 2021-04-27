@@ -36,6 +36,9 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   messageFormGroup = this.fb.group({
     message: this.fb.control('', [Validators.required])
   });
+  fileFormGroup = this.fb.group({
+    file: this.fb.control('', [Validators.required])
+  });
 
   // Simple Array of messages received on the conversation
   messages: Array<MessageDecorator> = [];
@@ -590,7 +593,22 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       this.recordInfos.push(recordingInfo);
     });
 
+
+    // File upload
+    //
+
+    this.conversation.on('transferBegun', () => {
+      this.uploadProgressPercentage = 0;
+    });
+    this.conversation.on('transferProgress', (progress) => {
+      this.uploadProgressPercentage = progress.percentage;
+    });
+    this.conversation.on('transferEnded', () => {
+      this.uploadProgressPercentage = 100;
+    });
   }
+
+  uploadProgressPercentage = 0;
 
   join(): void {
     this.joinError = null;
@@ -678,14 +696,43 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
    */
 
   sendMessage() {
-    const messageContent = this.messageFc.value;
+    const message = this.messageFc.value;
     this.messageFc.setValue('');
-    this.conversation.sendMessage(messageContent).then((uuid) => {
-      console.log("sendMessage", uuid, messageContent);
-      this.messages.push(MessageDecorator.build(this.userAgent.getUsername(), messageContent));
+    this.doSendMessage(message);
+
+  }
+
+  doSendMessage(message: string) {
+    this.conversation.sendMessage(message).then((uuid) => {
+      console.log("sendMessage", uuid, message);
+      this.messages.push(MessageDecorator.build(this.userAgent.getUsername(), message));
     })
       .catch(err => { console.error('sendMessage error', err); });
   }
+
+  /***************************************************************************
+    ApiRTC Files
+   */
+  selectedFiles: any;
+  selectFile(event: any): void {
+    this.selectedFiles = event.target.files;
+  }
+
+  sendFile(): void {
+    if (this.selectedFiles) {
+      const file: File | null = this.selectedFiles.item(0);
+      this.conversation.pushData({ 'file': file })
+        .then((cloudMediaInfo: any) => {
+          console.log('File uploaded :', cloudMediaInfo);
+          // Send file link message to the chat
+          this.doSendMessage('New file uploaded: <a href="' + cloudMediaInfo.url + '" target="_blank"><b>OPEN FILE</b></a>');
+        })
+        .catch((err) => {
+          console.log('File uploading error :', err);
+        });
+    }
+  }
+
 
   /***************************************************************************
     ApiRTC Streams

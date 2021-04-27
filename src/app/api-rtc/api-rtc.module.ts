@@ -11,6 +11,7 @@ import { MatListModule } from '@angular/material/list';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSelectModule } from '@angular/material/select';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { ClipboardModule } from '@angular/cdk/clipboard';
 
 import { UtilsModule } from '../utils/utils.module';
@@ -29,6 +30,7 @@ import { VideoStatsComponent } from './video-stats/video-stats.component';
 import { StreamComponent } from './stream/stream.component';
 import { StreamVideoComponent } from './stream-video/stream-video.component';
 
+
 @NgModule({
   declarations: [ConversationComponent, PeerComponent, OneToOneComponent, AudioStatsComponent, VideoStatsComponent, StreamComponent, StreamVideoComponent],
   imports: [
@@ -38,6 +40,7 @@ import { StreamVideoComponent } from './stream-video/stream-video.component';
 
     MatFormFieldModule, MatInputModule, MatIconModule, MatButtonModule,
     MatListModule, MatSlideToggleModule, MatSelectModule, MatChipsModule,
+    MatProgressBarModule,
     ClipboardModule,
 
     UtilsModule
