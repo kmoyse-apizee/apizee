@@ -21,7 +21,9 @@ export class StreamSubscribeEvent {
 export class StreamComponent implements OnInit, OnDestroy {
 
   @Input() streamHolder: StreamDecorator;
-  @Input() isLocal: boolean;
+
+  @Input() withDevicesControl: boolean = false;
+  @Input() isLocal: boolean = false;
 
   @Input() set audioMuted(audioMuted: boolean) {
     this.muteAudioFc.setValue(audioMuted);

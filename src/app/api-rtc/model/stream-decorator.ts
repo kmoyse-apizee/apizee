@@ -24,18 +24,18 @@ export class StreamDecorator {
         // if (typeof stream.getId() === "number") {
         //     console.log("stream.getId() is actually a number, not a string !!!", typeof stream.getId())
         // }
-        
+
         //this.callId = stream.callId;
         this.qosStat = qosStat && qosStat || undefined;
     }
 
     /**
      * 
-     * @param stream 
+     * @param streamInfo 
      * @returns 
      */
-    public static build(stream: any, qosStat?: any): StreamDecorator {
-        return new StreamDecorator(stream, qosStat);
+    public static build(streamInfo: any, qosStat?: any): StreamDecorator {
+        return new StreamDecorator(streamInfo, qosStat);
     }
 
     // Accessors

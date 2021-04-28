@@ -14,6 +14,9 @@
         </div>
     </div> -->
 
+    <!-- hidden video tag to be able to load MediaStrem from input file video -->
+    <video #fileVideo autoplay playsinline [hidden]="true"></video>
+
     <div class="container">
         <div class="row">
             <div class="col">
@@ -193,9 +196,8 @@
                                     class="bi bi-chat-left"></i></button>
                         </form>
                         <form [formGroup]="fileFormGroup" (ngSubmit)="sendFile()">
-
                             <input type="file" formControlName="file" (change)="selectFile($event)" />
-                            <button mat-raised-button color="primary" type="submit" [disabled]="!fileFormGroup.valid||!joined" title="Send File">Send&nbsp;<i
+                            <button mat-raised-button color="primary" type="submit" [disabled]="!fileFormGroup.valid||!joined||!selectedFile" title="Send File">Send&nbsp;<i
                                     class="bi bi-upload"></i></button>
                             <mat-progress-bar mode="determinate" [value]="uploadProgressPercentage"></mat-progress-bar>
                         </form>
@@ -223,7 +225,7 @@
                         Stream':'Unpublish
                         Stream'}}
                         <span *ngIf="publishInPrgs" class="spinner-border text-light" role="status"></span></button> &nbsp;
-                    <button mat-raised-button color="{{screenSharingStream?'accent':'primary'}}" (click)="toggleScreenSharing()" [disabled]="!joined">{{screenSharingStream?'Unshare':'Share'}}
+                    <button mat-raised-button color="{{screenSharingStreamHolder?'accent':'primary'}}" (click)="toggleScreenSharing()" [disabled]="!joined">{{screenSharingStreamHolder?'Unshare':'Share'}}
                         Screen</button>
                 </p>
             </div>
@@ -234,7 +236,7 @@
                 </p>
                 <p *ngIf="recordingError" class="alert alert-danger" role="alert">code:{{recordingError.code}}, message:{{recordingError.error.message}}
                 </p>
-                <mat-chip-list aria-label="Fish selection">
+                <mat-chip-list aria-label="record selection">
                     <mat-chip *ngFor="let recordInfo of recordInfos"><a href="{{recordInfo.mediaURL}}" target="_blank">{{recordInfo.recordedFileName}}&nbsp;<i
                                 class="bi bi-cloud-download"></i></a></mat-chip>
                 </mat-chip-list>
@@ -248,69 +250,19 @@
                 <div class="card-body">
                     <div id="videos" class="row row-cols-1 row-cols-sm-2">
                         <div class="col" *ngIf="localStreamHolder">
-                            <app-stream [streamHolder]="localStreamHolder" [isLocal]="true" [audioMuted]="false" [videoMuted]="false" [audioInDevices]="audioInDevices" [videoDevices]="videoDevices" (onAudioMute)="toggleAudioMute()" (onVideoMute)="toggleVideoMute()" (onAudioInSelected)="selectedAudioInDevice=$event;doChangeDevices()"
-                                (onVideoSelected)="selectedVideoDevice=$event;doChangeDevices()">
+                            <app-stream [streamHolder]="localStreamHolder" [isLocal]="true" [withDevicesControl]="true" [audioMuted]="false" [videoMuted]="false" [audioInDevices]="audioInDevices" [videoDevices]="videoDevices" (onAudioMute)="toggleAudioMute()" (onVideoMute)="toggleVideoMute()"
+                                (onAudioInSelected)="selectedAudioInDevice=$event;doChangeDevices()" (onVideoSelected)="selectedVideoDevice=$event;doChangeDevices()">
                             </app-stream>
                         </div>
-                        <!-- <div class="col">
-                            <div class="mycard">
-                                <div id="{{localStreamHolder?.stream.streamId}}" class="embed-responsive embed-responsive-4by3">
-                                    <video #localVideo muted autoplay playsinline></video>
-                                    <div class="mycard-text">
-                                        <form class="row row-cols-lg-auto g-3 align-items-center">
-                                            <div class="col-12">
-                                                <div>
-                                                    <mat-slide-toggle [formControl]="muteAudioFc" [disabled]="!localStreamHolder">
-                                                        Mute Audio
-                                                    </mat-slide-toggle>
-                                                    <br>
-                                                    <mat-slide-toggle [formControl]="muteVideoFc" [disabled]="!localStreamHolder">
-                                                        Mute Video
-                                                    </mat-slide-toggle>
-                                                </div>
-                                                <br>
-                                                <mat-form-field appearance="fill">
-                                                    <mat-label>VideoIn</mat-label>
-                                                    <mat-select [formControl]="videoFc">
-                                                        <mat-option *ngFor="let device of videoDevices" [value]="device.id">
-                                                            {{device.label}}
-                                                        </mat-option>
-                                                    </mat-select>
-                                                </mat-form-field>
-                                                <mat-form-field appearance="fill">
-                                                    <mat-label>AudioIn</mat-label>
-                                                    <mat-select [formControl]="audioInFc">
-                                                        <mat-option *ngFor="let device of audioInDevices" [value]="device">
-                                                            {{device.label}}
-                                                        </mat-option>
-                                                    </mat-select>
-                                                </mat-form-field>
-                                            </div>
-                                        </form>
-                                        <app-audio-stats [stats]="localStreamHolder?.qosStat?.audioSent"></app-audio-stats>
-                                        <app-video-stats [stats]="localStreamHolder?.qosStat?.videoSent"></app-video-stats>
-                                    </div>
-                                    <div class="mycard-over">
-                                        <p *ngIf="localStreamHolder">
-                                            <span class="badge badge-info">streamId:{{localStreamHolder.id}}</span>
-                                        </p>
-                                        <p *ngIf="localStreamHolder?.isSpeaking">
-                                            <span class="badge badge-success">
-                                            <mat-icon matSuffix>record_voice_over
-                                            </mat-icon>
-                                        </span>
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div> -->
 
-                        <!-- [hidden] does not seen to work, the div is still visible 
-                        anyways this is a bad way to handle it...-->
-                        <div class="col mycard" [hidden]="!screenSharingStream">
-                            <div id="{{screenSharingStream?.streamId}}" class="embed-responsive embed-responsive-4by3">
-                                <video #screenSharingVideo muted autoplay playsinline></video>
-                            </div>
+                        <div class="col" *ngIf="screenSharingStreamHolder">
+                            <app-stream [streamHolder]="screenSharingStreamHolder" [isLocal]="true" [withDevicesControl]="false">
+                            </app-stream>
+                        </div>
+
+                        <div class="col" *ngIf="videoStreamHolder">
+                            <app-stream [streamHolder]="videoStreamHolder" [isLocal]="true" [withDevicesControl]="false">
+                            </app-stream>
                         </div>
 
                         <div *ngFor="let kv of contactHoldersById | keyvalue" class="col">
@@ -319,6 +271,16 @@
                         </div>
 
                     </div>
+                </div>
+                <div class="card-footer">
+                    <form [formGroup]="videoFileFormGroup" (ngSubmit)="publishVideo()">
+                        <input type="file" formControlName="file" (change)="selectVideoFile($event)" />
+                        <button mat-raised-button color="primary" type="submit" [disabled]="!videoFileFormGroup.valid||!joined||!selectedVideoFile" title="Publish Video File">Publish
+                            Video&nbsp;<i class="bi bi-upload"></i></button>
+                        <!-- <mat-progress-bar mode="determinate" [value]="videoUploadProgressPercentage"></mat-progress-bar> -->
+                    </form>
+                    <button mat-raised-button color="primary" (click)="unpublishVideo()" [disabled]="!videoStreamHolder" title="Unpublish Video File">Unpublish
+                        Video</button>
                 </div>
 
             </div>

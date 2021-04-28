@@ -20,7 +20,9 @@ declare var apiRTC: any;
 })
 export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
 
-  @ViewChild("screenSharingVideo") screenSharingVideoRef: ElementRef;
+  //@ViewChild("screenSharingVideo") screenSharingVideoRef: ElementRef;
+
+  @ViewChild("fileVideo") fileVideoRef: ElementRef;
 
   // FormControl/Group objects
   //
@@ -37,6 +39,9 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     message: this.fb.control('', [Validators.required])
   });
   fileFormGroup = this.fb.group({
+    file: this.fb.control('', [Validators.required])
+  });
+  videoFileFormGroup = this.fb.group({
     file: this.fb.control('', [Validators.required])
   });
 
@@ -60,7 +65,8 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // Local Streams
   localStreamHolder: StreamDecorator;
-  screenSharingStream = null;
+  screenSharingStreamHolder: StreamDecorator = null;
+  videoStreamHolder: StreamDecorator = null;
 
   // Template helper attributes
   recording = false;
@@ -541,27 +547,46 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       this.userAgent.enableActiveSpeakerDetecting(true, { threshold: 50 });
     }
     this.conversation.on('callStatsUpdate', (callStats: any) => {
-      //console.log("on:callStatsUpdate:", callStats);
+      console.log("on:callStatsUpdate:", callStats);
+
+      // Below line can be wrong because a the callId on a stream can change during Stream lifecycle
+      //const streamHolder: StreamDecorator = this.streamsByCallId[callStats.callId];
+
+      // TODO: waiting for a fix in apiRTC (to include streamId in callStats), workround here by using internal map Conversation#callIdToStreamId:
+      // FIXTHIS: once apiRTC bug https://apizee.atlassian.net/browse/APIRTC-873 is fixed, we can use callStats.streamId instead of erroneous callStats.callId
+      const streamId = String(this.conversation.callIdToStreamId.get(callStats.callId));
 
       if (callStats.stats.videoReceived || callStats.stats.audioReceived) {
         // "received" media is from peer streams
-
-        // Below line can be wrong because a the callId on a stream can change during Stream lifecycle
-        //const streamHolder: StreamDecorator = this.streamsByCallId[callStats.callId];
-        // TODO: waiting for a fix in apiRTC (to include streamId in callStats), workround here by using internal map Conversation#callIdToStreamId:
-        // FIXTHIS: once apiRTC bug https://apizee.atlassian.net/browse/APIRTC-873 is fixed, we can use callStats.streamId instead of erroneous callStats.callId
-        const streamHolder: StreamDecorator = this.streamHoldersById.get(String(this.conversation.callIdToStreamId.get(callStats.callId)));
+        const streamHolder: StreamDecorator = this.streamHoldersById.get(streamId);
         streamHolder.setQosStat({
-          videoReceived: callStats.stats.videoReceived,
-          audioReceived: callStats.stats.audioReceived
+          video: callStats.stats.videoReceived,
+          audio: callStats.stats.audioReceived
         });
       }
       else if (callStats.stats.videoSent || callStats.stats.audioSent) {
-        // "sent" media is from local stream (to peers)
-        this.localStreamHolder.setQosStat({
-          videoSent: callStats.stats.videoSent,
-          audioSent: callStats.stats.audioSent
-        });
+        // "sent" media is from local stream(s) (to peers)
+        if (this.localStreamHolder && streamId === this.localStreamHolder.getId()) {
+          console.log("setQosStat on localStreamHolder", streamId);
+          this.localStreamHolder.setQosStat({
+            video: callStats.stats.videoSent,
+            audio: callStats.stats.audioSent
+          });
+        } else if (this.screenSharingStreamHolder && streamId === this.screenSharingStreamHolder.getId()) {
+          console.log("setQosStat on screenSharingStreamHolder", streamId);
+          this.screenSharingStreamHolder.setQosStat({
+            video: callStats.stats.videoSent,
+            audio: callStats.stats.audioSent
+          });
+        } else if (this.videoStreamHolder && streamId === this.videoStreamHolder.getId()) {
+          console.log("setQosStat on videoStreamHolder", streamId);
+          this.videoStreamHolder.setQosStat({
+            video: callStats.stats.videoSent,
+            audio: callStats.stats.audioSent
+          });
+        } else {
+          console.error("No local Stream found for", streamId);
+        }
       }
     });
 
@@ -692,7 +717,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   /***************************************************************************
-    ApiRTC Messages
+    Send Messages
    */
 
   sendMessage() {
@@ -711,28 +736,72 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   /***************************************************************************
-    ApiRTC Files
+    Send Files
    */
-  selectedFiles: any;
+  selectedFile: File;
   selectFile(event: any): void {
-    this.selectedFiles = event.target.files;
+    const file: File | null = event.target.files.item(0);
+    this.selectedFile = file;
   }
 
   sendFile(): void {
-    if (this.selectedFiles) {
-      const file: File | null = this.selectedFiles.item(0);
-      this.conversation.pushData({ 'file': file })
-        .then((cloudMediaInfo: any) => {
-          console.log('File uploaded :', cloudMediaInfo);
-          // Send file link message to the chat
-          this.doSendMessage('New file uploaded: <a href="' + cloudMediaInfo.url + '" target="_blank"><b>OPEN FILE</b></a>');
-        })
-        .catch((err) => {
-          console.log('File uploading error :', err);
-        });
-    }
+    this.conversation.pushData({ 'file': this.selectedFile })
+      .then((cloudMediaInfo: any) => {
+        console.log('File uploaded :', cloudMediaInfo);
+        // Send file link message to the chat
+        this.doSendMessage('New file uploaded: <a href="' + cloudMediaInfo.url + '" target="_blank"><b>OPEN FILE</b></a>');
+      })
+      .catch((err) => {
+        console.log('File uploading error :', err);
+      });
   }
 
+  /***************************************************************************
+    Send Video from file
+   */
+  selectedVideoFile: any;
+  selectVideoFile(event: any): void {
+    const file: File | null = event.target.files.item(0);
+    this.selectedVideoFile = file;
+  }
+
+  publishVideo() {
+    // To create a MediaStream from a video file, go through a 'video' DOM element
+    //
+    const videoElement = this.fileVideoRef.nativeElement;
+    videoElement.onloadeddata = () => {
+      // Note that video handling should be applied after data loaded
+      let mediaStream = (apiRTC.browser === 'Firefox') ? videoElement.mozCaptureStream() : videoElement.captureStream();
+      apiRTC.Stream.createStreamFromMediaStream(mediaStream)
+        .then((stream: any) => {
+          const streamInfo = { streamId: String(stream.getId()), isRemote: false, type: 'regular' };
+          this.videoStreamHolder = StreamDecorator.build(streamInfo);
+          this.videoStreamHolder.setStream(stream);
+          console.info('publishVideo()::createStreamFromMediaStream', stream);
+          this.conversation.publish(this.videoStreamHolder.getStream());
+        })
+        .catch((err) => {
+          console.error('publishVideo()::createStreamFromMediaStream', err);
+        });
+    };
+
+    // Read from file to 'video' DOM element
+    const reader = new FileReader();
+    reader.onloadend = (e) => {
+      const buffer: ArrayBuffer = e.target.result as ArrayBuffer;
+      //console.log("onloadend", e);
+      let videoBlob = new Blob([new Uint8Array(buffer)], { type: 'video/mp4' });
+      let url = window.URL.createObjectURL(videoBlob);
+      videoElement.src = url;
+    };
+    reader.readAsArrayBuffer(this.selectedVideoFile);
+  }
+
+  unpublishVideo() {
+    this.conversation.unpublish(this.videoStreamHolder.getStream());
+    this.videoStreamHolder.getStream().release();
+    this.videoStreamHolder = null;
+  }
 
   /***************************************************************************
     ApiRTC Streams
@@ -754,7 +823,10 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
         .then(stream => {
           console.log('createStream :', stream);
 
-          this.localStreamHolder = StreamDecorator.build({ streamId: String(stream.getId()), isRemote: false, type: 'regular' });
+          // build fake streamInfo object to build a local stream.
+          // TODO : enhance this in apiRTC
+          const streamInfo = { streamId: String(stream.getId()), isRemote: false, type: 'regular' };
+          this.localStreamHolder = StreamDecorator.build(streamInfo);
           this.localStreamHolder.setStream(stream);
 
           resolve(stream);
@@ -829,7 +901,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
 
   toggleScreenSharing(): void {
 
-    if (this.screenSharingStream === null) {
+    if (this.screenSharingStreamHolder === null) {
 
       const displayMediaStreamConstraints = {
         video: {
@@ -843,32 +915,31 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       };
 
       apiRTC.Stream.createDisplayMediaStream(displayMediaStreamConstraints, false)
-        .then(stream => {
-
+        .then((stream: any) => {
           stream.on('stopped', () => {
             //Used to detect when user stop the screenSharing with Chrome DesktopCapture UI
-            console.log("stopped event on stream");
-            var elem = document.getElementById('local-screensharing');
-            if (elem !== null) {
-              elem.remove();
-            }
-            this.screenSharingStream = null;
+            console.log("screenSharingStream on:stopped");
+            this.conversation.unpublish(this.screenSharingStreamHolder.getStream());
+            this.screenSharingStreamHolder.getStream().release();
+            this.screenSharingStreamHolder = null;
           });
 
-          this.screenSharingStream = stream;
-          this.conversation.publish(this.screenSharingStream);
-
-          // Attach stream
-          this.screenSharingStream.attachToElement(this.screenSharingVideoRef.nativeElement);
+          // build fake streamInfo object to build a local stream.
+          // TODO : enhance this in apiRTC
+          const streamInfo = { streamId: String(stream.getId()), isRemote: false, type: 'regular' };
+          this.screenSharingStreamHolder = StreamDecorator.build(streamInfo);
+          this.screenSharingStreamHolder.setStream(stream);
+          // and publish it
+          this.conversation.publish(this.screenSharingStreamHolder.getStream());
         })
         .catch(function (err) {
           console.error('Could not create screensharing stream :', err);
         });
     } else {
-      this.conversation.unpublish(this.screenSharingStream);
-      this.screenSharingStream.release();
-      // TODO : Handle display/ undisplay properly : aybe we should link this to the window of a peer
-      this.screenSharingStream = null;
+      this.conversation.unpublish(this.screenSharingStreamHolder.getStream());
+      this.screenSharingStreamHolder.getStream().release();
+      // TODO : Handle display/ undisplay properly : maybe we should link this to the window of a peer
+      this.screenSharingStreamHolder = null;
     }
   }
 }

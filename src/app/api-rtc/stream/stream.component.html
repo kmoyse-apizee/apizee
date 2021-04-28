@@ -5,7 +5,7 @@
             <!-- TODO should be handled by parent component (contact level) -->
             <!-- <h5>{{streamHolder.streamInfo.contact.userData.username}}</h5> -->
 
-            <div *ngIf="isLocal; else elseBlock_isRemote">
+            <div *ngIf="withDevicesControl">
                 <form class="row row-cols-lg-auto g-3 align-items-center">
                     <div class="col-12">
                         <div>
@@ -37,14 +37,21 @@
                         </mat-form-field>
                     </div>
                 </form>
+            </div>
+
+            <!-- <div *ngIf="isLocal; else elseBlock_isRemote">
                 <app-audio-stats [stats]="streamHolder.qosStat?.audioSent"></app-audio-stats>
                 <app-video-stats [stats]="streamHolder.qosStat?.videoSent"></app-video-stats>
             </div>
             <ng-template #elseBlock_isRemote>
                 <app-audio-stats [stats]="streamHolder.qosStat?.audioReceived"></app-audio-stats>
                 <app-video-stats [stats]="streamHolder.qosStat?.videoReceived"></app-video-stats>
-                <button *ngIf="!isLocal" mat-raised-button color="primary" (click)="toggleSubscribe()">{{streamHolder.stream?'Unsubscribe':'Subscribe'}}</button>
-            </ng-template>
+            </ng-template> -->
+
+            <app-audio-stats [stats]="streamHolder.qosStat?.audio"></app-audio-stats>
+            <app-video-stats [stats]="streamHolder.qosStat?.video"></app-video-stats>
+
+            <button *ngIf="isLocal" mat-raised-button color="primary" (click)="toggleSubscribe()">{{streamHolder.stream?'Unsubscribe':'Subscribe'}}</button>
         </div>
         <div class="mycard-over">
             <p>
