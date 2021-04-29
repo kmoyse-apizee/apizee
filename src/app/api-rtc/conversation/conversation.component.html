@@ -258,18 +258,18 @@
     <h2>Local streams</h2>
 
     <div class="row">
-        <div class="col" *ngIf="localStreamHolder">
+        <div class="col-4" *ngIf="localStreamHolder">
             <app-stream [streamHolder]="localStreamHolder" [isLocal]="true" [withDevicesControl]="true" [audioMuted]="false" [videoMuted]="false" [audioInDevices]="audioInDevices" [videoDevices]="videoDevices" (onAudioMute)="toggleAudioMute()" (onVideoMute)="toggleVideoMute()"
                 (onAudioInSelected)="selectedAudioInDevice=$event;doChangeDevices()" (onVideoSelected)="selectedVideoDevice=$event;doChangeDevices()">
             </app-stream>
         </div>
 
-        <div class="col" *ngIf="screenSharingStreamHolder">
+        <div class="col-4" *ngIf="screenSharingStreamHolder">
             <app-stream [streamHolder]="screenSharingStreamHolder" [isLocal]="true" [withDevicesControl]="false">
             </app-stream>
         </div>
 
-        <div class="col" *ngIf="videoStreamHolder">
+        <div class="col-4" *ngIf="videoStreamHolder">
             <app-stream [streamHolder]="videoStreamHolder" [isLocal]="true" [withDevicesControl]="false">
             </app-stream>
         </div>
@@ -278,24 +278,11 @@
     <h2>Peer streams</h2>
 
     <div class="row">
-        <div *ngFor="let kv of contactHoldersById | keyvalue" class="col">
+        <div *ngFor="let kv of contactHoldersById | keyvalue" class="col-4">
             <app-peer [contactHolder]="kv.value" (onStreamSubscribe)="onStreamSubscribe($event)">
             </app-peer>
         </div>
     </div>
-
-    <!-- <div class="row">
-        <div class="col">
-            <div class="card">
-                <div class="card-body">
-                    <div id="videos" class="row row-cols-1 row-cols-sm-2">
-                    </div>
-                </div>
-                <div class="card-footer">
-                </div>
-            </div>
-        </div>
-    </div> -->
 
     <hr>
 
