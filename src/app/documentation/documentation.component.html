@@ -26,10 +26,12 @@
 
     <ul>
         <li>In a <code>Conversation</code>, individuals watch, listen and/or share real-time audio, video, data, and/or screen-share materials.</li>
-        <li>A <code>Stream</code> is audio, data, and/or video captured from media sources available from browser.</li>
-        <li>Usually, each instance of client application instanciates one <code>UserAgent</code> for an individual.</li>
-        <li>A <code>Session</code> is opened by an individual <code>UserAgent</code> with ApiRTC's servers to create a
-            <code>Conversation</code> to which other individuals can join.
+        <li>Usually, each instance of client application instanciates one <code>UserAgent</code> representing the local individual.
+        </li>
+        <li>A <code>Contact</code> represents a peer individual.</li>
+        <li>A <code>Stream</code> is audio, and/or video captured with from sources available from browser.</li>
+        <li>A <code>Session</code> must be opened with <strong>ApiRTC</strong>'s servers to create a
+            <code>Conversation</code> to which individuals can join.
         </li>
     </ul>
 
@@ -37,17 +39,17 @@
 
     <h2>Load ApiRTC library</h2>
 
-    <p>In order to user <strong>ApiRTC</strong>, please add :
+    <p>In order to use <strong>ApiRTC</strong>, just add :
     </p>
     <p><code>&lt;script type="text/javascript" src="https://cloud.apizee.com/apiRTC/apiRTC-latest.min.js"&gt;&lt;/script&gt;</code>
     </p>
     <!-- <code>&lt;head&gt;...&lt;/head&gt;</code> tags of <code>index.html</code> -->
-    <p>inside <code>.html</code> document.</p>
+    <p>inside <code>&lt;head&gt;...&lt;/head&gt;</code> tag of <code>.html</code> document.</p>
     <p class="alert alert-info" role="alert">The <strong>ApiRTC</strong> api reference can be found at <a href="https://dev.apirtc.com/api/reference" target="_blank">https://dev.apirtc.com/api/reference</a></p>
 
     <h2>UserAgent</h2>
 
-    <p><code>UserAgent</code> is the entry point to <strong>ApiRTC</strong>. It is instanciated using the
+    <p>As the entry point to <strong>ApiRTC</strong>, <code>UserAgent</code> is instanciated using the
         <strong>apiKey</strong> associated to your <strong>enterprise</strong> account on <a href="https://www.apirtc.com" target="_blank">https://www.apirtc.com</a>.
     </p>
 
@@ -66,11 +68,13 @@
 
     <h2>Stream</h2>
 
-    <p>The method <code>UserAgent.createStream</code> returns an instance of <code>Stream</code>. It carries media
+    <p>The method <code>UserAgent.createStream</code> returns an instance of <code>Stream</code>, which carries media
         <strong>stream</strong> from computer device through the browser.
     </p>
 
-    <p>The method <code>Stream.attachToElement</code> binds the <strong>stream</strong> to a DOM element in order to display it in the web page.</p>
+    <p>The method <code>Stream.attachToElement</code> binds the <strong>stream</strong> to a DOM
+        <code>&lt;video&gt;</code> element in order to display it in the web page.
+    </p>
 
     <p class="text-center"><img src="assets/apirtc_createstream.svg" alt="image"></p>
 
@@ -86,14 +90,13 @@
     <!-- <p>TODO: lister les modes d'authentification, ou faire un lien vers un chapitre dédié</p> -->
 
     <p>Simply using <code>UserAgent.register</code> without authentication details registers a <code>userAgent</code> with
-        <strong>ApiRTC</strong>'s servers. An <code>id</code> can be provided to further identify this
-        <code>userAgent</code>.
+        <strong>ApiRTC</strong>'s servers without authentication.
     </p>
 
     <p class="text-center"><img src="assets/apirtc_useragent_register.svg" alt="image"></p>
 
     <pre class="border"><code>
-        userAgent.register(&#123;id: 'user1'&#125;).then(session => &#123;...&#125;);
+        userAgent.register().then(session => &#123;...&#125;);
     </code></pre>
 
     <p>The <code>session</code> grants access to connected features such like <strong>conversations</strong> or
@@ -139,7 +142,8 @@
     <ul>
         <li>
             Listening on <code>'streamListChanged'</code> event notifies of <strong>streams</strong> published to the
-            <strong>conversation</strong>. Note that the data provided by the event is not a <code>Stream</code> but a <code></code>,
+            <strong>conversation</strong>. Note that the data provided by the event is not a <code>Stream</code> but a
+            <code></code>,
         </li>
         <li>Then method
             <code>conversation.subscribeToStream</code> makes this <strong>conversation</strong> subscribe to a

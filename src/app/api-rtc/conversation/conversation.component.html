@@ -75,12 +75,13 @@
         </div>
         <div class="row" *ngIf="session">
             <div class="col">
-                <div class="alert alert-success clearfix" role="alert">Got <code>Session</code> with id &lt;
-                    <code>{{session.getId()}}</code>&gt;<span *ngIf="token">&nbsp;with token
+                <div class="alert alert-success clearfix" role="alert">Got <code>Session</code> with id
+                    <span>&lt;<code>{{session.getId()}}</code>&gt;</span><span *ngIf="token">&nbsp;with token
                         &lt;<code>{{token}}</code>&gt;</span>
                     <span class="float-right"><button mat-raised-button color="warn" (click)="unregister()"
                             [disabled]="conversation" title="Unregister"><i
                                 class="bi bi-box-arrow-left"></i>&nbsp;Unregister</button></span>
+                    <!-- <span>userAgent.getUsername()={{userAgent.getUsername()}}</span> -->
                 </div>
             </div>
         </div>
@@ -212,7 +213,7 @@
     <div class="container">
         <div class="row">
             <div class="col">
-                <h1>5. Create/Publish/Receive/Display Streams</h1>
+                <h1>5. Handle Streams</h1>
             </div>
         </div>
         <div class="row">
@@ -241,52 +242,60 @@
                                 class="bi bi-cloud-download"></i></a></mat-chip>
                 </mat-chip-list>
             </div>
+            <div class="col">
+                <form [formGroup]="videoFileFormGroup" (ngSubmit)="publishVideo()">
+                    <input type="file" formControlName="file" (change)="selectVideoFile($event)" />
+                    <button mat-raised-button color="primary" type="submit" [disabled]="!videoFileFormGroup.valid||!joined||!selectedVideoFile" title="Publish Video File">Publish
+                        Video&nbsp;<i class="bi bi-upload"></i></button>
+                    <!-- <mat-progress-bar mode="determinate" [value]="videoUploadProgressPercentage"></mat-progress-bar> -->
+                </form>
+                <button mat-raised-button color="primary" (click)="unpublishVideo()" [disabled]="!videoStreamHolder" title="Unpublish Video File">Unpublish
+                    Video</button>
+            </div>
         </div>
     </div>
 
+    <h2>Local streams</h2>
+
     <div class="row">
+        <div class="col" *ngIf="localStreamHolder">
+            <app-stream [streamHolder]="localStreamHolder" [isLocal]="true" [withDevicesControl]="true" [audioMuted]="false" [videoMuted]="false" [audioInDevices]="audioInDevices" [videoDevices]="videoDevices" (onAudioMute)="toggleAudioMute()" (onVideoMute)="toggleVideoMute()"
+                (onAudioInSelected)="selectedAudioInDevice=$event;doChangeDevices()" (onVideoSelected)="selectedVideoDevice=$event;doChangeDevices()">
+            </app-stream>
+        </div>
+
+        <div class="col" *ngIf="screenSharingStreamHolder">
+            <app-stream [streamHolder]="screenSharingStreamHolder" [isLocal]="true" [withDevicesControl]="false">
+            </app-stream>
+        </div>
+
+        <div class="col" *ngIf="videoStreamHolder">
+            <app-stream [streamHolder]="videoStreamHolder" [isLocal]="true" [withDevicesControl]="false">
+            </app-stream>
+        </div>
+    </div>
+
+    <h2>Peer streams</h2>
+
+    <div class="row">
+        <div *ngFor="let kv of contactHoldersById | keyvalue" class="col">
+            <app-peer [contactHolder]="kv.value" (onStreamSubscribe)="onStreamSubscribe($event)">
+            </app-peer>
+        </div>
+    </div>
+
+    <!-- <div class="row">
         <div class="col">
             <div class="card">
                 <div class="card-body">
                     <div id="videos" class="row row-cols-1 row-cols-sm-2">
-                        <div class="col" *ngIf="localStreamHolder">
-                            <app-stream [streamHolder]="localStreamHolder" [isLocal]="true" [withDevicesControl]="true" [audioMuted]="false" [videoMuted]="false" [audioInDevices]="audioInDevices" [videoDevices]="videoDevices" (onAudioMute)="toggleAudioMute()" (onVideoMute)="toggleVideoMute()"
-                                (onAudioInSelected)="selectedAudioInDevice=$event;doChangeDevices()" (onVideoSelected)="selectedVideoDevice=$event;doChangeDevices()">
-                            </app-stream>
-                        </div>
-
-                        <div class="col" *ngIf="screenSharingStreamHolder">
-                            <app-stream [streamHolder]="screenSharingStreamHolder" [isLocal]="true" [withDevicesControl]="false">
-                            </app-stream>
-                        </div>
-
-                        <div class="col" *ngIf="videoStreamHolder">
-                            <app-stream [streamHolder]="videoStreamHolder" [isLocal]="true" [withDevicesControl]="false">
-                            </app-stream>
-                        </div>
-
-                        <div *ngFor="let kv of contactHoldersById | keyvalue" class="col">
-                            <app-peer [contactHolder]="kv.value" (onStreamSubscribe)="onStreamSubscribe($event)">
-                            </app-peer>
-                        </div>
-
                     </div>
                 </div>
                 <div class="card-footer">
-                    <form [formGroup]="videoFileFormGroup" (ngSubmit)="publishVideo()">
-                        <input type="file" formControlName="file" (change)="selectVideoFile($event)" />
-                        <button mat-raised-button color="primary" type="submit" [disabled]="!videoFileFormGroup.valid||!joined||!selectedVideoFile" title="Publish Video File">Publish
-                            Video&nbsp;<i class="bi bi-upload"></i></button>
-                        <!-- <mat-progress-bar mode="determinate" [value]="videoUploadProgressPercentage"></mat-progress-bar> -->
-                    </form>
-                    <button mat-raised-button color="primary" (click)="unpublishVideo()" [disabled]="!videoStreamHolder" title="Unpublish Video File">Unpublish
-                        Video</button>
                 </div>
-
             </div>
         </div>
-
-    </div>
+    </div> -->
 
     <hr>
 

@@ -18,11 +18,9 @@ import { UtilsModule } from '../utils/utils.module';
 
 import { ConversationComponent } from './conversation/conversation.component';
 import { PeerComponent } from './peer/peer.component';
-import { OneToOneComponent } from './one-to-one/one-to-one.component';
 
 // to be used from routing
 export { ConversationComponent } from './conversation/conversation.component';
-export { OneToOneComponent } from './one-to-one/one-to-one.component';
 
 import { WINDOW_PROVIDERS } from '../windows-provider';
 import { AudioStatsComponent } from './audio-stats/audio-stats.component';
@@ -32,7 +30,7 @@ import { StreamVideoComponent } from './stream-video/stream-video.component';
 
 
 @NgModule({
-  declarations: [ConversationComponent, PeerComponent, OneToOneComponent, AudioStatsComponent, VideoStatsComponent, StreamComponent, StreamVideoComponent],
+  declarations: [ConversationComponent, PeerComponent, AudioStatsComponent, VideoStatsComponent, StreamComponent, StreamVideoComponent],
   imports: [
     CommonModule,
     FormsModule, ReactiveFormsModule,
@@ -45,7 +43,7 @@ import { StreamVideoComponent } from './stream-video/stream-video.component';
 
     UtilsModule
   ],
-  exports: [ConversationComponent, OneToOneComponent],
+  exports: [ConversationComponent],
   providers: [WINDOW_PROVIDERS]
 })
 export class ApiRtcModule { }

@@ -10,6 +10,7 @@ const routes: Routes = [
   { path: 'conversation/:name', component: ConversationComponent },
   { path: 'doc', component: DocumentationComponent },
   { path: 'apirest', component: ApiRestComponent },
+  { path: '', redirectTo: '/conversation', pathMatch: 'full' }
 ];
 
 @NgModule({
