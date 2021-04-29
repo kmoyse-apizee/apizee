@@ -111,7 +111,7 @@
                         <mat-form-field>
                             <mat-label>Nom de la conversation</mat-label>
                             <span matPrefix>{{conversationBaseUrl}}/</span>
-                            <input type="text" matInput placeholder="abcd" formControlName="conversationName">
+                            <input type="text" matInput placeholder="abcd" formControlName="name">
                             <!-- <mat-icon matSuffix>mode_edit</mat-icon> -->
                         </mat-form-field>&nbsp;
                         <button mat-raised-button color="primary" type="submit" [disabled]="!conversationFormGroup.valid||!session" title="Get Or Create Conversation">GetOrCreateConversation&nbsp;<i

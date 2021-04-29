@@ -32,7 +32,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   usernameFc: FormControl = new FormControl('');
 
   conversationFormGroup = this.fb.group({
-    conversationName: this.fb.control('', [Validators.required])
+    name: this.fb.control('', [Validators.required])
   });
 
   messageFormGroup = this.fb.group({
@@ -104,7 +104,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   // Convenient FormControl getters
   //
   get conversationNameFc() {
-    return this.conversationFormGroup.get('conversationName') as FormControl;
+    return this.conversationFormGroup.get('name') as FormControl;
   }
 
   get messageFc() {
@@ -145,7 +145,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   ngOnInit(): void {
     // Handle conversation name and url from RESTFUL path
     //
-    const _conversationName = this.activatedRoute.snapshot.paramMap.get("conversationName");
+    const _conversationName = this.activatedRoute.snapshot.paramMap.get("name");
     if (_conversationName) {
       this.conversationNameFc.setValue(_conversationName);
       // Recreate remove conversationName from current location url :
