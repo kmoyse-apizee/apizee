@@ -21,15 +21,17 @@
         <div class="row">
             <div class="col">
                 <h1>1. Create UserAgent</h1>
-                <p>Entry point to apiRTC is to create a <code>UserAgent</code>.</p>
-                <mat-form-field [style.width.%]="40">
-                    <mat-label>apiKey</mat-label>
-                    <input matInput placeholder="apiKey" [formControl]="apiKeyFc">
-                    <mat-icon matSuffix>fingerprint</mat-icon>
-                    <!-- <mat-hint>Enter your apiKey</mat-hint> -->
-                </mat-form-field>
-                &nbsp;
-                <button mat-raised-button color="primary" (click)="createUserAgent()" [disabled]="userAgent" title="Create UserAgent">new UserAgent&nbsp;<i class="bi bi-file-earmark-plus"></i></button>
+                <p>Entry point to <strong>apiRTC</strong> is to create a <code>UserAgent</code> :</p>
+                <div class="text-center">
+                    <mat-form-field [style.width.%]="40">
+                        <mat-label>apiKey</mat-label>
+                        <input matInput placeholder="apiKey" [formControl]="apiKeyFc">
+                        <mat-icon matSuffix>fingerprint</mat-icon>
+                        <!-- <mat-hint>Enter your apiKey</mat-hint> -->
+                    </mat-form-field>
+                    &nbsp;
+                    <button mat-raised-button color="primary" (click)="createUserAgent()" [disabled]="userAgent" title="Create UserAgent">new UserAgent&nbsp;<i class="bi bi-file-earmark-plus"></i></button>
+                </div>
                 <div *ngIf="userAgent" class="alert alert-success clearfix" role="alert"><code>UserAgent</code> created.
                     <span class="float-right"><button mat-raised-button color="warn" (click)="nullifyUserAgent()"
                             [disabled]="session" title="Set to null"><i
@@ -48,10 +50,10 @@
                 <p>Register a <code>UserAgent</code> to get a <code>Session</code>.</p>
             </div>
         </div>
-        <div class="row" *ngIf="!session">
+        <div class="row">
             <div class="col">
                 <p>Registering as guest is simple but less secured.</p>
-                <button mat-raised-button color="primary" (click)="register()" [disabled]="!userAgent||registerInPrgs" title="Register as guest">Register as
+                <button mat-raised-button color="primary" (click)="register()" [disabled]="!userAgent||registerInPrgs||session" title="Register as guest">Register as
                     Guest&nbsp;<i class="bi bi-box-arrow-in-right"></i></button>
             </div>
             <div class="col">
@@ -73,24 +75,20 @@
                 </app-login>
             </div>
         </div>
-        <div class="row" *ngIf="session">
+        <br>
+        <div class="row">
             <div class="col">
-                <div class="alert alert-success clearfix" role="alert">Got <code>Session</code> with id
+                <p *ngIf="session" class="alert alert-success clearfix" role="alert">Got <code>Session</code> with id
                     <span>&lt;<code>{{session.getId()}}</code>&gt;</span><span *ngIf="token">&nbsp;with token
                         &lt;<code>{{token}}</code>&gt;</span>
                     <span class="float-right"><button mat-raised-button color="warn" (click)="unregister()"
                             [disabled]="conversation" title="Unregister"><i
                                 class="bi bi-box-arrow-left"></i>&nbsp;Unregister</button></span>
                     <!-- <span>userAgent.getUsername()={{userAgent.getUsername()}}</span> -->
-                </div>
-            </div>
-        </div>
-        <br>
-        <p *ngIf="registrationError" class="alert alert-danger" role="alert">{{registrationError | json}} Please check on <a href="https://cloud.apizee.com/enterprise/users-authentication">https://cloud.apizee.com/enterprise/users-authentication</a> that the correct authentication method is set.
-        </p>
-        <div class="row" *ngIf="!session">
-            <div class="col">
-                <p class="alert alert-warning" role="alert"><strong>Note</strong> : You need to configure your
+                </p>
+                <p *ngIf="registrationError" class="alert alert-danger" role="alert">{{registrationError | json}} Please check on <a href="https://cloud.apizee.com/enterprise/users-authentication">https://cloud.apizee.com/enterprise/users-authentication</a> that the correct authentication method is set.
+                </p>
+                <p *ngIf="!session" class="alert alert-warning" role="alert"><strong>Note</strong> : You need to configure your
                     <strong>apiRTC</strong> account according to desired authentication.
                 </p>
             </div>
@@ -108,64 +106,70 @@
         <div class="row">
             <div class="col">
                 <div class="text-center">
-                    <form *ngIf="!conversation" [formGroup]="conversationFormGroup" (ngSubmit)="getOrcreateConversation()">
+                    <form [formGroup]="conversationFormGroup" (ngSubmit)="getOrcreateConversation()">
                         <mat-form-field>
                             <mat-label>Nom de la conversation</mat-label>
                             <span matPrefix>{{conversationBaseUrl}}/</span>
                             <input type="text" matInput placeholder="abcd" formControlName="name">
                             <!-- <mat-icon matSuffix>mode_edit</mat-icon> -->
                         </mat-form-field>&nbsp;
-                        <button mat-raised-button color="primary" type="submit" [disabled]="!conversationFormGroup.valid||!session" title="Get Or Create Conversation">GetOrCreateConversation&nbsp;<i
+                        <button mat-raised-button color="primary" type="submit" [disabled]="!conversationFormGroup.valid||!session||conversation" title="Get Or Create Conversation">GetOrCreateConversation&nbsp;<i
                                 class="bi bi-telephone-forward-fill"></i></button>
                     </form>
                 </div>
             </div>
         </div>
+
         <div class="row" *ngIf="conversation">
             <div class="col">
-                <div class="row">
-                    <div class="col">
-                        <div class="alert alert-success" role="alert">
-                            <p class="clearfix">Created <code>Conversation</code>. Others can join at url <a href="{{conversationUrl}}" target="_blank">{{conversationUrl}}</a>
-                                <span class="float-right"><button mat-raised-button color="primary"
-                                        [cdkCopyToClipboard]="conversationUrlWithApiKey" title="Copy to clipboard">Copy
-                                        link&nbsp;<i class="bi bi-clipboard"></i></button></span>
-                            </p>
-                            <p class="clearfix"><span class="float-right">
-                                    <button mat-raised-button color="warn" (click)="destroyConversation()"
-                                        title="Destroy Conversation">Destroy Conversation</button></span>
-                            </p>
-                        </div>
-                    </div>
+                <div class="alert alert-success" role="alert">
+                    <p class="clearfix">Got <code>Conversation</code> with name
+                        <span>&lt;<code>{{conversationNameFc.value}}</code>&gt;</span>. Others can join at url
+                        <a href="{{conversationUrl}}" target="_blank">{{conversationUrl}}</a>
+                        <span class="float-right"><button mat-raised-button color="primary"
+                                [cdkCopyToClipboard]="conversationUrlWithApiKey" title="Copy to clipboard">Copy
+                                link&nbsp;<i class="bi bi-clipboard"></i></button></span>
+                    </p>
+                    <p class="clearfix"><span class="float-right">
+                            <button mat-raised-button color="warn" (click)="destroyConversation()"
+                                title="Destroy Conversation">Destroy Conversation</button></span>
+                    </p>
                 </div>
-                <div class="row">
-                    <div class="col">
-                        <p>
-                            <mat-form-field appearance="outline">
-                                <mat-label>Name</mat-label>
-                                <input matInput placeholder="Name" [formControl]="usernameFc">
-                                <mat-icon matSuffix>sentiment_very_satisfied</mat-icon>
-                                <mat-hint>Enter your name</mat-hint>
-                            </mat-form-field>
-                            <br>
-                            <button mat-raised-button color="{{joined?'accent':'primary'}}" (click)="!joined?join():leave()" [disabled]="joinInPrgs" title="{{!joined?'Join':'Leave'}} Conversation">{{!joined?'Join':'Leave'}}&nbsp;<i
-                                    class="bi bi-chat-quote"></i></button>
-
-                        </p>
-                        <div class="alert alert-success clearfix" *ngIf="joined">
-                            <h3>List of contacts in this conversation :</h3>
-                            <ul *ngIf="contactHoldersById.size > 0; else elseBlock_Alone">
-                                <li *ngFor="let kv of contactHoldersById | keyvalue">
-                                    {{kv.key}} --> {{kv.value.username}}
-                                </li>
-                            </ul>
-                            <ng-template #elseBlock_Alone>No one joined yet.</ng-template>
-                        </div>
-
-                        <p *ngIf="joinError" class="alert alert-danger" role="alert">{{joinError | json}}
-                        </p>
-                    </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <p>
+                    Calling <code>Conversation.join</code> makes the current
+                    <code>UserAgent</code> take part of the <strong>conversation</strong>.
+                </p>
+                <p class="text-center">
+                    <button mat-raised-button color="{{joined?'accent':'primary'}}" (click)="!joined?join():leave()" [disabled]="!conversation||joinInPrgs" title="{{!joined?'Join':'Leave'}} Conversation">{{!joined?'Join':'Leave'}}&nbsp;<i
+                            class="bi bi-chat-quote"></i></button>
+                </p>
+                <p *ngIf="joinError" class="alert alert-danger" role="alert">{{joinError | json}}
+                </p>
+                <div class="alert alert-success clearfix" *ngIf="joined">
+                    <h3>List of <code>Contact</code>s in this conversation :</h3>
+                    <ul *ngIf="contactHoldersById.size > 0; else elseBlock_Alone">
+                        <li *ngFor="let kv of contactHoldersById | keyvalue">
+                            {{kv.key}} --> {{kv.value.username}}
+                        </li>
+                    </ul>
+                    <ng-template #elseBlock_Alone>No one joined yet.</ng-template>
                 </div>
+
+                <p>Setting <code>UserAgent.username</code> is usefull to get identified by other people (
+                    <code>Contact</code>s) in the conversation :
+                </p>
+                <p class="text-center">
+                    <mat-form-field appearance="outline">
+                        <mat-label>Name</mat-label>
+                        <input matInput placeholder="Name" [formControl]="usernameFc">
+                        <mat-icon matSuffix>sentiment_very_satisfied</mat-icon>
+                        <mat-hint>Enter your name</mat-hint>
+                    </mat-form-field>
+                </p>
             </div>
         </div>
     </div>
@@ -177,35 +181,47 @@
                 <h1>4. Exchange text messages and files</h1>
                 <!-- h-100 to force card to take all height -->
                 <div class="card">
+                    <div class="card-header">
+                        Messages
+                    </div>
                     <div class="card-body">
-                        <h5 class="card-title">Messages</h5>
                         <div *ngFor="let message of messages">
                             <!-- <span>{{message|json}}</span> -->
                             <span><strong>{{message.username}}</strong> : <span
                                     [innerHTML]="message.content"></span></span>
                         </div>
                     </div>
-                    <div class="card-footer">
-                        <form [formGroup]="messageFormGroup" (ngSubmit)="sendMessage()">
-                            <mat-form-field>
-                                <mat-label>Message</mat-label>
-                                <!-- <span matPrefix>Send</span> -->
-                                <input type="text" matInput placeholder="abcd" formControlName="message">
-                                <!-- <mat-icon matSuffix>mode_edit</mat-icon> -->
-                            </mat-form-field>&nbsp;
-                            <button mat-raised-button color="primary" type="submit" [disabled]="!messageFormGroup.valid||!joined" title="Send Message">Send&nbsp;<i
-                                    class="bi bi-chat-left"></i></button>
-                        </form>
-                        <form [formGroup]="fileFormGroup" (ngSubmit)="sendFile()">
-                            <input type="file" formControlName="file" (change)="selectFile($event)" />
-                            <button mat-raised-button color="primary" type="submit" [disabled]="!fileFormGroup.valid||!joined||!selectedFile" title="Send File">Send&nbsp;<i
-                                    class="bi bi-upload"></i></button>
-                            <mat-progress-bar mode="determinate" [value]="uploadProgressPercentage"></mat-progress-bar>
-                        </form>
-                    </div>
+                    <!-- <div class="card-footer">
+                    </div> -->
                 </div>
             </div>
         </div>
+        <br>
+        <div class="row">
+            <div class="col">
+                <form [formGroup]="messageFormGroup" (ngSubmit)="sendMessage()">
+                    <mat-form-field class="w-75">
+                        <mat-label>Message</mat-label>
+                        <!-- <span matPrefix>Send</span> -->
+                        <input type="text" matInput placeholder="abcd" formControlName="message">
+                        <!-- <mat-icon matSuffix>mode_edit</mat-icon> -->
+                    </mat-form-field>&nbsp;
+                    <button mat-raised-button color="primary" type="submit" [disabled]="!messageFormGroup.valid||!joined" title="Send Message">Send&nbsp;<i
+                            class="bi bi-chat-left"></i></button>
+                </form>
+            </div>
+            <div class="col">
+                <mat-progress-bar mode="determinate" [value]="uploadProgressPercentage">
+                </mat-progress-bar>
+                <hr>
+                <form [formGroup]="fileFormGroup" (ngSubmit)="sendFile()">
+                    <input type="file" formControlName="file" (change)="selectFile($event)" /> &nbsp;
+                    <button mat-raised-button color="primary" type="submit" [disabled]="!fileFormGroup.valid||!joined||!selectedFile" title="Send File">Upload
+                        file&nbsp;<i class="bi bi-upload"></i></button>
+                </form>
+            </div>
+        </div>
+
     </div>
 
     <hr>
@@ -214,76 +230,98 @@
         <div class="row">
             <div class="col">
                 <h1>5. Handle Streams</h1>
+                <p><strong>ApiRTC</strong> allows to publish many <code>Stream</code>s at the same time in a
+                    <code>Conversation</code>. They can be webcam, screen share, video file...
+                </p>
             </div>
         </div>
         <div class="row">
-            <div class="col">
-                <p>
-                    <button mat-raised-button color="{{localStreamHolder?'accent':'primary'}}" (click)="!localStreamHolder?createStream():destroyStream()" [disabled]="!userAgent||published">{{!localStreamHolder?'Create Stream':'Release
-                        Stream'}}</button>
-                    <!-- publishInPrgs -->
-                    <button mat-raised-button color="{{published?'accent':'primary'}}" (click)="!published?publishStream():unpublishStream()" [disabled]="!localStreamHolder||!joined||publishInPrgs">{{!published?'Publish
-                        Stream':'Unpublish
-                        Stream'}}
-                        <span *ngIf="publishInPrgs" class="spinner-border text-light" role="status"></span></button> &nbsp;
-                    <button mat-raised-button color="{{screenSharingStreamHolder?'accent':'primary'}}" (click)="toggleScreenSharing()" [disabled]="!joined">{{screenSharingStreamHolder?'Unshare':'Share'}}
-                        Screen</button>
-                </p>
+            <div class="col text-center">
+                <button mat-raised-button color="{{localStreamHolder?'accent':'primary'}}" (click)="!localStreamHolder?createStream():releaseStream()" [disabled]="!userAgent||localStreamHolder?.published">{{!localStreamHolder?'Create
+                    Stream':'Release
+                    Stream'}}</button>
+                <button mat-raised-button color="{{localStreamHolder?.published?'accent':'primary'}}" (click)="!localStreamHolder?.published?publishStream():unpublishStream()" [disabled]="!localStreamHolder||!joined||publishInPrgs">{{!localStreamHolder?.published?'Publish
+                    Stream':'Unpublish
+                    Stream'}}
+                    <span *ngIf="publishInPrgs" class="spinner-border text-light" role="status"></span></button>
             </div>
-            <div class="col">
-                <p>
-                    <button mat-stroked-button color="warn" (click)="toggleRecording()" [disabled]="!joined" title="{{!recording?'Record':'Stop Recording'}} Conversation">{{!recording?'Record':'Stop
-                        Recording'}}&nbsp;<i class="bi bi-record-circle"></i></button>
-                </p>
-                <p *ngIf="recordingError" class="alert alert-danger" role="alert">code:{{recordingError.code}}, message:{{recordingError.error.message}}
-                </p>
-                <mat-chip-list aria-label="record selection">
-                    <mat-chip *ngFor="let recordInfo of recordInfos"><a href="{{recordInfo.mediaURL}}" target="_blank">{{recordInfo.recordedFileName}}&nbsp;<i
-                                class="bi bi-cloud-download"></i></a></mat-chip>
-                </mat-chip-list>
+            <div class="col text-center">
+                <button mat-raised-button color="{{screenSharingStreamHolder?'accent':'primary'}}" (click)="toggleScreenSharing()" [disabled]="!joined">{{screenSharingStreamHolder?'Unshare':'Share'}}
+                    Screen</button>
             </div>
-            <div class="col">
-                <form [formGroup]="videoFileFormGroup" (ngSubmit)="publishVideo()">
-                    <input type="file" formControlName="file" (change)="selectVideoFile($event)" />
-                    <button mat-raised-button color="primary" type="submit" [disabled]="!videoFileFormGroup.valid||!joined||!selectedVideoFile" title="Publish Video File">Publish
-                        Video&nbsp;<i class="bi bi-upload"></i></button>
+            <div class="col text-center">
+                <!-- (ngSubmit)="createVideoStream()" -->
+                <form [formGroup]="videoFileFormGroup">
+                    <input type="file" formControlName="file" (change)="createVideoStream($event)" />
+                    <!-- <br>
+                    <button mat-raised-button color="primary" type="submit" [disabled]="!videoFileFormGroup.valid||!joined||!selectedVideoFile" title="Publish Video File">Create
+                        Video Stream&nbsp;<i class="bi bi-upload"></i></button> -->
+                    <button mat-raised-button color="{{videoStreamHolder?.published?'accent':'primary'}}" (click)="togglePublishVideoStream()" [disabled]="!joined||!videoStreamHolder" title="{{videoStreamHolder?.published?'Unpublish':'Publish'}} Video File">{{videoStreamHolder?.published?'Unpublish':'Publish'}}</button>
                     <!-- <mat-progress-bar mode="determinate" [value]="videoUploadProgressPercentage"></mat-progress-bar> -->
+
+                    <button mat-raised-button color="accent" (click)="releaseVideoStream()" [disabled]="!videoStreamHolder||videoStreamHolder?.published" title="Release Stream">Release</button>
                 </form>
-                <button mat-raised-button color="primary" (click)="unpublishVideo()" [disabled]="!videoStreamHolder" title="Unpublish Video File">Unpublish
-                    Video</button>
+
             </div>
         </div>
     </div>
 
-    <h2>Local streams</h2>
+    <h2 class="text-center">Local streams</h2>
 
     <div class="row">
         <div class="col-4" *ngIf="localStreamHolder">
-            <app-stream [streamHolder]="localStreamHolder" [isLocal]="true" [withDevicesControl]="true" [audioMuted]="false" [videoMuted]="false" [audioInDevices]="audioInDevices" [videoDevices]="videoDevices" (onAudioMute)="toggleAudioMute()" (onVideoMute)="toggleVideoMute()"
+            <app-stream [streamHolder]="localStreamHolder" [withSubscription]="false" [withDevicesControl]="true" [audioMuted]="false" [videoMuted]="false" [audioInDevices]="audioInDevices" [videoDevices]="videoDevices" (onAudioMute)="toggleAudioMute()" (onVideoMute)="toggleVideoMute()"
                 (onAudioInSelected)="selectedAudioInDevice=$event;doChangeDevices()" (onVideoSelected)="selectedVideoDevice=$event;doChangeDevices()">
             </app-stream>
         </div>
 
         <div class="col-4" *ngIf="screenSharingStreamHolder">
-            <app-stream [streamHolder]="screenSharingStreamHolder" [isLocal]="true" [withDevicesControl]="false">
+            <app-stream [streamHolder]="screenSharingStreamHolder" [withSubscription]="false" [withDevicesControl]="false">
             </app-stream>
         </div>
 
         <div class="col-4" *ngIf="videoStreamHolder">
-            <app-stream [streamHolder]="videoStreamHolder" [isLocal]="true" [withDevicesControl]="false">
+            <app-stream [streamHolder]="videoStreamHolder" [withSubscription]="false" [withDevicesControl]="false">
             </app-stream>
         </div>
     </div>
 
-    <h2>Peer streams</h2>
+    <h2 class="text-center">Peer streams</h2>
 
     <div class="row">
         <div *ngFor="let kv of contactHoldersById | keyvalue" class="col-4">
-            <app-peer [contactHolder]="kv.value" (onStreamSubscribe)="onStreamSubscribe($event)">
+            <app-peer [contactHolder]="kv.value" (onStreamSubscription)="subscribeOrUnsubscribeToStream($event)">
             </app-peer>
         </div>
     </div>
 
     <hr>
+
+    <div class="container">
+        <div class="row">
+            <div class="col">
+                <h1>6. Conversation features</h1>
+                <p><strong>ApiRTC</strong> allows record a <code>Conversation</code> :
+                </p>
+                <div class="text-center">
+                    <p>
+                        <button mat-stroked-button color="warn" (click)="toggleRecording()" [disabled]="!joined" title="{{!recording?'Record':'Stop Recording'}} Conversation">{{!recording?'Record':'Stop
+                            Recording'}}&nbsp;<i class="bi bi-record-circle"></i></button>
+                        <mat-spinner *ngIf=""></mat-spinner>
+                    </p>
+                    <p *ngIf="recordingError" class="alert alert-danger" role="alert">code:{{recordingError.code}}, message:{{recordingError.error.message}}
+                    </p>
+
+                    <div class="alert alert-success clearfix text-center" *ngIf="recordingsByMediaId.size>0">
+                        <mat-chip-list aria-label="record selection">
+                            <mat-chip *ngFor="let kv of recordingsByMediaId | keyvalue"><a href="{{kv.value.recordingInfo.mediaURL}}" target="_blank">{{kv.value.recordingInfo.recordedFileName}}<span
+                                        *ngIf="kv.value.available">&nbsp;<i class="bi bi-cloud-download"></i></span></a>
+                            </mat-chip>
+                        </mat-chip-list>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
 </div>

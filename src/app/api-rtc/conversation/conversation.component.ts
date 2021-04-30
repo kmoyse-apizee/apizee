@@ -1,3 +1,4 @@
+import { ThrowStmt } from '@angular/compiler';
 import { Component, OnDestroy, OnInit, AfterViewInit, ViewChild, ElementRef, HostListener } from '@angular/core';
 import { Inject } from '@angular/core';
 import { FormBuilder, FormControl, Validators } from '@angular/forms';
@@ -7,7 +8,7 @@ import { WINDOW } from '../../windows-provider';
 
 import { AuthServerService } from '../auth-server.service';
 
-import { ContactDecorator, MessageDecorator, StreamDecorator } from '../model/model.module';
+import { ContactDecorator, MessageDecorator, StreamDecorator, RecordingInfoDecorator } from '../model/model.module';
 
 import { StreamSubscribeEvent } from '../stream/stream.component';
 
@@ -20,8 +21,6 @@ declare var apiRTC: any;
 })
 export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
 
-  //@ViewChild("screenSharingVideo") screenSharingVideoRef: ElementRef;
-
   @ViewChild("fileVideo") fileVideoRef: ElementRef;
 
   // FormControl/Group objects
@@ -29,7 +28,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   // TODO : do not provide a default apiKey
   apiKeyFc: FormControl = new FormControl('9669e2ae3eb32307853499850770b0c3');
 
-  usernameFc: FormControl = new FormControl('');
+  usernameFc: FormControl = new FormControl({ value: '', disabled: true });
 
   conversationFormGroup = this.fb.group({
     name: this.fb.control('', [Validators.required])
@@ -58,7 +57,6 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   userAgent: any;
   session: any = null;
   conversation: any = null;
-  recordInfos: Array<any> = [];
 
   // Local user credentials
   credentials: any = null;
@@ -79,7 +77,6 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   joinError: any = null;
   joined = false;
 
-  published = false;
   publishInPrgs = false;
 
   // Peer Contacts
@@ -88,6 +85,9 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // Peer Streams
   streamHoldersById: Map<string, StreamDecorator> = new Map();
+
+  // Recorded Media
+  recordingsByMediaId: Map<string, any> = new Map();
 
   // Authentication Token (JSON or other)
   token: string;
@@ -145,9 +145,9 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   ngOnInit(): void {
     // Handle conversation name and url from RESTFUL path
     //
-    const _conversationName = this.activatedRoute.snapshot.paramMap.get("name");
-    if (_conversationName) {
-      this.conversationNameFc.setValue(_conversationName);
+    const conversationName = this.activatedRoute.snapshot.paramMap.get("name");
+    if (conversationName) {
+      this.conversationNameFc.setValue(conversationName);
       // Recreate remove conversationName from current location url :
       // use pathname that looks like "/path/to/conversationName"
       const path = `${this.window.location.pathname}`.split('/');
@@ -190,6 +190,24 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private doDestroy(): void {
+    if (this.localStreamHolder) {
+      if (this.localStreamHolder.isPublished()) {
+        this.unpublishStream();
+      }
+      this.releaseStream();
+    }
+    if (this.screenSharingStreamHolder) {
+      if (this.screenSharingStreamHolder.isPublished()) {
+        this.unpublishScreenSharingStream();
+      }
+      this.releaseScreenSharingStream();
+    }
+    if (this.videoStreamHolder) {
+      if (this.videoStreamHolder.isPublished()) {
+        this.unpublishVideoStream();
+      }
+      this.releaseVideoStream()
+    }
     this.destroyConversation();
   }
 
@@ -203,6 +221,8 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       // format is like 'apzKey:9669e2ae3eb32307853499850770b0c3'
       uri: 'apzkey:' + this.apiKeyFc.value
     });
+
+    this.usernameFc.enable();
 
     // Media device selection handling
     //
@@ -224,6 +244,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   nullifyUserAgent() {
+    this.usernameFc.disable();
     this.userAgent = null;
   }
 
@@ -382,7 +403,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
         // but not necessarily having joined the same conversation...
         const contactHolder: ContactDecorator = this.contactHoldersById.get(contactId);
         if (contactHolder) {
-          contactHolder.updateData(contact);
+          contactHolder.update(contact);
         }
       }
 
@@ -405,8 +426,12 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
 
     if (this.localStreamHolder) {
 
+      const published = this.localStreamHolder.isPublished();
+
       // first, unpublish and release current local stream
-      this.conversation.unpublish(this.localStreamHolder.getStream());
+      if (published) {
+        this.conversation.unpublish(this.localStreamHolder.getStream());
+      }
       this.localStreamHolder.getStream().release();
 
       // get selected devices
@@ -420,7 +445,8 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       // and recreate a new stream
       this.createStream(options)
         .then((stream) => {
-          if (this.published) {
+          // if local stream was published consider we should publish changed one
+          if (published) {
             this.publishStream();
           }
         })
@@ -615,7 +641,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     //
     this.conversation.on('recordingAvailable', (recordingInfo: any) => {
       console.log("on:recordingAvailable", recordingInfo);
-      this.recordInfos.push(recordingInfo);
+      this.recordingsByMediaId.set(recordingInfo.mediaId, new RecordingInfoDecorator(recordingInfo, true));
     });
 
 
@@ -677,6 +703,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       this.conversation.startRecording()
         .then((recordingInfo: any) => {
           console.info('startRecording', recordingInfo);
+
         })
         .catch((err: any) => {
           console.error('startRecording', err);
@@ -689,6 +716,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       this.conversation.stopRecording()
         .then((recordingInfo: any) => {
           console.info('stopRecording', recordingInfo);
+          this.recordingsByMediaId.set(recordingInfo.mediaId, new RecordingInfoDecorator(recordingInfo, false));
         })
         .catch((err: any) => {
           console.error('stopRecording', err);
@@ -757,53 +785,6 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   /***************************************************************************
-    Send Video from file
-   */
-  selectedVideoFile: any;
-  selectVideoFile(event: any): void {
-    const file: File | null = event.target.files.item(0);
-    this.selectedVideoFile = file;
-  }
-
-  publishVideo() {
-    // To create a MediaStream from a video file, go through a 'video' DOM element
-    //
-    const videoElement = this.fileVideoRef.nativeElement;
-    videoElement.onloadeddata = () => {
-      // Note that video handling should be applied after data loaded
-      let mediaStream = (apiRTC.browser === 'Firefox') ? videoElement.mozCaptureStream() : videoElement.captureStream();
-      apiRTC.Stream.createStreamFromMediaStream(mediaStream)
-        .then((stream: any) => {
-          const streamInfo = { streamId: String(stream.getId()), isRemote: false, type: 'regular' };
-          this.videoStreamHolder = StreamDecorator.build(streamInfo);
-          this.videoStreamHolder.setStream(stream);
-          console.info('publishVideo()::createStreamFromMediaStream', stream);
-          this.conversation.publish(this.videoStreamHolder.getStream());
-        })
-        .catch((err) => {
-          console.error('publishVideo()::createStreamFromMediaStream', err);
-        });
-    };
-
-    // Read from file to 'video' DOM element
-    const reader = new FileReader();
-    reader.onloadend = (e) => {
-      const buffer: ArrayBuffer = e.target.result as ArrayBuffer;
-      //console.log("onloadend", e);
-      let videoBlob = new Blob([new Uint8Array(buffer)], { type: 'video/mp4' });
-      let url = window.URL.createObjectURL(videoBlob);
-      videoElement.src = url;
-    };
-    reader.readAsArrayBuffer(this.selectedVideoFile);
-  }
-
-  unpublishVideo() {
-    this.conversation.unpublish(this.videoStreamHolder.getStream());
-    this.videoStreamHolder.getStream().release();
-    this.videoStreamHolder = null;
-  }
-
-  /***************************************************************************
     ApiRTC Streams
    */
 
@@ -851,52 +832,47 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     else { this.localStreamHolder.getStream().muteVideo(); }
   }
 
-  onStreamSubscribe(event: StreamSubscribeEvent) {
+  subscribeOrUnsubscribeToStream(event: StreamSubscribeEvent) {
+    console.log("subscribeOrUnsubscribeToStream", event);
     if (event.doSubscribe) {
-      console.log("onStreamSubscribe", event.streamHolder);
       this.conversation.subscribeToStream(event.streamHolder.getId()).then(stream => {
         console.log('onStreamSubscribe success:', stream);
       }).catch(err => {
         console.error('onStreamSubscribe error', err);
       });
     } else {
-      console.log("onStreamSubscribe", event.streamHolder);
       this.conversation.unsubscribeToStream(event.streamHolder.getId());
     }
   }
 
-  destroyStream() {
-    if (this.localStreamHolder) {
-      this.localStreamHolder.getStream().release();
-      this.localStreamHolder = null;
-    }
+  releaseStream() {
+    this.localStreamHolder.getStream().release();
+    this.localStreamHolder = null;
   }
 
   publishStream(): void {
-    console.log("publish()");
-
     const stream = this.localStreamHolder.getStream();
+    console.log("publishStream()", stream);
 
-    if (this.conversation) {
-      // Publish your own stream to the conversation
-      this.publishInPrgs = true;
-      this.conversation.publish(stream).then(stream => {
-        this.published = true;
-        this.publishInPrgs = false;
-      }).catch(err => {
-        console.error('publish error', err);
-        this.publishInPrgs = false;
-      });
-    }
+    // Publish your own stream to the conversation
+    this.publishInPrgs = true;
+    this.conversation.publish(stream).then((stream: any) => {
+      this.localStreamHolder.setPublished(true);
+      this.publishInPrgs = false;
+    }).catch(err => {
+      console.error('publish error', err);
+      this.publishInPrgs = false;
+    });
   }
 
   unpublishStream(): void {
-    if (this.conversation) {
-      // https://apizee.atlassian.net/browse/APIRTC-863
-      //this.conversation.unpublish(this.localStream.getStream(), null);
-      this.conversation.unpublish(this.localStreamHolder.getStream());
-      this.published = false;
-    }
+    const stream = this.localStreamHolder.getStream();
+    console.log("unpublishStream()", stream);
+
+    // https://apizee.atlassian.net/browse/APIRTC-863
+    //this.conversation.unpublish(this.localStream.getStream(), null);
+    this.conversation.unpublish(this.localStreamHolder.getStream());
+    this.localStreamHolder.setPublished(false);
   }
 
   toggleScreenSharing(): void {
@@ -917,11 +893,12 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       apiRTC.Stream.createDisplayMediaStream(displayMediaStreamConstraints, false)
         .then((stream: any) => {
           stream.on('stopped', () => {
-            //Used to detect when user stop the screenSharing with Chrome DesktopCapture UI
+            // Used to detect when user stop the screenSharing with Chrome DesktopCapture UI
             console.log("screenSharingStream on:stopped");
-            this.conversation.unpublish(this.screenSharingStreamHolder.getStream());
-            this.screenSharingStreamHolder.getStream().release();
-            this.screenSharingStreamHolder = null;
+            if (this.screenSharingStreamHolder.isPublished()) {
+              this.unpublishScreenSharingStream();
+            }
+            this.releaseScreenSharingStream();
           });
 
           // build fake streamInfo object to build a local stream.
@@ -930,16 +907,97 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
           this.screenSharingStreamHolder = StreamDecorator.build(streamInfo);
           this.screenSharingStreamHolder.setStream(stream);
           // and publish it
-          this.conversation.publish(this.screenSharingStreamHolder.getStream());
+          console.log("publish", stream);
+          this.conversation.publish(this.screenSharingStreamHolder.getStream()).then((stream: any) => {
+            this.screenSharingStreamHolder.setPublished(true);
+          }).catch(err => {
+            console.error('toggleScreenSharing()::publish', err);
+          });
         })
         .catch(function (err) {
           console.error('Could not create screensharing stream :', err);
         });
     } else {
-      this.conversation.unpublish(this.screenSharingStreamHolder.getStream());
-      this.screenSharingStreamHolder.getStream().release();
-      // TODO : Handle display/ undisplay properly : maybe we should link this to the window of a peer
-      this.screenSharingStreamHolder = null;
+      this.unpublishScreenSharingStream();
+      this.releaseScreenSharingStream();
     }
   }
+
+  unpublishScreenSharingStream() {
+    this.conversation.unpublish(this.screenSharingStreamHolder.getStream());
+    this.screenSharingStreamHolder.setPublished(false);
+  }
+
+  releaseScreenSharingStream() {
+    this.screenSharingStreamHolder.getStream().release();
+    this.screenSharingStreamHolder = null;
+  }
+
+  /***************************************************************************
+  Send Video from file
+ */
+  //selectedVideoFile: any;
+  // selectVideoFile(event: any): void {
+  //   const file: File | null = event.target.files.item(0);
+  //   this.selectedVideoFile = file;
+  // }
+
+  createVideoStream(event: any) {
+    // To create a MediaStream from a video file, go through a 'video' DOM element
+    //
+
+    const file: File | null = event.target.files.item(0);
+    //this.selectedVideoFile = file;
+
+    const videoElement = this.fileVideoRef.nativeElement;
+    videoElement.onloadeddata = () => {
+      // Note that video handling should be applied after data loaded
+      let mediaStream = (apiRTC.browser === 'Firefox') ? videoElement.mozCaptureStream() : videoElement.captureStream();
+      apiRTC.Stream.createStreamFromMediaStream(mediaStream)
+        .then((stream: any) => {
+          const streamInfo = { streamId: String(stream.getId()), isRemote: false, type: 'regular' };
+          this.videoStreamHolder = StreamDecorator.build(streamInfo);
+          this.videoStreamHolder.setStream(stream);
+          console.info('createVideoStream()::createStreamFromMediaStream', stream);
+        })
+        .catch((err) => {
+          console.error('createVideoStream()::createStreamFromMediaStream', err);
+        });
+    };
+
+    // Read from file to 'video' DOM element
+    const reader = new FileReader();
+    reader.onloadend = (e) => {
+      const buffer: ArrayBuffer = e.target.result as ArrayBuffer;
+      //console.log("onloadend", e);
+      let videoBlob = new Blob([new Uint8Array(buffer)], { type: 'video/mp4' });
+      let url = window.URL.createObjectURL(videoBlob);
+      videoElement.src = url;
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  togglePublishVideoStream() {
+    console.error('togglePublishVideoStream()', this.videoStreamHolder);
+    if (this.videoStreamHolder.isPublished()) {
+      this.unpublishVideoStream();
+    } else {
+      this.conversation.publish(this.videoStreamHolder.getStream()).then((stream: any) => {
+        this.videoStreamHolder.setPublished(true);
+      }).catch(err => {
+        console.error('togglePublishVideoStream()::publish', err);
+      });
+    }
+  }
+
+  unpublishVideoStream() {
+    this.conversation.unpublish(this.videoStreamHolder.getStream());
+    this.videoStreamHolder.setPublished(false);
+  }
+
+  releaseVideoStream() {
+    this.videoStreamHolder.getStream().release();
+    this.videoStreamHolder = null;
+  }
+
 }

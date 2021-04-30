@@ -23,7 +23,7 @@ export class StreamComponent implements OnInit, OnDestroy {
   @Input() streamHolder: StreamDecorator;
 
   @Input() withDevicesControl: boolean = false;
-  @Input() isLocal: boolean = false;
+  @Input() withSubscription: boolean = false;
 
   @Input() set audioMuted(audioMuted: boolean) {
     this.muteAudioFc.setValue(audioMuted);
@@ -41,7 +41,7 @@ export class StreamComponent implements OnInit, OnDestroy {
     this._videoDevices = videoDevices;
   }
 
-  @Output() onSubscribe = new EventEmitter<StreamSubscribeEvent>();
+  @Output() onSubscription = new EventEmitter<StreamSubscribeEvent>();
   @Output() onAudioMute = new EventEmitter<boolean>();
   @Output() onVideoMute = new EventEmitter<boolean>();
   @Output() onAudioInSelected = new EventEmitter<any>();
@@ -87,7 +87,7 @@ export class StreamComponent implements OnInit, OnDestroy {
 
   toggleSubscribe() {
     console.log("StreamComponent::toggleSubscribe");
-    this.onSubscribe.emit(new StreamSubscribeEvent(this.streamHolder, this.streamHolder.stream ? false : true));
+    this.onSubscription.emit(new StreamSubscribeEvent(this.streamHolder, this.streamHolder.stream ? false : true));
   }
 
 }

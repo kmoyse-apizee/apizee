@@ -12,6 +12,7 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSelectModule } from '@angular/material/select';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ClipboardModule } from '@angular/cdk/clipboard';
 
 import { UtilsModule } from '../utils/utils.module';
@@ -38,7 +39,7 @@ import { StreamVideoComponent } from './stream-video/stream-video.component';
 
     MatFormFieldModule, MatInputModule, MatIconModule, MatButtonModule,
     MatListModule, MatSlideToggleModule, MatSelectModule, MatChipsModule,
-    MatProgressBarModule,
+    MatProgressBarModule, MatProgressSpinnerModule,
     ClipboardModule,
 
     UtilsModule

@@ -12,6 +12,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { RouterTestingModule } from '@angular/router/testing';
 
@@ -33,7 +34,7 @@ describe('ConversationComponent', () => {
         [{ path: 'conversation/:name', component: ConversationComponent }
         ]),
         BrowserAnimationsModule,
-        MatFormFieldModule, MatInputModule, MatChipsModule, MatProgressBarModule,
+        MatFormFieldModule, MatInputModule, MatChipsModule, MatProgressBarModule, MatProgressSpinnerModule,
         ReactiveFormsModule, HttpClientModule, HttpClientTestingModule],
       declarations: [ConversationComponent, LoginComponent],
       providers: [{ provide: WINDOW, useValue: mockWindow }]

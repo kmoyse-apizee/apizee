@@ -14,7 +14,7 @@
             </div> -->
             <div class="carousel-item" [ngClass]="{'active': i === activeIndex}" *ngFor="let kv of streamHoldersById | keyvalue; index as i; first as isFirst">
                 <div class="d-block w-100 h-100">
-                    <app-stream [streamHolder]="kv.value" (onSubscribe)="emitStreamSubscribe($event)">
+                    <app-stream [streamHolder]="kv.value" withSubscription="true" (onSubscription)="emitStreamSubscription($event)">
                     </app-stream>
                 </div>
             </div>
@@ -28,9 +28,4 @@
             <span class="sr-only">Next</span>
         </a>
     </div>
-
-    <!-- <div *ngFor="let kv of streamHoldersById | keyvalue">
-        <app-stream [streamHolder]="kv.value" (onSubscribe)="emitStreamSubscribe($event)">
-        </app-stream>
-    </div> -->
 </div>

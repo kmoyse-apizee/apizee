@@ -22,15 +22,15 @@ export class PeerComponent implements OnInit {
     this.streamHoldersById = contactHolder.getStreamHoldersById();
   };
 
-  @Output() onStreamSubscribe = new EventEmitter<StreamSubscribeEvent>();
+  @Output() onStreamSubscription = new EventEmitter<StreamSubscribeEvent>();
 
   constructor() { }
 
   ngOnInit(): void {
   }
 
-  emitStreamSubscribe(event: StreamSubscribeEvent) {
-    this.onStreamSubscribe.emit(event);
+  emitStreamSubscription(event: StreamSubscribeEvent) {
+    this.onStreamSubscription.emit(event);
   }
 
   prev() {

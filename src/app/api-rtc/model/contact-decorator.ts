@@ -12,7 +12,7 @@ export class ContactDecorator {
     constructor(contact: any) {
         //console.log("typeof contact.getId()", typeof contact.getId());
         this.id = String(contact.getId());
-        this.updateData(contact);
+        this.update(contact);
     }
 
     public static build(contact: any): ContactDecorator {
@@ -24,7 +24,7 @@ export class ContactDecorator {
     //     return this.contact.getUsername();
     // }
 
-    public updateData(contact: any) {
+    public update(contact: any) {
         this.contact = contact;
         this.username = contact.getUsername();
     }

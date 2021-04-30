@@ -51,7 +51,7 @@
             <app-audio-stats [stats]="streamHolder.qosStat?.audio"></app-audio-stats>
             <app-video-stats [stats]="streamHolder.qosStat?.video"></app-video-stats>
 
-            <button *ngIf="!isLocal" mat-raised-button color="primary" (click)="toggleSubscribe()">{{streamHolder.stream?'Unsubscribe':'Subscribe'}}</button>
+            <button *ngIf="withSubscription" mat-raised-button color="primary" (click)="toggleSubscribe()">{{streamHolder.stream?'Unsubscribe':'Subscribe'}}</button>
         </div>
         <div class="mycard-over">
             <p>

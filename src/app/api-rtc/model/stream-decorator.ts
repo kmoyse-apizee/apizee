@@ -13,6 +13,8 @@ export class StreamDecorator {
 
     public isSpeaking = false;
 
+    public published = false;
+
     constructor(streamInfo: any, qosStat?: any) {
         this.streamInfo = streamInfo;
 
@@ -64,9 +66,19 @@ export class StreamDecorator {
         return this.qosStat;
     }
 
+    // Speaking
 
     public setSpeaking(isSpeaking: boolean) {
         this.isSpeaking = isSpeaking;
+    }
+
+    // Published
+
+    public setPublished(published: boolean) {
+        this.published = published;
+    }
+    public isPublished(): boolean {
+        return this.published;
     }
 
 }
