@@ -13,6 +13,13 @@ export class StreamSubscribeEvent {
   }
 }
 
+export class BackgroundImageEvent {
+  readonly imageData: ImageData;
+  constructor(imageData: ImageData) {
+    this.imageData = imageData;
+  }
+}
+
 @Component({
   selector: 'app-stream',
   templateUrl: './stream.component.html',
@@ -41,11 +48,27 @@ export class StreamComponent implements OnInit, OnDestroy {
     this._videoDevices = videoDevices;
   }
 
+  @Input() set background(background: string | BackgroundImageEvent) {
+    if (background instanceof BackgroundImageEvent) {
+      this.backgroundFc.setValue('image');
+    } else {
+      this.backgroundFc.setValue(background);
+    }
+  }
+
+  backgrounds: any[] = [
+    { value: 'none', viewValue: 'No background' },
+    { value: 'blur', viewValue: 'blur' },
+    { value: 'transparent', viewValue: 'transparent' },
+    { value: 'image', viewValue: 'image' }
+  ];
+
   @Output() onSubscription = new EventEmitter<StreamSubscribeEvent>();
   @Output() onAudioMute = new EventEmitter<boolean>();
   @Output() onVideoMute = new EventEmitter<boolean>();
   @Output() onAudioInSelected = new EventEmitter<any>();
   @Output() onVideoSelected = new EventEmitter<any>();
+  @Output() onBackgroundSelected = new EventEmitter<string | BackgroundImageEvent>();
 
   // Audio/Video Muting
   muteAudioFc = new FormControl(false);
@@ -54,6 +77,9 @@ export class StreamComponent implements OnInit, OnDestroy {
   // Devices handling
   audioInFc = new FormControl('');
   videoFc = new FormControl('');
+
+  // Backgroung
+  backgroundFc = new FormControl('none');
 
   constructor() { }
 
@@ -79,6 +105,54 @@ export class StreamComponent implements OnInit, OnDestroy {
       console.log("videoFc#valueChanges", value);
       this.onVideoSelected.emit(value);
     });
+
+    // Background selection
+    //
+    this.backgroundFc.valueChanges.subscribe(value => {
+      console.log("backgroundFc#valueChanges", value);
+      if (value !== 'image') {
+        this.onBackgroundSelected.emit(value);
+      }
+    });
+  }
+
+  chooseImage(event: any): void {
+    const file: File | null = event.target.files.item(0);
+    console.log("chooseImage", file);
+
+    // if (apiRTC.browser === 'Firefox') {
+
+    //   var fr = new FileReader;
+
+    //   fr.onload = () => { // file is loaded
+    //     var img = new Image;
+    //     img.onload = () => {
+    //       var canvas = document.createElement('canvas');
+    //       var context = canvas.getContext('2d');
+    //       context.drawImage(img, 0, 0);  // draw image onto canvas (lazy method™)
+    //       console.log("onload Firefox", img);
+    //       const imageData = context.getImageData(0, 0, img.width, img.height);
+    //       this.onBackgroundSelected.emit(new BackgroundImageEvent(imageData));
+    //     };
+    //     img.src = fr.result as string; // is the data URL because called with readAsDataURL
+    //   };
+    //   fr.readAsDataURL(file);
+    // }
+    // else {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {                    // handle async image loading
+      var canvas = document.createElement('canvas');
+      var context = canvas.getContext('2d');
+      context.drawImage(img, 0, 0);  // draw image onto canvas (lazy method™)
+      console.log("onload", img);
+      const imageData = context.getImageData(0, 0, img.width, img.height);
+      this.onBackgroundSelected.emit(new BackgroundImageEvent(imageData));
+      // free memory
+      URL.revokeObjectURL(img.src);
+    };
+    img.src = url;
+    // }
   }
 
   ngOnDestroy(): void {

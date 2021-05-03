@@ -35,6 +35,16 @@
                                 </mat-option>
                             </mat-select>
                         </mat-form-field>
+
+                        <mat-form-field appearance="fill">
+                            <mat-label>Background</mat-label>
+                            <mat-select [formControl]="backgroundFc">
+                                <mat-option *ngFor="let background of backgrounds" [value]="background.value">
+                                    {{background.viewValue}}
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                        <input *ngIf="backgroundFc.value==='image'" type="file" (change)="chooseImage($event)" />
                     </div>
                 </form>
             </div>

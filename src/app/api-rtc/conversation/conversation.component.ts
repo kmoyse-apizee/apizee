@@ -10,7 +10,7 @@ import { AuthServerService } from '../auth-server.service';
 
 import { ContactDecorator, MessageDecorator, StreamDecorator, RecordingInfoDecorator } from '../model/model.module';
 
-import { StreamSubscribeEvent } from '../stream/stream.component';
+import { StreamSubscribeEvent, BackgroundImageEvent } from '../stream/stream.component';
 
 declare var apiRTC: any;
 
@@ -100,6 +100,8 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
 
   selectedAudioInDevice = null;
   selectedVideoDevice = null;
+
+  currentBackground: string | BackgroundImageEvent = 'none';
 
   // Convenient FormControl getters
   //
@@ -422,7 +424,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     this.videoDevices = Object.values(mediaDevices.videoinput);
   }
 
-  doChangeDevices(): void {
+  changeLocalStream(): void {
 
     if (this.localStreamHolder) {
 
@@ -434,6 +436,9 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       }
       this.localStreamHolder.getStream().release();
 
+      // Set localStreamHolder to null in order to destroy the associated component
+      this.localStreamHolder = null;
+
       // get selected devices
       const options = {};
       if (this.selectedAudioInDevice) {
@@ -442,6 +447,31 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       if (this.selectedVideoDevice) {
         options['videoInputId'] = this.selectedVideoDevice.id;
       }
+
+      if (this.currentBackground instanceof BackgroundImageEvent) {
+        options['filters'] = [{ type: 'backgroundSubtraction', options: { backgroundMode: 'image', image: this.currentBackground.imageData } }];
+      }
+      else {
+        switch (this.currentBackground) {
+          case 'none':
+            break;
+          case 'blur':
+            console.log('blur selected');
+            options['filters'] = [{ type: 'backgroundSubtraction', options: { backgroundMode: 'blur' } }];
+            break;
+          case 'transparent':
+            options['filters'] = [{ type: 'backgroundSubtraction', options: { backgroundMode: 'transparent' } }];
+            break;
+          //case 'image':
+          // TODO request for an image  
+          //options['filters'][{ type: 'backgroundSubtraction', options: { backgroundMode: 'image', image: imageData } }];
+          //console.log("backgroundMode 'image' not implemented");
+          //  break;
+          default:
+            console.log(`Sorry, not a good filter value`);
+        }
+      }
+
       // and recreate a new stream
       this.createStream(options)
         .then((stream) => {
@@ -453,6 +483,8 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
         .catch(err => { console.error('createStream error', err); });
     }
   }
+
+
 
   /***************************************************************************
     ApiRTC Conversation

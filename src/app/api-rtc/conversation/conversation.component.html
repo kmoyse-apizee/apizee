@@ -271,7 +271,7 @@
     <div class="row">
         <div class="col-4" *ngIf="localStreamHolder">
             <app-stream [streamHolder]="localStreamHolder" [withSubscription]="false" [withDevicesControl]="true" [audioMuted]="false" [videoMuted]="false" [audioInDevices]="audioInDevices" [videoDevices]="videoDevices" (onAudioMute)="toggleAudioMute()" (onVideoMute)="toggleVideoMute()"
-                (onAudioInSelected)="selectedAudioInDevice=$event;doChangeDevices()" (onVideoSelected)="selectedVideoDevice=$event;doChangeDevices()">
+                (onAudioInSelected)="selectedAudioInDevice=$event;changeLocalStream()" (onVideoSelected)="selectedVideoDevice=$event;changeLocalStream()" [background]="currentBackground" (onBackgroundSelected)="currentBackground=$event;changeLocalStream()">
             </app-stream>
         </div>
 
