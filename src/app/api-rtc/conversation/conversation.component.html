@@ -149,17 +149,8 @@
                 </p>
                 <p *ngIf="joinError" class="alert alert-danger" role="alert">{{joinError | json}}
                 </p>
-                <div class="alert alert-success clearfix" *ngIf="joined">
-                    <h3>List of <code>Contact</code>s in this conversation :</h3>
-                    <ul *ngIf="contactHoldersById.size > 0; else elseBlock_Alone">
-                        <li *ngFor="let kv of contactHoldersById | keyvalue">
-                            {{kv.key}} --> {{kv.value.username}}
-                        </li>
-                    </ul>
-                    <ng-template #elseBlock_Alone>No one joined yet.</ng-template>
-                </div>
 
-                <p>Setting <code>UserAgent.username</code> is usefull to get identified by other people (
+                <p>Setting <code>UserAgent.username</code> is useful to get identified by other people (
                     <code>Contact</code>s) in the conversation :
                 </p>
                 <p class="text-center">
@@ -170,6 +161,20 @@
                         <mat-hint>Enter your name</mat-hint>
                     </mat-form-field>
                 </p>
+
+                <div class="alert alert-success clearfix" *ngIf="joined">
+                    <h3>List of <code>Contact</code>s in this conversation :</h3>
+                    <ul *ngIf="contactHoldersById.size > 0; else elseBlock_Alone">
+                        <li *ngFor="let kv of contactHoldersById | keyvalue">
+                            Peer <code>UserAgent</code> with username
+                            <span>&lt;<code>{{kv.value.username}}</code>&gt;</span> has joined. This is
+                            <code>Contact</code> with id
+                            <span>&lt;<code>{{kv.key}}</code>&gt;</span>
+                        </li>
+                    </ul>
+                    <ng-template #elseBlock_Alone>No one joined yet.</ng-template>
+                </div>
+
             </div>
         </div>
     </div>
@@ -301,7 +306,7 @@
         <div class="row">
             <div class="col">
                 <h1>6. Conversation features</h1>
-                <p><strong>ApiRTC</strong> allows record a <code>Conversation</code> :
+                <p><strong>ApiRTC</strong> allows to record a composite video of a <code>Conversation</code> :
                 </p>
                 <div class="text-center">
                     <p>
