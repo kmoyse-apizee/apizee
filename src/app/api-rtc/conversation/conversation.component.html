@@ -184,21 +184,6 @@
         <div class="row">
             <div class="col">
                 <h1>4. Exchange text messages and files</h1>
-                <!-- h-100 to force card to take all height -->
-                <div class="card">
-                    <div class="card-header">
-                        Messages
-                    </div>
-                    <div class="card-body">
-                        <div *ngFor="let message of messages">
-                            <!-- <span>{{message|json}}</span> -->
-                            <span><strong>{{message.username}}</strong> : <span
-                                    [innerHTML]="message.content"></span></span>
-                        </div>
-                    </div>
-                    <!-- <div class="card-footer">
-                    </div> -->
-                </div>
             </div>
         </div>
         <br>
@@ -226,7 +211,17 @@
                 </form>
             </div>
         </div>
-
+        <br>
+        <div class="row">
+            <div class="col">
+                <div class="alert alert-success clearfix">
+                    <h3>List of <code>Message</code>s in this conversation :</h3>
+                    <div *ngFor="let message of messages">
+                        <span><strong>{{message.username}}</strong> : <span [innerHTML]="message.content"></span></span>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <hr>
@@ -234,7 +229,7 @@
     <div class="container">
         <div class="row">
             <div class="col">
-                <h1>5. Handle Streams</h1>
+                <h1>5. Publish Streams</h1>
                 <p><strong>ApiRTC</strong> allows to publish many <code>Stream</code>s at the same time in a
                     <code>Conversation</code>. They can be webcam, screen share, video file...
                 </p>
@@ -255,44 +250,54 @@
                     Screen</button>
             </div>
             <div class="col text-center">
-                <!-- (ngSubmit)="createVideoStream()" -->
                 <form [formGroup]="videoFileFormGroup">
                     <input type="file" formControlName="file" (change)="createVideoStream($event)" />
-                    <!-- <br>
-                    <button mat-raised-button color="primary" type="submit" [disabled]="!videoFileFormGroup.valid||!joined||!selectedVideoFile" title="Publish Video File">Create
-                        Video Stream&nbsp;<i class="bi bi-upload"></i></button> -->
-                    <button mat-raised-button color="{{videoStreamHolder?.published?'accent':'primary'}}" (click)="togglePublishVideoStream()" [disabled]="!joined||!videoStreamHolder" title="{{videoStreamHolder?.published?'Unpublish':'Publish'}} Video File">{{videoStreamHolder?.published?'Unpublish':'Publish'}}</button>
-                    <!-- <mat-progress-bar mode="determinate" [value]="videoUploadProgressPercentage"></mat-progress-bar> -->
-
                     <button mat-raised-button color="accent" (click)="releaseVideoStream()" [disabled]="!videoStreamHolder||videoStreamHolder?.published" title="Release Stream">Release</button>
+                    <button mat-raised-button color="{{videoStreamHolder?.published?'accent':'primary'}}" (click)="togglePublishVideoStream()" [disabled]="!joined||!videoStreamHolder" title="{{videoStreamHolder?.published?'Unpublish':'Publish'}} Video File">{{videoStreamHolder?.published?'Unpublish':'Publish'}}</button>
                 </form>
 
             </div>
         </div>
     </div>
 
-    <h2 class="text-center">Local streams</h2>
-
     <div class="row">
         <div class="col-4" *ngIf="localStreamHolder">
-            <app-stream [streamHolder]="localStreamHolder" [withSubscription]="false" [withDevicesControl]="true" [audioMuted]="false" [videoMuted]="false" [audioInDevices]="audioInDevices" [videoDevices]="videoDevices" (onAudioMute)="toggleAudioMute()" (onVideoMute)="toggleVideoMute()"
-                (onAudioInSelected)="selectedAudioInDevice=$event;changeLocalStream()" (onVideoSelected)="selectedVideoDevice=$event;changeLocalStream()" [background]="currentBackground" (onBackgroundSelected)="currentBackground=$event;changeLocalStream()">
-            </app-stream>
+            <div class="alert alert-success clearfix">
+                <app-stream [streamHolder]="localStreamHolder" [withSubscription]="false" [withDevicesControl]="true" [audioMuted]="false" [videoMuted]="false" [audioInDevices]="audioInDevices" [videoDevices]="videoDevices" (onAudioMute)="toggleAudioMute()" (onVideoMute)="toggleVideoMute()"
+                    (onAudioInSelected)="selectedAudioInDevice=$event;changeLocalStream()" (onVideoSelected)="selectedVideoDevice=$event;changeLocalStream()" [background]="currentBackground" (onBackgroundSelected)="currentBackground=$event;changeLocalStream()">
+                </app-stream>
+            </div>
         </div>
 
         <div class="col-4" *ngIf="screenSharingStreamHolder">
-            <app-stream [streamHolder]="screenSharingStreamHolder" [withSubscription]="false" [withDevicesControl]="false">
-            </app-stream>
+            <div class="alert alert-success clearfix">
+                <app-stream [streamHolder]="screenSharingStreamHolder" [withSubscription]="false" [withDevicesControl]="false">
+                </app-stream>
+            </div>
         </div>
 
         <div class="col-4" *ngIf="videoStreamHolder">
-            <app-stream [streamHolder]="videoStreamHolder" [withSubscription]="false" [withDevicesControl]="false">
-            </app-stream>
+            <div class="alert alert-success clearfix">
+                <app-stream [streamHolder]="videoStreamHolder" [withSubscription]="false" [withDevicesControl]="false">
+                </app-stream>
+            </div>
         </div>
     </div>
 
-    <h2 class="text-center">Peer streams</h2>
+    <hr>
 
+    <div class="container">
+        <div class="row">
+            <div class="col">
+                <h1>6. Display Streams from peers</h1>
+                <p>Display <code>Stream</code>(s) received from peers.
+                </p>
+                <p class="alert alert-info" role="alert" *ngIf="contactHoldersById.size===0">
+                    Open this webapp in another tab, using link at <strong>3.</strong>, to simulate a peer.
+                </p>
+            </div>
+        </div>
+    </div>
     <div class="row">
         <div *ngFor="let kv of contactHoldersById | keyvalue" class="col-4">
             <app-peer [contactHolder]="kv.value" (onStreamSubscription)="subscribeOrUnsubscribeToStream($event)">
@@ -305,7 +310,7 @@
     <div class="container">
         <div class="row">
             <div class="col">
-                <h1>6. Conversation features</h1>
+                <h1>7. Conversation features</h1>
                 <p><strong>ApiRTC</strong> allows to record a composite video of a <code>Conversation</code> :
                 </p>
                 <div class="text-center">
@@ -319,8 +324,13 @@
 
                     <div class="alert alert-success clearfix text-center" *ngIf="recordingsByMediaId.size>0">
                         <mat-chip-list aria-label="record selection">
-                            <mat-chip *ngFor="let kv of recordingsByMediaId | keyvalue"><a href="{{kv.value.recordingInfo.mediaURL}}" target="_blank">{{kv.value.recordingInfo.recordedFileName}}<span
-                                        *ngIf="kv.value.available">&nbsp;<i class="bi bi-cloud-download"></i></span></a>
+                            <mat-chip *ngFor="let kv of recordingsByMediaId | keyvalue"><a href="{{kv.value.recordingInfo.mediaURL}}" target="_blank">{{kv.value.recordingInfo.recordedFileName}}</a>
+                                <span>&nbsp;<span *ngIf="kv.value.available; else elseBlockUnavalable"><i
+                                            class="bi bi-cloud-download"></i></span>
+                                <ng-template #elseBlockUnavalable>
+                                    <mat-spinner [diameter]="15"></mat-spinner>
+                                </ng-template>
+                                </span>
                             </mat-chip>
                         </mat-chip-list>
                     </div>

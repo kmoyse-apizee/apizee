@@ -8,14 +8,14 @@
          Global STUN/TURN relays, media services for large-scale group conferences and recording, and signaling infrastructure are all included. -->
 
     <p>
-        <strong>ApiRTC</strong> is built on top WebRTC. It helps to fastly build rich media sharing web based applications.
+        <strong>ApiRTC</strong> is built on top <strong>WebRTC</strong>. It helps to fastly build rich media sharing web based applications.
     </p>
-    <p>It fills gaps <strong>WebRTC</strong> does not address.</p>
-    <p><strong>ApiRTC</strong> :</p>
+    <p><strong>ApiRTC</strong> fills gaps <strong>WebRTC</strong> does not address.</p>
+    <p><strong>ApiRTC</strong> brings :</p>
     <ul>
-        <li> handles signaling,</li>
-        <li> provides STUN/TURN relays,</li>
-        <li> supports large scale group conversations.</li>
+        <li> signalisation,</li>
+        <li> STUN/TURN relays,</li>
+        <li> large scale group conversations support.</li>
     </ul>
 
     <!-- <h2>ApiRTC Terms</h2>
@@ -42,7 +42,7 @@
         </li>
     </ul>
 
-    <h1>Let's start coding</h1>
+    <h1>Getting Started</h1>
 
     <h2>Load ApiRTC library</h2>
 
@@ -75,7 +75,7 @@
 
     <h2>Stream</h2>
 
-    <p>The method <code>UserAgent.createStream</code> returns an instance of <code>Stream</code>, which carries media
+    <p>When <code>UserAgent.createStream</code> is called, a popup opens in the browser to request user acceptance for using media devices. Then it provides an instance of <code>Stream</code>, which carries media
         <strong>stream</strong> from computer device through the browser.
     </p>
 

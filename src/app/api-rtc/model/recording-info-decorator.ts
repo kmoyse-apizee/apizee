@@ -7,15 +7,7 @@ export class RecordingInfoDecorator {
         this.available = available;
     }
 
-    // public getRecordingInfo(): Object {
-    //     return this.recordingInfo;
-    // }
-
     public isAvailable(): boolean {
         return this.available;
     }
-    // public setAvailable(available: boolean) {
-    //     this.available = available;
-    // }
-
 }

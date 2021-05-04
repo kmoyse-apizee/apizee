@@ -867,7 +867,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   subscribeOrUnsubscribeToStream(event: StreamSubscribeEvent) {
     console.log("subscribeOrUnsubscribeToStream", event);
     if (event.doSubscribe) {
-      this.conversation.subscribeToStream(event.streamHolder.getId()).then(stream => {
+      this.conversation.subscribeToStream(event.streamHolder.getId()).then((stream: any) => {
         console.log('onStreamSubscribe success:', stream);
       }).catch(err => {
         console.error('onStreamSubscribe error', err);
@@ -900,9 +900,6 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   unpublishStream(): void {
     const stream = this.localStreamHolder.getStream();
     console.log("unpublishStream()", stream);
-
-    // https://apizee.atlassian.net/browse/APIRTC-863
-    //this.conversation.unpublish(this.localStream.getStream(), null);
     this.conversation.unpublish(this.localStreamHolder.getStream());
     this.localStreamHolder.setPublished(false);
   }
@@ -915,6 +912,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
         video: {
           cursor: "always"
         },
+        // TODO : is audio relevant here ?
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
@@ -966,25 +964,21 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   /***************************************************************************
-  Send Video from file
+  Create video Stream from file
  */
-  //selectedVideoFile: any;
-  // selectVideoFile(event: any): void {
-  //   const file: File | null = event.target.files.item(0);
-  //   this.selectedVideoFile = file;
-  // }
 
   createVideoStream(event: any) {
     // To create a MediaStream from a video file, go through a 'video' DOM element
     //
 
+    // Get file the user selected
     const file: File | null = event.target.files.item(0);
-    //this.selectedVideoFile = file;
 
+    // Prepare the 'loadeddata' event that will actually create Stream instance
     const videoElement = this.fileVideoRef.nativeElement;
     videoElement.onloadeddata = () => {
       // Note that video handling should be applied after data loaded
-      let mediaStream = (apiRTC.browser === 'Firefox') ? videoElement.mozCaptureStream() : videoElement.captureStream();
+      const mediaStream = (apiRTC.browser === 'Firefox') ? videoElement.mozCaptureStream() : videoElement.captureStream();
       apiRTC.Stream.createStreamFromMediaStream(mediaStream)
         .then((stream: any) => {
           const streamInfo = { streamId: String(stream.getId()), isRemote: false, type: 'regular' };
@@ -995,22 +989,23 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
         .catch((err) => {
           console.error('createVideoStream()::createStreamFromMediaStream', err);
         });
+      // free memory
+      URL.revokeObjectURL(videoElement.src);
     };
 
     // Read from file to 'video' DOM element
     const reader = new FileReader();
     reader.onloadend = (e) => {
       const buffer: ArrayBuffer = e.target.result as ArrayBuffer;
-      //console.log("onloadend", e);
-      let videoBlob = new Blob([new Uint8Array(buffer)], { type: 'video/mp4' });
-      let url = window.URL.createObjectURL(videoBlob);
+      const videoBlob = new Blob([new Uint8Array(buffer)], { type: 'video/mp4' });
+      const url = window.URL.createObjectURL(videoBlob);
       videoElement.src = url;
     };
     reader.readAsArrayBuffer(file);
   }
 
   togglePublishVideoStream() {
-    console.error('togglePublishVideoStream()', this.videoStreamHolder);
+    console.info('togglePublishVideoStream()', this.videoStreamHolder);
     if (this.videoStreamHolder.isPublished()) {
       this.unpublishVideoStream();
     } else {
