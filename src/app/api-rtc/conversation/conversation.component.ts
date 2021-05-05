@@ -1,4 +1,3 @@
-import { ThrowStmt } from '@angular/compiler';
 import { Component, OnDestroy, OnInit, AfterViewInit, ViewChild, ElementRef, HostListener } from '@angular/core';
 import { Inject } from '@angular/core';
 import { FormBuilder, FormControl, Validators } from '@angular/forms';
@@ -13,6 +12,11 @@ import { ContactDecorator, MessageDecorator, StreamDecorator, RecordingInfoDecor
 import { StreamSubscribeEvent, BackgroundImageEvent } from '../stream/stream.component';
 
 declare var apiRTC: any;
+
+// TODO FIXTHIS: generates build error :
+// Error: node_modules/@apizee/apirtc/apirtc.d.ts:842:22 - error TS2709: Cannot use namespace 'apiRTC' as a type.
+// 842 declare var apiRTC2: apiRTC; // Added for retro compatibility
+// import { UserAgent } from '@apizee/apirtc';
 
 @Component({
   selector: 'app-conversation',

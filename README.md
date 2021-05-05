@@ -38,3 +38,6 @@ git add docs/*
 git status
 git commit -a -m "deploy"
 git push origin main
+
+
+## To build your own application

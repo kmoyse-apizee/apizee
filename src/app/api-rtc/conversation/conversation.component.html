@@ -78,9 +78,11 @@
         <br>
         <div class="row">
             <div class="col">
-                <p *ngIf="session" class="alert alert-success clearfix" role="alert">Got <code>Session</code> with id
-                    <span>&lt;<code>{{session.getId()}}</code>&gt;</span><span *ngIf="token">&nbsp;with token
-                        &lt;<code>{{token}}</code>&gt;</span>
+                <p *ngIf="session" class="alert alert-success clearfix" role="alert">Got <code>Session</code> with
+                    <code>id</code>
+                    <span>&lt;<strong>{{session.getId()}}</strong>&gt;</span><span *ngIf="token">&nbsp;with
+                        <code>token</code>
+                        &lt;<strong>{{token}}</strong>&gt;</span>
                     <span class="float-right"><button mat-raised-button color="warn" (click)="unregister()"
                             [disabled]="conversation" title="Unregister"><i
                                 class="bi bi-box-arrow-left"></i>&nbsp;Unregister</button></span>
@@ -123,8 +125,8 @@
         <div class="row" *ngIf="conversation">
             <div class="col">
                 <div class="alert alert-success" role="alert">
-                    <p class="clearfix">Got <code>Conversation</code> with name
-                        <span>&lt;<code>{{conversationNameFc.value}}</code>&gt;</span>. Others can join at url
+                    <p class="clearfix">Got <code>Conversation</code> with <code>name</code>
+                        <span>&lt;<strong>{{conversationNameFc.value}}</strong>&gt;</span>. Others can join at url
                         <a href="{{conversationUrl}}" target="_blank">{{conversationUrl}}</a>
                         <span class="float-right"><button mat-raised-button color="primary"
                                 [cdkCopyToClipboard]="conversationUrlWithApiKey" title="Copy to clipboard">Copy
@@ -166,10 +168,10 @@
                     <h3>List of <code>Contact</code>s in this conversation :</h3>
                     <ul *ngIf="contactHoldersById.size > 0; else elseBlock_Alone">
                         <li *ngFor="let kv of contactHoldersById | keyvalue">
-                            Peer <code>UserAgent</code> with username
-                            <span>&lt;<code>{{kv.value.username}}</code>&gt;</span> has joined. This is
-                            <code>Contact</code> with id
-                            <span>&lt;<code>{{kv.key}}</code>&gt;</span>
+                            Peer <code>UserAgent</code> with <code>username</code>
+                            <span>&lt;<strong>{{kv.value.username}}</strong>&gt;</span> has joined. This is
+                            <code>Contact</code> with <code>id</code>
+                            <span>&lt;<strong>{{kv.key}}</strong>&gt;</span>
                         </li>
                     </ul>
                     <ng-template #elseBlock_Alone>No one joined yet.</ng-template>
