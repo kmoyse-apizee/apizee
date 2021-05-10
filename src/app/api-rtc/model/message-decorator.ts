@@ -28,11 +28,11 @@ export class MessageDecorator {
      * @param message 
      * @returns 
      */
-    public static buildFromMessage(message: any): MessageDecorator {
+    public static build(message: any): MessageDecorator {
         return new MessageDecorator(message);
     }
 
-    public static build(nickname: string, content: string): MessageDecorator {
+    public static buildWithoutMessage(nickname: string, content: string): MessageDecorator {
         return new MessageDecorator(null, nickname, content);
     }
 

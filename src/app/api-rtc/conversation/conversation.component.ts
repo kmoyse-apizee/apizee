@@ -17,9 +17,9 @@ const DEFAULT_NICKNAME = '';
 declare var apiRTC: any;
 
 // TODO FIXTHIS: generates build error :
+// import { UserAgent } from '@apizee/apirtc';
 // Error: node_modules/@apizee/apirtc/apirtc.d.ts:842:22 - error TS2709: Cannot use namespace 'apiRTC' as a type.
 // 842 declare var apiRTC2: apiRTC; // Added for retro compatibility
-// import { UserAgent } from '@apizee/apirtc';
 
 @Component({
   selector: 'app-conversation',
@@ -109,6 +109,8 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
 
   currentBackground: string | BackgroundImageEvent = 'none';
 
+  uploadProgressPercentage = 0;
+
   // Convenient FormControl getters
   //
   get conversationNameFc(): FormControl {
@@ -119,6 +121,8 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.messageFormGroup.get('message') as FormControl;
   }
 
+  // Constructor
+  //
   constructor(@Inject(WINDOW) public window: Window,
     private activatedRoute: ActivatedRoute,
     private authServerService: AuthServerService,
@@ -143,11 +147,6 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   beforeUnloadHandler(event: any) {
     console.log("beforeUnloadHandler");
     this.doDestroy();
-  }
-
-  buildConversationUrls() {
-    this.conversationUrl = `${this.conversationBaseUrl}/${this.conversationNameFc.value}`;
-    this.conversationUrlWithApiKey = `${this.conversationBaseUrl}/${this.conversationNameFc.value}?apiKey=${this.apiKeyFc.value}`;
   }
 
   ngOnInit(): void {
@@ -195,6 +194,13 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.doDestroy();
+  }
+
+  /***************************************************************************/
+
+  private buildConversationUrls() {
+    this.conversationUrl = `${this.conversationBaseUrl}/${this.conversationNameFc.value}`;
+    this.conversationUrlWithApiKey = `${this.conversationBaseUrl}/${this.conversationNameFc.value}?apiKey=${this.apiKeyFc.value}`;
   }
 
   private doDestroy(): void {
@@ -267,7 +273,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   /***************************************************************************
-    ApiRTC Authentication and registration
+  * ApiRTC authentication and registration
   *
   * In order to access 'connected' features of ApiRTC, a session to ApiRTC's servers has to be obtained through register
   */
@@ -355,9 +361,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       });
   }
 
-  /**
-   * Registration can be made with authentication token.
-   */
+  // Registration with authentication token 
   doRegisterWithToken() {
     this.registrationError = null;
     const registerInformation = this.credentials ? {
@@ -438,8 +442,8 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   /***************************************************************************
-    Handle Media device change
-   */
+  * Handle Media device change
+  */
 
   doUpdateMediaDevices(mediaDevices: any): void {
     // Convert map values to array
@@ -509,8 +513,8 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   /***************************************************************************
-    ApiRTC Conversation
-   */
+  * ApiRTC Conversation
+  */
 
   getOrcreateConversation(): void {
 
@@ -616,7 +620,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     //
     this.conversation.on('message', (message: any) => {
       console.log("on:message:", message);
-      this.messages.push(MessageDecorator.buildFromMessage(message));
+      this.messages.push(MessageDecorator.build(message));
     });
 
     // QoS Statistics
@@ -701,7 +705,6 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
 
     // File upload
     //
-
     this.conversation.on('transferBegun', () => {
       this.uploadProgressPercentage = 0;
     });
@@ -712,8 +715,6 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       this.uploadProgressPercentage = 100;
     });
   }
-
-  uploadProgressPercentage = 0;
 
   join(): void {
     this.joinError = null;
@@ -749,6 +750,29 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       });
   }
 
+  destroyConversation(): void {
+    console.info('Destroy conversation');
+    if (this.conversation) {
+      if (this.joined) {
+        this.conversation.leave()
+          .then(() => {
+            this.joined = false;
+            this.conversation.destroy();
+            this.conversation = null;
+          })
+          .catch(err => { console.error('Conversation leave error', err); });
+      }
+      else {
+        this.conversation.destroy();
+        this.conversation = null;
+      }
+    }
+  }
+
+  /***************************************************************************
+  * ApiRTC Conversation Recording
+  */
+
   toggleRecording() {
     this.recordingError = null;
     this.recording = !this.recording;
@@ -779,28 +803,9 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  destroyConversation(): void {
-    console.info('Destroy conversation');
-    if (this.conversation) {
-      if (this.joined) {
-        this.conversation.leave()
-          .then(() => {
-            this.joined = false;
-            this.conversation.destroy();
-            this.conversation = null;
-          })
-          .catch(err => { console.error('Conversation leave error', err); });
-      }
-      else {
-        this.conversation.destroy();
-        this.conversation = null;
-      }
-    }
-  }
-
   /***************************************************************************
-    Send Messages
-   */
+  * ApiRTC messages
+  */
 
   sendMessage() {
     const message = this.messageFc.value;
@@ -809,17 +814,17 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
 
   }
 
-  doSendMessage(message: string) {
-    this.conversation.sendMessage(message).then((uuid) => {
-      console.log("sendMessage", uuid, message);
-      this.messages.push(MessageDecorator.build(this.userAgent.getUserData().get(PROPERTY_NICKNAME), message));
+  doSendMessage(messageContent: string) {
+    this.conversation.sendMessage(messageContent).then((uuid: string) => {
+      console.log("sendMessage", uuid, messageContent);
+      this.messages.push(MessageDecorator.buildWithoutMessage(this.userAgent.getUserData().get(PROPERTY_NICKNAME), messageContent));
     })
       .catch(err => { console.error('sendMessage error', err); });
   }
 
   /***************************************************************************
-    Send Files
-   */
+  * Send Files
+  */
   selectedFile: File;
   selectFile(event: any): void {
     const file: File | null = event.target.files.item(0);
@@ -839,8 +844,8 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   /***************************************************************************
-    ApiRTC Streams
-   */
+  * ApiRTC Streams
+  */
 
   // if options are specified, this is because a specific device was selected
   createStream(options?: any): Promise<Object> {
@@ -926,6 +931,10 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     this.localStreamHolder.setPublished(false);
   }
 
+  /***************************************************************************
+  * ApiRTC screen sharing
+  */
+
   toggleScreenSharing(): void {
 
     if (this.screenSharingStreamHolder === null) {
@@ -986,8 +995,8 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   /***************************************************************************
-  Create video Stream from file
- */
+  * Create video Stream from file
+  */
 
   createVideoStream(event: any) {
     // To create a MediaStream from a video file, go through a 'video' DOM element
