@@ -28,7 +28,7 @@ declare var apiRTC: any;
 })
 export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
 
-  @ViewChild("fileVideo") fileVideoRef: ElementRef;
+  @ViewChild('fileVideo') fileVideoRef: ElementRef;
 
   // FormControl/Group objects
   //
@@ -165,13 +165,14 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     } else {
       // When no conversationName is provided then location.href is the expected url
       // Note : This is important to NOT try using this.convBaseUrl = `${this.window.location.protocol}//${this.window.location.host}/conversation`;
-      // because 1. route can change and 2. this does not work if application is hosted under a path
+      // because 1. route can change and 2. this does not work if application is hosted under a path.
+      // Hence use location.href :
       this.conversationBaseUrl = `${this.window.location.href}`;
     }
 
     this.buildConversationUrls();
 
-    // Handle conversation url when its inputs change
+    // Rebuild conversation url when its inputs change
     //
     this.conversationNameFc.valueChanges.subscribe(value => {
       this.buildConversationUrls();
@@ -231,6 +232,8 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
 
   createUserAgent() {
 
+    // This is the main entry to ApiRTC : create first a UserAgent, providing your apiKey.
+    //
     this.userAgent = new apiRTC.UserAgent({
       // format is like 'apzKey:<APIKEY>'
       uri: 'apzkey:' + this.apiKeyFc.value
@@ -519,16 +522,14 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   getOrcreateConversation(): void {
 
     // Create the conversation
-    // TODO : the tutorials use getConversation but logs and code actually say it is deprecated
-    // in favor to getOrCreateConversation(name, options = {})
-    this.conversation = this.session.getOrCreateConversation(this.conversationNameFc.value);
-    // TODO il existe aussi getOrCreateConference mais les deux retournent une Conference ou une Conversation en fonction du format du nom..
-    // se faire expliquer !
-
-    // Streams
     //
-    this.conversation.on('streamListChanged', streamInfo => {
-      console.log("streamListChanged :", streamInfo);
+    this.conversation = this.session.getOrCreateConversation(this.conversationNameFc.value);
+
+    // List of Streams published by peers in the Conversation shall be maintained in the application
+    // by listening on streamListChanged event
+    //
+    this.conversation.on('streamListChanged', (streamInfo: any) => {
+      console.log("on:streamListChanged :", streamInfo);
 
       // The streamListChanged event is usefull to maintain a list of streams published on a conversation.
       // The event carries a streamInfo Object, which is not an actual apiRTC.Stream, that provides information
@@ -549,12 +550,8 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
           contactHolder.addStream(streamHolder);
 
           this.conversation.subscribeToStream(streamInfo.streamId)
-            .then(stream => {
+            .then((stream: any) => {
               console.log('subscribeToStream success:', stream);
-              // Cannot do that here, the streamHolder may not yet be in streamHoldersById
-              // TODO : this is something we should think about in an api redesign ?
-              //const streamHolder:StreamDecorator = this.streamHoldersById[stream.getId()];
-              //streamHolder.setSubscribed(true);
             }).catch(err => {
               console.error('subscribeToStream error', err);
             });
@@ -575,15 +572,15 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     });
 
     this.conversation.on('streamAdded', (stream: any) => {
-      console.log('streamAdded, stream:', stream);
+      console.log('on:streamAdded:', stream);
       // 'streamAdded' actually means that a stream is published by a peer and thus is ready to be displayed.
       // The event comes with a Stream object that can be attached to DOM
-      // TODO : ask to rename this event ?
+      // TODO : rename this event ?
       //
-      // Get our object
+      // Get our decorator object
       const streamHolder: StreamDecorator = this.streamHoldersById.get(String(stream.getId()));
+      // And attach the actual Stream object to it. The corresponding angular component will handle the display.
       streamHolder.setStream(stream);
-
     }).on('streamRemoved', (stream: any) => {
       console.log('on:streamRemoved:', stream)
       // 'streamRemoved' actually means that a stream is no more readable : either because :
@@ -603,15 +600,17 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
         streamHolder.setStream(null);
       }
 
+      // REMOVETHIS :
+      // for debug only (this function getAvailableStreamList shall be hidden in apiRTC public api)
       console.log("getAvailableStreamList:", this.conversation.getAvailableStreamList());
     })
 
     // Contacts
     //
-    this.conversation.on('contactJoined', contact => {
+    this.conversation.on('contactJoined', (contact: any) => {
       console.log("on:contactJoined:", contact);
       const contactHolder: ContactDecorator = this.getOrCreateContactHolder(contact);
-    }).on('contactLeft', contact => {
+    }).on('contactLeft', (contact: any) => {
       console.log("on:contactLeft:", contact);
       this.contactHoldersById.delete(contact.getId());
     });

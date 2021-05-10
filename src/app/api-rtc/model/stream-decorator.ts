@@ -3,10 +3,9 @@
 export class StreamDecorator {
 
     public readonly id: string;
-    // The call Id might change dugring Stream life
-    // so this is not good to store it
-    //public readonly callId: string;
+
     public readonly streamInfo: any;
+
     public stream: any;
 
     public qosStat: any;
@@ -18,16 +17,9 @@ export class StreamDecorator {
     constructor(streamInfo: any, qosStat?: any) {
         this.streamInfo = streamInfo;
 
-        console.log("StreamDecorator: typeof streamInfo.streamId :", typeof streamInfo.streamId)
-        // => number
+        // console.log("StreamDecorator: typeof streamInfo.streamId :", typeof streamInfo.streamId) => number
         this.id = String(streamInfo.streamId);
 
-        //console.log("StreamDecorator: typeof stream.getId() :", typeof stream.getId())
-        // if (typeof stream.getId() === "number") {
-        //     console.log("stream.getId() is actually a number, not a string !!!", typeof stream.getId())
-        // }
-
-        //this.callId = stream.callId;
         this.qosStat = qosStat && qosStat || undefined;
     }
 
@@ -45,10 +37,6 @@ export class StreamDecorator {
     public getId(): string {
         return this.id;
     }
-
-    // public getCallId(): string {
-    //     return this.callId;
-    // }
 
     public setStream(stream: any) {
         this.stream = stream;
