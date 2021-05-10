@@ -46,32 +46,58 @@
 
     <h2>Load ApiRTC library</h2>
 
-    <p>In order to use <strong>ApiRTC</strong>, just add :
-    </p>
-    <p><code>&lt;script type="text/javascript" src="https://cloud.apizee.com/apiRTC/apiRTC-latest.min.js"&gt;&lt;/script&gt;</code>
-    </p>
-    <!-- <code>&lt;head&gt;...&lt;/head&gt;</code> tags of <code>index.html</code> -->
-    <p>inside <code>&lt;head&gt;...&lt;/head&gt;</code> tag of <code>.html</code> document.</p>
-
-    <p>If using Angular, you can also run <code>npm install @apizee/apirtc@latest --save</code> and in
-        <code>angular.json</code> add script :
-    </p>
-    <pre>
-    <code>
-    {{ '{' }}
-        ...
-        "projects": {{ '{' }}
-            "YOUR_PROJECT_NAME": {{ '{' }}
+    <mat-tab-group animationDuration="0ms">
+        <mat-tab label="Angular">
+            <br>
+            <div class="card">
+                <div class="card-body">
+                    <p>In your angular project run :</p>
+                    <p><code>npm install @apizee/apirtc@latest --save</code></p>
+                    <p>And in
+                        <code>angular.json</code> add script :
+                    </p>
+                    <pre>
+            <code>
+            {{ '{' }}
                 ...
-                "architect": {{ '{' }}
-                    "build": {{ '{' }}
+                "projects": {{ '{' }}
+                    "YOUR_PROJECT_NAME": {{ '{' }}
                         ...
-                        "options": {{ '{' }}
-                            ...
-                            "scripts": [
-                                "node_modules/@apizee/apirtc/apiRTC.min.js"
-    </code>
-        </pre>
+                        "architect": {{ '{' }}
+                            "build": {{ '{' }}
+                                ...
+                                "options": {{ '{' }}
+                                    ...
+                                    "scripts": [
+                                        "node_modules/@apizee/apirtc/apiRTC.min.js"
+            </code>
+                </pre>
+                </div>
+            </div>
+        </mat-tab>
+        <mat-tab label="ReactJS">
+            <br>
+            <div class="card">
+                <div class="card-body">
+                    <p>TODO</p>
+                </div>
+            </div>
+        </mat-tab>
+        <mat-tab label="JS">
+            <br>
+            <div class="card">
+                <div class="card-body">
+                    <p>Just add :
+                    </p>
+                    <p><code>&lt;script type="text/javascript" src="https://cloud.apizee.com/apiRTC/apiRTC-latest.min.js"&gt;&lt;/script&gt;</code>
+                    </p>
+                    <!-- <code>&lt;head&gt;...&lt;/head&gt;</code> tags of <code>index.html</code> -->
+                    <p>inside <code>&lt;head&gt;...&lt;/head&gt;</code> tag of <code>.html</code> document.</p>
+                </div>
+            </div>
+        </mat-tab>
+    </mat-tab-group>
+    <br>
 
     <p class="alert alert-info" role="alert">The <strong>ApiRTC</strong> api reference can be found at <a href="https://dev.apirtc.com/api/reference" target="_blank">https://dev.apirtc.com/api/reference</a></p>
 
@@ -154,7 +180,7 @@
         conversation.join();
     </code></pre>
 
-    <!-- TODO : this is weird again, now this is the conversation that actually wears the publich method -->
+    <!-- TODO : this is weird again, now this is the conversation that actually wears the publish method -->
     <p>Once a <strong>conversation</strong> joined, a <code>userAgent</code> can publish a
         <strong>stream</strong> using <code>Conversation.publish</code> method :
     </p>

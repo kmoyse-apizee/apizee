@@ -9,7 +9,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-
+import { MatTabsModule } from '@angular/material/tabs';
+import { MatCardModule } from '@angular/material/card';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
@@ -31,7 +32,7 @@ import { DocumentationComponent } from './documentation/documentation.component'
     HttpClientModule,
 
     // Material
-    MatFormFieldModule, MatInputModule, MatIconModule, MatButtonModule,
+    MatFormFieldModule, MatInputModule, MatIconModule, MatButtonModule, MatTabsModule, MatCardModule,
 
     // Project
     ApiRestModule, ApiRtcModule

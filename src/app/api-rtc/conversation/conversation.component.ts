@@ -29,8 +29,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // FormControl/Group objects
   //
-  // TODO : do not provide a default apiKey
-  apiKeyFc: FormControl = new FormControl('9669e2ae3eb32307853499850770b0c3');
+  apiKeyFc: FormControl = new FormControl('myDemoApiKey');
 
   usernameFc: FormControl = new FormControl({ value: '', disabled: true });
 
@@ -109,11 +108,11 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // Convenient FormControl getters
   //
-  get conversationNameFc() {
+  get conversationNameFc(): FormControl {
     return this.conversationFormGroup.get('name') as FormControl;
   }
 
-  get messageFc() {
+  get messageFc(): FormControl {
     return this.messageFormGroup.get('message') as FormControl;
   }
 
@@ -487,8 +486,6 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
         .catch(err => { console.error('createStream error', err); });
     }
   }
-
-
 
   /***************************************************************************
     ApiRTC Conversation

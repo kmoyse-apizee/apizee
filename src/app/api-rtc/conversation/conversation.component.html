@@ -27,7 +27,8 @@
                         <mat-label>apiKey</mat-label>
                         <input matInput placeholder="apiKey" [formControl]="apiKeyFc">
                         <mat-icon matSuffix>fingerprint</mat-icon>
-                        <!-- <mat-hint>Enter your apiKey</mat-hint> -->
+                        <mat-hint>Get your own apiKey from <a href="https://cloud.apirtc.com/register#account" target="_blank">https://cloud.apirtc.com/register</a>
+                        </mat-hint>
                     </mat-form-field>
                     &nbsp;
                     <button mat-raised-button color="primary" (click)="createUserAgent()" [disabled]="userAgent" title="Create UserAgent">new UserAgent&nbsp;<i class="bi bi-file-earmark-plus"></i></button>
@@ -86,7 +87,6 @@
                     <span class="float-right"><button mat-raised-button color="warn" (click)="unregister()"
                             [disabled]="conversation" title="Unregister"><i
                                 class="bi bi-box-arrow-left"></i>&nbsp;Unregister</button></span>
-                    <!-- <span>userAgent.getUsername()={{userAgent.getUsername()}}</span> -->
                 </p>
                 <p *ngIf="registrationError" class="alert alert-danger" role="alert">{{registrationError | json}} Please check on <a href="https://cloud.apizee.com/enterprise/users-authentication">https://cloud.apizee.com/enterprise/users-authentication</a> that the correct authentication method is set.
                 </p>
@@ -113,7 +113,6 @@
                             <mat-label>Nom de la conversation</mat-label>
                             <span matPrefix>{{conversationBaseUrl}}/</span>
                             <input type="text" matInput placeholder="abcd" formControlName="name">
-                            <!-- <mat-icon matSuffix>mode_edit</mat-icon> -->
                         </mat-form-field>&nbsp;
                         <button mat-raised-button color="primary" type="submit" [disabled]="!conversationFormGroup.valid||!session||conversation" title="Get Or Create Conversation">GetOrCreateConversation&nbsp;<i
                                 class="bi bi-telephone-forward-fill"></i></button>
@@ -194,9 +193,7 @@
                 <form [formGroup]="messageFormGroup" (ngSubmit)="sendMessage()">
                     <mat-form-field class="w-75">
                         <mat-label>Message</mat-label>
-                        <!-- <span matPrefix>Send</span> -->
                         <input type="text" matInput placeholder="abcd" formControlName="message">
-                        <!-- <mat-icon matSuffix>mode_edit</mat-icon> -->
                     </mat-form-field>&nbsp;
                     <button mat-raised-button color="primary" type="submit" [disabled]="!messageFormGroup.valid||!joined" title="Send Message">Send&nbsp;<i
                             class="bi bi-chat-left"></i></button>
