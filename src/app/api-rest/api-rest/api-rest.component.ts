@@ -4,7 +4,7 @@ import { FormBuilder, FormArray, FormControl, Validators } from '@angular/forms'
 
 import { ApirtcRestTokenService } from '../apirtc-rest-token.service';
 
-import { APIZEE_ACCOUNT } from '../../consts';
+import { APIZEE_ACCOUNT } from '../consts';
 
 import { ApirtcRestConferenceService, ConferenceOptionsBuilder } from '../apirtc-rest-conference.service';
 
@@ -23,7 +23,7 @@ export class ApiRestComponent implements OnInit, OnDestroy {
     audioMute: this.fb.control(false)
   });
 
-  access_token:string;
+  access_token: string;
 
   response: Object;
 

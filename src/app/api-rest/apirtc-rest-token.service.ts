@@ -7,7 +7,7 @@ import { catchError } from 'rxjs/operators';
 
 import { handleError } from '../misc';
 
-import { APIZEE_ACCOUNT } from '../consts';
+import { APIZEE_ACCOUNT } from './consts';
 
 @Injectable({
   providedIn: 'root'

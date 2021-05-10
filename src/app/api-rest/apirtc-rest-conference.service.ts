@@ -1,12 +1,12 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, } from '@angular/common/http';
 
-import { Observable, throwError } from 'rxjs';
+import { throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
 import { handleError } from '../misc';
 
-import { APIZEE_ACCOUNT } from '../consts';
+import { APIZEE_ACCOUNT } from './consts';
 
 export class ConferenceOptions {
 

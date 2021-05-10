@@ -1,22 +1,24 @@
+import { PROPERTY_NICKNAME } from './../../consts';
+
 /**
  * To avoid accessing to data using methods in templates,
  * this decorator allows to access relevant attributes
  */
 export class MessageDecorator {
 
-    readonly username: string;
+    readonly nickname: string;
     readonly content: string;
 
     private message: any;
 
-    constructor(message?: any, username?: string, content?: string) {
+    constructor(message?: any, nickname?: string, content?: string) {
         if (message) {
             this.message = message;
-            this.username = message.sender.getUsername();
+            this.nickname = message.sender.getUserData().get(PROPERTY_NICKNAME);
             this.content = message.content;
         }
         else {
-            this.username = username;
+            this.nickname = nickname;
             this.content = content;
         }
     }
@@ -30,8 +32,8 @@ export class MessageDecorator {
         return new MessageDecorator(message);
     }
 
-    public static build(username: string, content: string): MessageDecorator {
-        return new MessageDecorator(null, username, content);
+    public static build(nickname: string, content: string): MessageDecorator {
+        return new MessageDecorator(null, nickname, content);
     }
 
     getMessage(): any {

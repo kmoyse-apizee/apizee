@@ -1,9 +1,15 @@
 import { StreamDecorator } from './stream-decorator'
 
+import { PROPERTY_NICKNAME } from './../../consts';
+
 export class ContactDecorator {
 
     public readonly id: string;
+
+    // Do not use a function from templates : it can trigger performance issues
+    // So we use a local attributes updated on event.
     public username: string;
+    public nickname: string;
 
     private contact: any;
 
@@ -19,14 +25,10 @@ export class ContactDecorator {
         return new ContactDecorator(contact);
     }
 
-    // Do not use this from templates : it can trigger performance issues
-    // public get username(): string {
-    //     return this.contact.getUsername();
-    // }
-
     public update(contact: any) {
         this.contact = contact;
         this.username = contact.getUsername();
+        this.nickname = contact.getUserData().get(PROPERTY_NICKNAME);
     }
 
     public getId(): string {

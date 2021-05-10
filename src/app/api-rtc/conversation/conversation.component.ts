@@ -11,6 +11,9 @@ import { ContactDecorator, MessageDecorator, StreamDecorator, RecordingInfoDecor
 
 import { StreamSubscribeEvent, BackgroundImageEvent } from '../stream/stream.component';
 
+import { PROPERTY_NICKNAME } from './../../consts';
+const DEFAULT_NICKNAME = '';
+
 declare var apiRTC: any;
 
 // TODO FIXTHIS: generates build error :
@@ -31,7 +34,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   //
   apiKeyFc: FormControl = new FormControl('myDemoApiKey');
 
-  usernameFc: FormControl = new FormControl({ value: '', disabled: true });
+  nicknameFc: FormControl = new FormControl({ value: DEFAULT_NICKNAME, disabled: true });
 
   conversationFormGroup = this.fb.group({
     name: this.fb.control('', [Validators.required])
@@ -137,7 +140,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   // Use BEFORE unload to hangup (works for Firefox at least)
   // This is usefull if user closes the tab, or refreshes the page
   @HostListener('window:beforeunload', ['$event'])
-  beforeUnloadHandler(event) {
+  beforeUnloadHandler(event: any) {
     console.log("beforeUnloadHandler");
     this.doDestroy();
   }
@@ -223,11 +226,17 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   createUserAgent() {
 
     this.userAgent = new apiRTC.UserAgent({
-      // format is like 'apzKey:9669e2ae3eb32307853499850770b0c3'
+      // format is like 'apzKey:<APIKEY>'
       uri: 'apzkey:' + this.apiKeyFc.value
     });
 
-    this.usernameFc.enable();
+    // Initialize UserData
+    // set nickname with default value set for the formControl
+    const userData = new apiRTC.UserData();
+    userData.setProp(PROPERTY_NICKNAME, this.nicknameFc.value);
+    this.userAgent.setUserData(userData);
+
+    this.nicknameFc.enable();
 
     // Media device selection handling
     //
@@ -242,14 +251,18 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       this.doUpdateMediaDevices(mediaDevices);
     });
 
-    this.usernameFc.valueChanges.subscribe((selectedValue) => {
+    this.nicknameFc.valueChanges.subscribe((selectedValue) => {
       console.log("name valueChanges:", selectedValue);
-      this.userAgent.setUsername(selectedValue);
+      // go through UserData to pass username to peers (do not use username for that purpose)
+      this.userAgent.getUserData().setProp(PROPERTY_NICKNAME, selectedValue);
+      // TODO : request to fixthis ?
+      // setProp does not propagate to peers, have to force it by calling setToSession();
+      this.userAgent.getUserData().setToSession();
     });
   }
 
   nullifyUserAgent() {
-    this.usernameFc.disable();
+    this.nicknameFc.disable();
     this.userAgent = null;
   }
 
@@ -264,7 +277,10 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     this.userAgent.register().then((session: any) => {
       this.session = session;
       console.log("Session:", session);
-      this.usernameFc.setValue(this.userAgent.getUsername());
+
+      // Set nickname with username
+      this.nicknameFc.setValue(this.userAgent.getUsername());
+
       this.doListenSessionEvents();
       this.registerInPrgs = false;
       this.registrationError = null;
@@ -292,7 +308,10 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       json => {
         this.token = json.token;
         console.log("doJWTAuth, JWT:", json.token);
-        this.usernameFc.setValue(this.credentials.username);
+
+        // Set nickname with username
+        this.nicknameFc.setValue(this.credentials.username);
+
         this.doRegisterWithToken();
         this.registerInPrgs = false;
         this.registrationError = null;
@@ -321,7 +340,10 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       json => {
         this.token = json.token;
         console.log("do3rdPartyAuth, token:", json.token);
-        this.usernameFc.setValue(this.credentials.username);
+
+        // Set nickname with username
+        this.nicknameFc.setValue(this.credentials.username);
+
         this.doRegisterWithToken();
         this.registerInPrgs = false;
         this.registrationError = null;
@@ -361,6 +383,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
 
   unregister() {
     this.userAgent.unregister();
+    this.nicknameFc.setValue(DEFAULT_NICKNAME);
     this.session = null;
     this.token = null;
   }
@@ -411,8 +434,6 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
           contactHolder.update(contact);
         }
       }
-
-      // }
     })
   }
 
@@ -791,7 +812,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   doSendMessage(message: string) {
     this.conversation.sendMessage(message).then((uuid) => {
       console.log("sendMessage", uuid, message);
-      this.messages.push(MessageDecorator.build(this.userAgent.getUsername(), message));
+      this.messages.push(MessageDecorator.build(this.userAgent.getUserData().get(PROPERTY_NICKNAME), message));
     })
       .catch(err => { console.error('sendMessage error', err); });
   }

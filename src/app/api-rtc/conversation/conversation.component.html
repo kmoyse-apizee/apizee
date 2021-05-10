@@ -151,13 +151,13 @@
                 <p *ngIf="joinError" class="alert alert-danger" role="alert">{{joinError | json}}
                 </p>
 
-                <p>Setting <code>UserAgent.username</code> is useful to get identified by other people (
+                <p>Setting <code>UserAgent.getUserData() nickname</code> is useful to get identified by other people (
                     <code>Contact</code>s) in the conversation :
                 </p>
                 <p class="text-center">
                     <mat-form-field appearance="outline">
                         <mat-label>Name</mat-label>
-                        <input matInput placeholder="Name" [formControl]="usernameFc">
+                        <input matInput placeholder="Name" [formControl]="nicknameFc">
                         <mat-icon matSuffix>sentiment_very_satisfied</mat-icon>
                         <mat-hint>Enter your name</mat-hint>
                     </mat-form-field>
@@ -170,7 +170,8 @@
                             Peer <code>UserAgent</code> with <code>username</code>
                             <span>&lt;<strong>{{kv.value.username}}</strong>&gt;</span> has joined. This is
                             <code>Contact</code> with <code>id</code>
-                            <span>&lt;<strong>{{kv.key}}</strong>&gt;</span>
+                            <span>&lt;<strong>{{kv.key}}</strong>&gt;</span> and <code>nickname</code>
+                            <span>&lt;<strong>{{kv.value.nickname}}</strong>&gt;</span>
                         </li>
                     </ul>
                     <ng-template #elseBlock_Alone>No one joined yet.</ng-template>
@@ -216,7 +217,7 @@
                 <div class="alert alert-success clearfix">
                     <h3>List of <code>Message</code>s in this conversation :</h3>
                     <div *ngFor="let message of messages">
-                        <span><strong>{{message.username}}</strong> : <span [innerHTML]="message.content"></span></span>
+                        <span><strong>{{message.nickname}}</strong> : <span [innerHTML]="message.content"></span></span>
                     </div>
                 </div>
             </div>

@@ -38,7 +38,9 @@ import { DocumentationComponent } from './documentation/documentation.component'
     ApiRestModule, ApiRtcModule
   ],
   providers: [
-    // { provide: 'apiKey', useValue: '9669e2ae3eb32307853499850770b0c3' }
+    // TODO : remove this
+    //9669e2ae3eb32307853499850770b0c3
+    // { provide: 'apiKey', useValue: 'myDemoApiKey' }
   ],
   bootstrap: [AppComponent]
 })
