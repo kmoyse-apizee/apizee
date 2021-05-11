@@ -75,9 +75,10 @@
 
     <div class="container">
         <div class="row">
-            <div class="col-3">
+            <div class="col">
                 <h1>2. Register UserAgent</h1>
-                <p>Register a <code>UserAgent</code> to get a <code>Session</code>.</p>
+                <p>Register a <code>UserAgent</code> to get a <code>Session</code>. Several authentications are possible.
+                </p>
             </div>
         </div>
         <div class="row">
@@ -91,7 +92,7 @@
                     </div>
                     <div class="col-4 with-divider">
                         <p>Using your own authentication server that provides a <strong>Json Web Token</strong> allows to register the <code>UserAgent</code> with <strong>ApiRTC</strong>'s servers in a more secure way.</p>
-                        <app-login [btnText]="'Register with JWT'" [enable]="userAgentCreationType === userAgentCreationTypeEnum.Key" (credentials)="registerWithJWTAuth($event)"></app-login>
+                        <app-login [btnText]="'Register with JWT'" [enable]="!session&&(userAgentCreationType === userAgentCreationTypeEnum.Key)" (credentials)="registerWithJWTAuth($event)"></app-login>
                         <!-- <p *ngIf="token" class="text-success">Got token &lt;<code>{{token}}</code>&gt;</p>
                         <button mat-raised-button color="primary" (click)="registerWithToken()" [disabled]="!token" title="Register with token">Register with token
                             &nbsp;<i class="bi bi-box-arrow-in-right"></i></button> -->
@@ -100,14 +101,15 @@
                         <p>Authentication with third party server that generates a <strong>token</strong> and that
                             <strong>ApiRTC</strong>'s servers will query with this token during registration.
                         </p>
-                        <app-login [btnText]="'Register with 3rdP auth server'" [enable]="userAgentCreationType === userAgentCreationTypeEnum.Key" (credentials)="registerWith3rdPartyAuth($event)">
+                        <app-login [btnText]="'Register with 3rdP auth server'" [enable]="!session&&(userAgentCreationType === userAgentCreationTypeEnum.Key)" (credentials)="registerWith3rdPartyAuth($event)">
                         </app-login>
                     </div>
                 </div>
-                <div class="row" *ngIf="!session&&(userAgentCreationType === userAgentCreationTypeEnum.Key)">
+                <!-- *ngIf="!session&&(userAgentCreationType === userAgentCreationTypeEnum.Key)" -->
+                <div class="row">
                     <div class="col">
                         <br>
-                        <p class="alert alert-warning" role="alert"><strong>Note</strong> : You need to configure authentication at
+                        <p class="alert alert-warning" role="alert">You need to configure authentication at
                             <a href="https://cloud.apirtc.com/enterprise/users-authentication" target="_blank">https://cloud.apirtc.com/enterprise/users-authentication</a> according to the one you want to use.
                         </p>
                     </div>
@@ -126,7 +128,8 @@
                 <div class="row">
                     <div class="col">
                         <br>
-                        <p class="alert alert-info" role="alert"><strong>Info</strong> : This authentication is only available when <code>UserAgent</code> is created with a <code>username</code>.
+                        <p class="alert alert-warning" role="alert">This authentication is only available when
+                            <code>UserAgent</code> is created with a <code>username</code>.
                         </p>
                     </div>
                 </div>
@@ -148,7 +151,7 @@
                             [disabled]="conversation" title="Unregister"><i
                                 class="bi bi-box-arrow-left"></i>&nbsp;Unregister</button></span>
                 </p>
-                <p *ngIf="registrationError" class="alert alert-danger" role="alert">{{registrationError | json}} Please check on <a href="https://cloud.apirtc.com/enterprise/users-authentication">https://cloud.apirtc.com/enterprise/users-authentication</a> that the correct authentication method is set.
+                <p *ngIf="registrationError" class="alert alert-danger" role="alert">{{registrationError | json}}
                 </p>
             </div>
         </div>

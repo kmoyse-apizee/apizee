@@ -16,10 +16,15 @@ const DEFAULT_NICKNAME = '';
 
 declare var apiRTC: any;
 
+
+
 // TODO FIXTHIS: generates build error :
 // import { UserAgent } from '@apizee/apirtc';
 // Error: node_modules/@apizee/apirtc/apirtc.d.ts:842:22 - error TS2709: Cannot use namespace 'apiRTC' as a type.
 // 842 declare var apiRTC2: apiRTC; // Added for retro compatibility
+
+// TODO test (from dev.apirtc.com FAQ)
+//import * as apiRTC2 from './apiRTC2-vX.Y.Z.js';
 
 enum UserAgentCreationType {
   Key,
@@ -37,7 +42,10 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // FormControl/Group objects
   //
-  apiKeyFc: FormControl = new FormControl('myDemoApiKey');
+  //apiKeyFc: FormControl = new FormControl('myDemoApiKey');
+  // TODO : REMOVETHIS remove my apiKey
+  apiKeyFc: FormControl = new FormControl('9669e2ae3eb32307853499850770b0c3');
+
   // TODO : REMOVETHIS Remove default
   usernameFc: FormControl = new FormControl('kevin_moyse@yahoo.fr', [Validators.required]);
 
@@ -72,7 +80,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   conversationUrlWithApiKey: string;
 
   // apiRTC objects
-  userAgent: any;
+  userAgent: any = null;
   session: any = null;
   conversation: any = null;
 
@@ -279,7 +287,6 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     userData.setProp(PROPERTY_NICKNAME, this.nicknameFc.value);
     this.userAgent.setUserData(userData);
 
-
     this.apiKeyFc.disable();
     this.usernameFc.disable();
 
@@ -361,12 +368,14 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     this.authServerService.loginJWToken(this.credentials.username, this.credentials.password).subscribe(
       json => {
         this.token = json.token;
-        console.log("doJWTAuth, JWT:", json.token);
+        console.log("loginJWToken:", json);
 
         // Set nickname with username
         this.nicknameFc.setValue(this.credentials.username);
 
         this.doRegister({
+          // The id here MUST be the same value as the one provided in JSONWebToken's payload to identify the user
+          id: json.userId,
           token: this.token
         });
         this.registerInPrgs = false;
@@ -401,6 +410,8 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
         this.nicknameFc.setValue(this.credentials.username);
 
         this.doRegister({
+          // The id here will be used as 'userId' uri parameter in the request made to the auth server
+          id: json.userId,
           token: this.token
         });
         this.registerInPrgs = false;
@@ -431,6 +442,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       // This is misleading as we never heard about a channelId before !
       this.session = session;
       console.log("Session:", session);
+
       this.doListenSessionEvents();
       this.registrationError = null;
     }).catch(error => {
