@@ -21,9 +21,14 @@
         <div class="row">
             <div class="col">
                 <h1>1. Create UserAgent</h1>
-                <p>Entry point to <strong>apiRTC</strong> is to create a <code>UserAgent</code> :</p>
+                <!-- <p>Entry point to <strong>apiRTC</strong> is to create a <code>UserAgent</code> :</p> -->
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-6 with-divider">
+                <p>Create <code>UserAgent</code> with an apiKey :</p>
                 <div class="text-center">
-                    <mat-form-field [style.width.%]="40">
+                    <mat-form-field [style.width.%]="60">
                         <mat-label>apiKey</mat-label>
                         <input matInput placeholder="apiKey" [formControl]="apiKeyFc">
                         <mat-icon matSuffix>fingerprint</mat-icon>
@@ -33,6 +38,30 @@
                     &nbsp;
                     <button mat-raised-button color="primary" (click)="createUserAgent()" [disabled]="userAgent" title="Create UserAgent">new UserAgent&nbsp;<i class="bi bi-file-earmark-plus"></i></button>
                 </div>
+            </div>
+            <div class="col-6">
+                <p>Create <code>UserAgent</code> with the <code>username</code> of a user created within your enterprise account on <a href="https://cloud.apirtc.com/users" target="_blank">https://cloud.apirtc.com/users</a> :
+                </p>
+                <div class="text-center">
+                    <mat-form-field [style.width.%]="50">
+                        <mat-label>username</mat-label>
+                        <input matInput placeholder="username" [formControl]="usernameFc">
+                        <mat-icon matSuffix>verified_user</mat-icon>
+                        <mat-hint>Enter username of a user created on cloud.apirtc.com
+                        </mat-hint>
+                        <mat-error *ngIf="usernameFc.hasError('required')">
+                            username is <strong>required</strong>
+                        </mat-error>
+                    </mat-form-field>
+                    &nbsp;
+                    <button mat-raised-button color="primary" (click)="createUserAgentWithUsername()" [disabled]="userAgent" title="Create UserAgent">new UserAgent&nbsp;<i
+                            class="bi bi-file-earmark-plus"></i></button>
+                </div>
+            </div>
+        </div>
+        <br>
+        <div class="row">
+            <div class="col">
                 <div *ngIf="userAgent" class="alert alert-success clearfix" role="alert"><code>UserAgent</code> created.
                     <span class="float-right"><button mat-raised-button color="warn" (click)="nullifyUserAgent()"
                             [disabled]="session" title="Set to null"><i
@@ -46,35 +75,63 @@
 
     <div class="container">
         <div class="row">
-            <div class="col">
+            <div class="col-3">
                 <h1>2. Register UserAgent</h1>
                 <p>Register a <code>UserAgent</code> to get a <code>Session</code>.</p>
             </div>
         </div>
         <div class="row">
-            <div class="col">
-                <p>Registering as guest is simple but less secured.</p>
-                <button mat-raised-button color="primary" (click)="register()" [disabled]="!userAgent||registerInPrgs||session" title="Register as guest">Register as
-                    Guest&nbsp;<i class="bi bi-box-arrow-in-right"></i></button>
+
+            <div class="col-9  with-divider">
+                <div class="row">
+                    <div class="col-4 with-divider">
+                        <p>Registering as guest is simple but less secured.</p>
+                        <button mat-raised-button color="primary" (click)="register()" [disabled]="!userAgent||registerInPrgs||session||userAgentCreationType === userAgentCreationTypeEnum.Username" title="Register as guest">Register as
+                            Guest&nbsp;<i class="bi bi-box-arrow-in-right"></i></button>
+                    </div>
+                    <div class="col-4 with-divider">
+                        <p>Using your own authentication server that provides a <strong>Json Web Token</strong> allows to register the <code>UserAgent</code> with <strong>ApiRTC</strong>'s servers in a more secure way.</p>
+                        <app-login [btnText]="'Register with JWT'" [enable]="userAgentCreationType === userAgentCreationTypeEnum.Key" (credentials)="registerWithJWTAuth($event)"></app-login>
+                        <!-- <p *ngIf="token" class="text-success">Got token &lt;<code>{{token}}</code>&gt;</p>
+                        <button mat-raised-button color="primary" (click)="registerWithToken()" [disabled]="!token" title="Register with token">Register with token
+                            &nbsp;<i class="bi bi-box-arrow-in-right"></i></button> -->
+                    </div>
+                    <div class="col-4">
+                        <p>Authentication with third party server that generates a <strong>token</strong> and that
+                            <strong>ApiRTC</strong>'s servers will query with this token during registration.
+                        </p>
+                        <app-login [btnText]="'Register with 3rdP auth server'" [enable]="userAgentCreationType === userAgentCreationTypeEnum.Key" (credentials)="registerWith3rdPartyAuth($event)">
+                        </app-login>
+                    </div>
+                </div>
+                <div class="row" *ngIf="!session&&(userAgentCreationType === userAgentCreationTypeEnum.Key)">
+                    <div class="col">
+                        <br>
+                        <p class="alert alert-warning" role="alert"><strong>Note</strong> : You need to configure authentication at
+                            <a href="https://cloud.apirtc.com/enterprise/users-authentication" target="_blank">https://cloud.apirtc.com/enterprise/users-authentication</a> according to the one you want to use.
+                        </p>
+                    </div>
+                </div>
             </div>
-            <div class="col">
-                <p class="text-center">Or</p>
+
+            <div class="col-3">
+                <div class="row">
+                    <div class="col">
+                        <p>Authentication with <strong>ApiRTC</strong> cloud user management.</p>
+                        <app-login [btnText]="'Register with ApiRTC.com'" [username]="usernameFc.value" [enable]="userAgentCreationType === userAgentCreationTypeEnum.Username" (credentials)="registerWithApizeeUserManagement($event)">
+                        </app-login>
+                    </div>
+                </div>
+                <!-- *ngIf="!session&&(userAgentCreationType === userAgentCreationTypeEnum.Username)" -->
+                <div class="row">
+                    <div class="col">
+                        <br>
+                        <p class="alert alert-info" role="alert"><strong>Info</strong> : This authentication is only available when <code>UserAgent</code> is created with a <code>username</code>.
+                        </p>
+                    </div>
+                </div>
             </div>
-            <div class="col">
-                <p>Using your own authentication server that provides a <strong>Json Web Token</strong> allows to register the <code>UserAgent</code> with ApiRTC's servers in a more secure way.</p>
-                <app-login [btnText]="'Register with JWT Auth'" (credentials)="registerWithJWTAuth($event)"></app-login>
-                <!-- <p *ngIf="token" class="text-success">Got token &lt;<code>{{token}}</code>&gt;</p>
-                <button mat-raised-button color="primary" (click)="registerWithToken()" [disabled]="!token" title="Register with token">Register with token
-                    &nbsp;<i class="bi bi-box-arrow-in-right"></i></button> -->
-            </div>
-            <div class="col">
-                <p class="text-center">Or</p>
-            </div>
-            <div class="col">
-                <p>Authentication with third party server that generates a <strong>token</strong> and that ApiRTC's servers will query with this token during registration.</p>
-                <app-login [btnText]="'Register with 3rdParty server Auth'" (credentials)="registerWith3rdPartyAuth($event)">
-                </app-login>
-            </div>
+
         </div>
         <br>
         <div class="row">
@@ -83,15 +140,15 @@
                     <code>id</code>
                     <span>&lt;<strong>{{session.getId()}}</strong>&gt;</span><span *ngIf="token">&nbsp;with
                         <code>token</code>
-                        &lt;<strong>{{token}}</strong>&gt;</span>
+                        <span class="wrap">&lt;<button type="button" class="btn btn-sm btn-info"
+                                (click)="showToken=!showToken">hide/show</button><strong
+                                *ngIf="showToken">{{token}}</strong>&gt;</span>
+                    </span>
                     <span class="float-right"><button mat-raised-button color="warn" (click)="unregister()"
                             [disabled]="conversation" title="Unregister"><i
                                 class="bi bi-box-arrow-left"></i>&nbsp;Unregister</button></span>
                 </p>
-                <p *ngIf="registrationError" class="alert alert-danger" role="alert">{{registrationError | json}} Please check on <a href="https://cloud.apizee.com/enterprise/users-authentication">https://cloud.apizee.com/enterprise/users-authentication</a> that the correct authentication method is set.
-                </p>
-                <p *ngIf="!session" class="alert alert-warning" role="alert"><strong>Note</strong> : You need to configure your
-                    <strong>apiRTC</strong> account according to desired authentication.
+                <p *ngIf="registrationError" class="alert alert-danger" role="alert">{{registrationError | json}} Please check on <a href="https://cloud.apirtc.com/enterprise/users-authentication">https://cloud.apirtc.com/enterprise/users-authentication</a> that the correct authentication method is set.
                 </p>
             </div>
         </div>
@@ -107,6 +164,7 @@
         </div>
         <div class="row">
             <div class="col">
+                <p>From a <code>Session</code>, get or create a <code>Conversation</code> :</p>
                 <div class="text-center">
                     <form [formGroup]="conversationFormGroup" (ngSubmit)="getOrcreateConversation()">
                         <mat-form-field>
@@ -140,9 +198,10 @@
         </div>
         <div class="row">
             <div class="col">
+                <br>
                 <p>
                     Calling <code>Conversation.join</code> makes the current
-                    <code>UserAgent</code> take part of the <strong>conversation</strong>.
+                    <code>UserAgent</code> take part of the <strong>conversation</strong> :
                 </p>
                 <p class="text-center">
                     <button mat-raised-button color="{{joined?'accent':'primary'}}" (click)="!joined?join():leave()" [disabled]="!conversation||joinInPrgs" title="{{!joined?'Join':'Leave'}} Conversation">{{!joined?'Join':'Leave'}}&nbsp;<i
@@ -150,16 +209,16 @@
                 </p>
                 <p *ngIf="joinError" class="alert alert-danger" role="alert">{{joinError | json}}
                 </p>
-
-                <p>Setting <code>UserAgent.getUserData() nickname</code> is useful to get identified by other people (
+                <br>
+                <p>Setting <code>UserAgent.getUserData()</code> property <code>nickname</code> is useful to get identified by other people (
                     <code>Contact</code>s) in the conversation :
                 </p>
                 <p class="text-center">
                     <mat-form-field appearance="outline">
-                        <mat-label>Name</mat-label>
-                        <input matInput placeholder="Name" [formControl]="nicknameFc">
+                        <mat-label>Nickname</mat-label>
+                        <input matInput placeholder="Nickname" [formControl]="nicknameFc">
                         <mat-icon matSuffix>sentiment_very_satisfied</mat-icon>
-                        <mat-hint>Enter your name</mat-hint>
+                        <mat-hint>Enter a nickname</mat-hint>
                     </mat-form-field>
                 </p>
 

@@ -16,21 +16,38 @@ export class LoginComponent implements OnInit {
 
   @Input() btnText = "Login";
 
+  @Input() set username(username: string) {
+    this.usernameFc.setValue(username);
+    this.usernameFc.disable();
+  }
+
+  @Input() set enable(enable: boolean) {
+    if (enable) {
+      this.fgroup.enable();
+      if (this.usernameFc.value !== '') {
+        this.usernameFc.disable();
+      }
+    } else {
+      this.fgroup.disable();
+    }
+  }
+
   @Output() credentials = new EventEmitter<Object>();
 
   constructor(private fb: FormBuilder) { }
 
   ngOnInit(): void {
+
   }
 
-  get username() {
+  get usernameFc() {
     return this.fgroup.get('username') as FormControl;
   }
-  get password() {
+  get passwordFc() {
     return this.fgroup.get('password') as FormControl;
   }
 
   submit() {
-    this.credentials.emit({ username: this.username.value, password: this.password.value });
+    this.credentials.emit({ username: this.usernameFc.value, password: this.passwordFc.value });
   }
 }

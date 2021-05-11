@@ -3,7 +3,7 @@
         <mat-form-field>
             <mat-label>Username</mat-label>
             <input type="text" matInput formControlName="username" placeholder="">
-            <mat-error *ngIf="username.hasError('required')">
+            <mat-error *ngIf="usernameFc.hasError('required')">
                 username is <strong>required</strong>
             </mat-error>
         </mat-form-field>
@@ -11,13 +11,12 @@
     <div class="form-group">
         <mat-form-field>
             <mat-label>Password</mat-label>
-            <input type="text" matInput formControlName="password" placeholder="">
-            <mat-error *ngIf="password.hasError('required')">
+            <input type="password" matInput formControlName="password" placeholder="">
+            <mat-error *ngIf="passwordFc.hasError('required')">
                 password is <strong>required</strong>
             </mat-error>
         </mat-form-field>
     </div>
     &nbsp;
-    <button mat-raised-button color="primary" type="submit" [disabled]="!fgroup.valid" title="{{btnText}}">{{btnText}}&nbsp;<i
-            class="bi bi-box-arrow-in-right"></i></button>
+    <button mat-raised-button color="primary" type="submit" [disabled]="!fgroup.valid" title="{{btnText}}">{{btnText}}&nbsp;<i class="bi bi-box-arrow-in-right"></i></button>
 </form>

@@ -21,6 +21,11 @@ declare var apiRTC: any;
 // Error: node_modules/@apizee/apirtc/apirtc.d.ts:842:22 - error TS2709: Cannot use namespace 'apiRTC' as a type.
 // 842 declare var apiRTC2: apiRTC; // Added for retro compatibility
 
+enum UserAgentCreationType {
+  Key,
+  Username
+}
+
 @Component({
   selector: 'app-conversation',
   templateUrl: './conversation.component.html',
@@ -33,6 +38,13 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   // FormControl/Group objects
   //
   apiKeyFc: FormControl = new FormControl('myDemoApiKey');
+  // TODO : REMOVETHIS Remove default
+  usernameFc: FormControl = new FormControl('kevin_moyse@yahoo.fr', [Validators.required]);
+
+  userAgentCreationType: UserAgentCreationType;
+
+  // to be used from template
+  userAgentCreationTypeEnum = UserAgentCreationType;
 
   nicknameFc: FormControl = new FormControl({ value: DEFAULT_NICKNAME, disabled: true });
 
@@ -97,6 +109,8 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // Authentication Token (JSON or other)
   token: string;
+
+  showToken: boolean = false;
 
   // Devices handling
   audioInDevices: Array<any>;
@@ -227,23 +241,47 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   /***************************************************************************
-    ApiRTC UserAgent
-   */
+  * ApiRTC UserAgent
+  * 
+  * This is the main entry to ApiRTC : create first a UserAgent, providing your apiKey, or username from a user managed by apiRTC.com
+  */
 
   createUserAgent() {
-
-    // This is the main entry to ApiRTC : create first a UserAgent, providing your apiKey.
+    // 
     //
     this.userAgent = new apiRTC.UserAgent({
       // format is like 'apzKey:<APIKEY>'
       uri: 'apzkey:' + this.apiKeyFc.value
     });
 
+    this.userAgentCreationType = UserAgentCreationType.Key;
+
+    this.doUserAgentBindings();
+  }
+
+  createUserAgentWithUsername() {
+    // This is the main entry to ApiRTC : create first a UserAgent, providing your apiKey.
+    //
+    this.userAgent = new apiRTC.UserAgent({
+      // format is like 'apizee:<USERNAME>'
+      uri: 'apizee:' + this.usernameFc.value
+    });
+
+    this.userAgentCreationType = UserAgentCreationType.Username;
+
+    this.doUserAgentBindings();
+  }
+
+  doUserAgentBindings() {
     // Initialize UserData
     // set nickname with default value set for the formControl
     const userData = new apiRTC.UserData();
     userData.setProp(PROPERTY_NICKNAME, this.nicknameFc.value);
     this.userAgent.setUserData(userData);
+
+
+    this.apiKeyFc.disable();
+    this.usernameFc.disable();
 
     this.nicknameFc.enable();
 
@@ -266,13 +304,20 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       this.userAgent.getUserData().setProp(PROPERTY_NICKNAME, selectedValue);
       // TODO : request to fixthis ?
       // setProp does not propagate to peers, have to force it by calling setToSession();
-      this.userAgent.getUserData().setToSession();
+      if (this.session) {
+        this.userAgent.getUserData().setToSession();
+      }
     });
   }
 
   nullifyUserAgent() {
     this.nicknameFc.disable();
+
+    this.apiKeyFc.enable();
+    this.usernameFc.enable();
+
     this.userAgent = null;
+    this.userAgentCreationType = null;
   }
 
   /***************************************************************************
@@ -321,12 +366,14 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
         // Set nickname with username
         this.nicknameFc.setValue(this.credentials.username);
 
-        this.doRegisterWithToken();
+        this.doRegister({
+          token: this.token
+        });
         this.registerInPrgs = false;
         this.registrationError = null;
       },
       error => {
-        console.error('ConversationComponent::doJWTAuth', error);
+        console.error('ConversationComponent::registerWithJWTAuth', error);
         this.registerInPrgs = false;
         this.registrationError = error;
       });
@@ -353,24 +400,28 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
         // Set nickname with username
         this.nicknameFc.setValue(this.credentials.username);
 
-        this.doRegisterWithToken();
+        this.doRegister({
+          token: this.token
+        });
         this.registerInPrgs = false;
         this.registrationError = null;
       },
       error => {
-        console.error('ConversationComponent::do3rdPartyAuth', error);
+        console.error('ConversationComponent::registerWith3rdPartyAuth', error);
         this.registerInPrgs = false;
         this.registrationError = error;
       });
   }
 
-  // Registration with authentication token 
-  doRegisterWithToken() {
+  registerWithApizeeUserManagement(credentials: any) {
+    this.doRegister({
+      password: credentials.password
+    });
+  }
+
+  // Registration with registerInformation
+  doRegister(registerInformation: Object) {
     this.registrationError = null;
-    const registerInformation = this.credentials ? {
-      id: this.credentials.username,
-      token: this.token
-    } : {};
 
     this.userAgent.register(registerInformation).then((session: any) => {
       // TODO : if I don't use same registerInformation.id as the user id (username) that was used to create the token,
