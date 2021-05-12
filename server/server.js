@@ -19,7 +19,7 @@ const secretKey = '0}ulE|m:[w;Do?@x2gfrux4(h4x"(2Aqm9%k>.I+k@}kn&D1';
 
 app.post('/loginJWToken', function(req, res) {
     if (true) { // USUALLY YOU SHOULD VERIFY username/password HERE
-        const userId = req.body.username + '_id'; // USUALLY YOU SHOULD retrieve the userId from you DB. For testing purpose, we build one using the username suffixed by '_id'.
+        const userId = req.body.username + '_id'; // USUALLY YOU SHOULD retrieve the userId from your DB. For testing purpose, we build one using the username suffixed by '_id'.
         const token = (new AccessToken(apiKey, secretKey, { apiRTC_UserAgent_Id: userId, ttl: 7200 })).toJwt();
         res.status(200).send(JSON.stringify({ userId: userId, token: token }));
     } else {
@@ -29,7 +29,7 @@ app.post('/loginJWToken', function(req, res) {
 
 app.post('/loginToken', function(req, res) {
     if (true) { // USUALLY YOU SHOULD VERIFY username/password HERE
-        const userId = req.body.username + '_id'; // USUALLY YOU SHOULD retrieve the userId from you DB. For testing purpose, we build one using the username suffixed by '_id'.
+        const userId = req.body.username + '_id'; // USUALLY YOU SHOULD retrieve the userId from your DB. For testing purpose, we build one using the username suffixed by '_id'.
         const token = basicAuthToken(req.body.username, req.body.password);
         res.status(200).send(JSON.stringify({ token: token }));
     } else {
