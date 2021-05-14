@@ -16,8 +16,6 @@ const DEFAULT_NICKNAME = '';
 
 declare var apiRTC: any;
 
-
-
 // TODO FIXTHIS: generates build error :
 // import { UserAgent } from '@apizee/apirtc';
 // Error: node_modules/@apizee/apirtc/apirtc.d.ts:842:22 - error TS2709: Cannot use namespace 'apiRTC' as a type.
@@ -29,6 +27,13 @@ declare var apiRTC: any;
 enum UserAgentCreationType {
   Key,
   Username
+}
+
+enum UserAgentAuthType {
+  Guest,
+  JWT,
+  ThirdParty,
+  CloudApiRTC
 }
 
 @Component({
@@ -47,12 +52,15 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   apiKeyFc: FormControl = new FormControl('9669e2ae3eb32307853499850770b0c3');
 
   // TODO : REMOVETHIS Remove default
-  usernameFc: FormControl = new FormControl('kevin_moyse@yahoo.fr', [Validators.required]);
+  //usernameFc: FormControl = new FormControl('kevin_moyse@yahoo.fr', [Validators.required]);
+  usernameFc: FormControl = new FormControl('kevin.moyse@apizee.com', [Validators.required]);
 
   userAgentCreationType: UserAgentCreationType;
+  userAgentAuthType: UserAgentAuthType;
 
   // to be used from template
   userAgentCreationTypeEnum = UserAgentCreationType;
+  userAgentAuthTypeEnum = UserAgentAuthType;
 
   nicknameFc: FormControl = new FormControl({ value: DEFAULT_NICKNAME, disabled: true });
 
@@ -84,8 +92,12 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   session: any = null;
   conversation: any = null;
 
+  // apiRTC data objects
+  //joinRequests: Array<any> = new Array();
+  joinRequestsById: Map<string, any> = new Map();
+
   // Local user credentials
-  credentials: any = null;
+  //credentials: any = null;
 
   // Local Streams
   localStreamHolder: StreamDecorator;
@@ -209,6 +221,9 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       if (params['apiKey']) {
         this.apiKeyFc.setValue(params['apiKey']);
       }
+      if (params['private']) {
+        this.isPrivate = true;
+      }
     });
   }
 
@@ -221,9 +236,18 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
 
   /***************************************************************************/
 
+  private _isPrivate: boolean = false;
+  get isPrivate(): boolean {
+    return this._isPrivate;
+  }
+  set isPrivate(value: boolean) {
+    this._isPrivate = value;
+    this.buildConversationUrls();
+  }
+
   private buildConversationUrls() {
     this.conversationUrl = `${this.conversationBaseUrl}/${this.conversationNameFc.value}`;
-    this.conversationUrlWithApiKey = `${this.conversationBaseUrl}/${this.conversationNameFc.value}?apiKey=${this.apiKeyFc.value}`;
+    this.conversationUrlWithApiKey = `${this.conversationBaseUrl}/${this.conversationNameFc.value}?apiKey=${this.apiKeyFc.value}&private=${this.isPrivate}`;
   }
 
   private doDestroy(): void {
@@ -332,12 +356,14 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   *
   * In order to access 'connected' features of ApiRTC, a session to ApiRTC's servers has to be obtained through register
   */
-  register() {
+  registerWithoutAuth() {
     this.registrationError = null;
     this.registerInPrgs = true;
     this.userAgent.register().then((session: any) => {
       this.session = session;
       console.log("Session:", session);
+
+      this.userAgentAuthType = UserAgentAuthType.Guest;
 
       // Set nickname with username
       this.nicknameFc.setValue(this.userAgent.getUsername());
@@ -363,17 +389,19 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   registerWithJWTAuth(credentials: any): void {
     this.registrationError = null;
     this.registerInPrgs = true;
-    this.credentials = credentials;
+
+    // store username for further use as a nickname
+    this.userAgent.setUsername(credentials.username);
+
     // Authenticate to get a JWT
-    this.authServerService.loginJWToken(this.credentials.username, this.credentials.password).subscribe(
+    this.authServerService.loginJWToken(credentials.username, credentials.password).subscribe(
       json => {
         this.token = json.token;
         console.log("loginJWToken:", json);
 
-        // Set nickname with username
-        this.nicknameFc.setValue(this.credentials.username);
+        this.userAgentAuthType = UserAgentAuthType.JWT;
 
-        this.doRegister({
+        this.doRegisterWithRegisterInformation({
           // The id here MUST be the same value as the one provided in JSONWebToken's payload to identify the user
           id: json.userId,
           token: this.token
@@ -399,17 +427,19 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   registerWith3rdPartyAuth(credentials: any): void {
     this.registrationError = null;
     this.registerInPrgs = true;
-    this.credentials = credentials;
+
+    // store username for further use as a nickname
+    this.userAgent.setUsername(credentials.username);
+
     // Authenticate to get a token
-    this.authServerService.loginToken(this.credentials.username, this.credentials.password).subscribe(
+    this.authServerService.loginToken(credentials.username, credentials.password).subscribe(
       json => {
         this.token = json.token;
         console.log("do3rdPartyAuth, token:", json.token);
 
-        // Set nickname with username
-        this.nicknameFc.setValue(this.credentials.username);
+        this.userAgentAuthType = UserAgentAuthType.ThirdParty;
 
-        this.doRegister({
+        this.doRegisterWithRegisterInformation({
           // The id here will be used as 'userId' uri parameter in the request made to the auth server
           id: json.userId,
           token: this.token
@@ -425,23 +455,32 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   registerWithApizeeUserManagement(credentials: any) {
-    this.doRegister({
+
+    this.userAgentAuthType = UserAgentAuthType.CloudApiRTC;
+
+    // the username must have already been set on the userAgent
+    this.doRegisterWithRegisterInformation({
       password: credentials.password
     });
   }
 
   // Registration with registerInformation
-  doRegister(registerInformation: Object) {
+  doRegisterWithRegisterInformation(registerInformation: Object) {
     this.registrationError = null;
 
     this.userAgent.register(registerInformation).then((session: any) => {
-      // TODO : if I don't use same registerInformation.id as the user id (username) that was used to create the token,
-      // I get error :
-      //[2021-04-08T15:23:30.150Z][ERROR]apiRTC(ApiCC_Channel) Channel error : access token failure: invalid channelId apiRTC-latest.min.js:5:19425
-      //[2021-04-08T15:23:30.155Z][ERROR]apiRTC(UserAgent) register() - ApiRTC Initialization error : Channel Error : access token failure: invalid channelId
-      // This is misleading as we never heard about a channelId before !
       this.session = session;
       console.log("Session:", session);
+
+      if (session.getUserData().get(PROPERTY_NICKNAME) !== null) {
+        console.log("A nickname is already set", session.getUserData().get(PROPERTY_NICKNAME));
+        // If user is managed by cloud.apirtc, a nickname may be present already in UserData.
+        this.nicknameFc.setValue(session.getUserData().get(PROPERTY_NICKNAME));
+      }
+      else {
+        // otherwise use the provided username set during authentication phase
+        this.nicknameFc.setValue(this.userAgent.getUsername());
+      }
 
       this.doListenSessionEvents();
       this.registrationError = null;
@@ -456,6 +495,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     this.nicknameFc.setValue(DEFAULT_NICKNAME);
     this.session = null;
     this.token = null;
+    this.userAgentAuthType = null;
   }
 
   // Helper methods
@@ -579,14 +619,148 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   /***************************************************************************
-  * ApiRTC Conversation
+  * ApiRTC Conversation & Conference
   */
 
   getOrcreateConversation(): void {
 
     // Create the conversation
     //
-    this.conversation = this.session.getOrCreateConversation(this.conversationNameFc.value);
+    // TODO handle differently the isPrivate from request parameters and the one set by choice locally...
+    if (this.isPrivate) {
+      // WARN getConference is deprecated ! shall I finally be able to have same function for both getOrcreateConversation and createConference ?
+      // just making the name different ?
+      this.conversation = this.session.getConference(this.conversationNameFc.value);
+      //this.conversation = this.session.getOrCreateConversation('Private:' + this.conversationNameFc.value);
+    } else {
+      this.conversation = this.session.getOrCreateConversation(this.conversationNameFc.value);
+    }
+
+    // force Urls build
+    this.buildConversationUrls();
+
+    this.doListenToConversationEvents();
+  }
+
+  createConference_test_REMOVETHIS() {
+    const enterprise = this.userAgent.getEnterprise();
+    console.log("Enterprise apiKey", enterprise.getApiKey());
+
+    // use the apiKeyFc to store the apiKey (will be used to create the conversation url)
+    this.apiKeyFc.setValue(enterprise.getApiKey());
+
+    console.log("createConference2", 'Private:' + this.conversationNameFc.value);
+    this.conversation = this.session.getOrCreateConversation('Private:' + this.conversationNameFc.value);
+
+    this.isPrivate = true;
+
+    // force Urls build
+    this.buildConversationUrls();
+
+    this.doListenToConversationEvents();
+  }
+
+  /*
+  * A Conference is a Conversation with moderation capabilities
+  */
+  createConference() {
+    const enterprise = this.userAgent.getEnterprise();
+
+    console.log("Enterprise", enterprise);
+    console.log("Enterprise apiKey", enterprise.getApiKey());
+
+    // use the apiKeyFc to store the apiKey (will be used to create the conversation url)
+    this.apiKeyFc.setValue(enterprise.getApiKey());
+
+    // TODO test with session.getOrCreateConversation with a special name name:apiKey
+    enterprise.createPrivateConference().then((conference: any) => {
+
+      console.log("Conference", conference);
+      console.log("Conference name", conference.getName());
+
+      this.conversationNameFc.setValue(conference.getName());
+
+      // A Conference is actually a Conversation but with moderation capabilities
+      //
+      this.conversation = conference;
+
+      this.isPrivate = true;
+
+      // in this case join is done automatically
+      this.joined = true;
+
+      this.doListenToConversationEvents();
+
+      // on top of typical Session Events, listen to moderation events too :
+
+      this.session.on('conversationJoinRequest', (request: any) => {
+        console.log('on:conversationJoinRequest', request);
+        this.joinRequestsById.set(request.getId(), request);
+      });
+
+      // on top of typical Conversation Events, listen to moderation events too :
+
+      // Listen participantEjected event 
+      this.conversation.on('participantEjected', (data: any) => {
+        console.log('on:participantEjected', data);
+        // if (userRole === 'guest') {
+        //     if (data.self) {
+        //         console.log('User was ejected');
+        //         // If user was ejected handle conference leaving things
+        //         handleLeaveConference();
+        //     }
+        // } else if (userRole === 'moderator') {
+        //     if (data.contact) {
+        //         // Remove Eject button for the user
+        //         document.getElementById('eject-' + data.contact.getId()).remove();
+        //     }
+        // }
+      });
+
+    });
+
+  }
+
+  acceptJoinRequest(request: any) {
+    request.accept()
+      .then(() => {
+        console.log('Join request accepted');
+
+        this.doRemoveJoinRequest(request);
+      })
+      .catch((err) => {
+        console.error('Request accept error', err);
+      });
+  }
+
+  declineJoinRequest(request: any) {
+    request.decline()
+      .then(() => {
+        console.log('Join request declined');
+        this.doRemoveJoinRequest(request);
+      })
+      .catch((err) => {
+        console.error('Request decline error', err);
+      });
+  }
+
+  doRemoveJoinRequest(request: any) {
+    // const index = this.joinRequests.indexOf(request, 0);
+    // if (index > -1) {
+    //   this.joinRequests.splice(index, 1);
+    // }
+    this.joinRequestsById.delete(request.getId());
+  }
+
+  doListenToConversationEvents() {
+
+    //console.log("this.conversation instanceof apiRTC.Conference", this.conversation instanceof apiRTC.Conference);
+    //console.log("typeof this.conversation ", typeof this.conversation);
+    if (this.isPrivate) {
+      this.conversation.on('waitingForModeratorAcceptance', (moderator: any) => {
+        console.log("on:waitingForModeratorAcceptance", moderator);
+      });
+    }
 
     // List of Streams published by peers in the Conversation shall be maintained in the application
     // by listening on streamListChanged event
@@ -764,7 +938,6 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       this.recordingsByMediaId.set(recordingInfo.mediaId, new RecordingInfoDecorator(recordingInfo, true));
     });
 
-
     // File upload
     //
     this.conversation.on('transferBegun', () => {
@@ -782,7 +955,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     this.joinError = null;
     this.joinInPrgs = true;
     this.conversation.join()
-      .then(response => {
+      .then((response: any) => {
         console.info('Conversation joined', response);
         this.joined = true;
         this.joinInPrgs = false;
@@ -821,12 +994,14 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
             this.joined = false;
             this.conversation.destroy();
             this.conversation = null;
+            this.joinRequestsById.clear();
           })
           .catch(err => { console.error('Conversation leave error', err); });
       }
       else {
         this.conversation.destroy();
         this.conversation = null;
+        this.joinRequestsById.clear();
       }
     }
   }

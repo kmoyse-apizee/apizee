@@ -77,17 +77,17 @@
         <div class="row">
             <div class="col">
                 <h1>2. Register UserAgent</h1>
-                <p>Register a <code>UserAgent</code> to get a <code>Session</code>. Several authentications are possible.
+                <p>Register a <code>UserAgent</code> to get a <code>Session</code>. Several authentications are possible :
                 </p>
             </div>
         </div>
         <div class="row">
 
-            <div class="col-9  with-divider">
+            <div class="col-9 with-divider">
                 <div class="row">
                     <div class="col-4 with-divider">
                         <p>Registering as guest is simple but less secured.</p>
-                        <button mat-raised-button color="primary" (click)="register()" [disabled]="!userAgent||registerInPrgs||session||userAgentCreationType === userAgentCreationTypeEnum.Username" title="Register as guest">Register as
+                        <button mat-raised-button color="primary" (click)="registerWithoutAuth()" [disabled]="!userAgent||registerInPrgs||session||userAgentCreationType === userAgentCreationTypeEnum.Username" title="Register as guest">Register as
                             Guest&nbsp;<i class="bi bi-box-arrow-in-right"></i></button>
                     </div>
                     <div class="col-4 with-divider">
@@ -119,7 +119,7 @@
             <div class="col-3">
                 <div class="row">
                     <div class="col">
-                        <p>Authentication with <strong>ApiRTC</strong> cloud user management.</p>
+                        <p>Authentication with <strong>cloud.ApiRTC</strong> user management.</p>
                         <app-login [btnText]="'Register with ApiRTC.com'" [username]="usernameFc.value" [enable]="userAgentCreationType === userAgentCreationTypeEnum.Username" (credentials)="registerWithApizeeUserManagement($event)">
                         </app-login>
                     </div>
@@ -166,7 +166,7 @@
             </div>
         </div>
         <div class="row">
-            <div class="col">
+            <div class="col-8 with-divider">
                 <p>From a <code>Session</code>, get or create a <code>Conversation</code> :</p>
                 <div class="text-center">
                     <form [formGroup]="conversationFormGroup" (ngSubmit)="getOrcreateConversation()">
@@ -180,14 +180,36 @@
                     </form>
                 </div>
             </div>
+            <div class="col">
+                <div class="row">
+                    <div class="col">
+                        <p>Or create a <code>Conference</code> (a private conversation, with moderation capabilities)
+                        </p>
+                        <div class="text-center">
+                            <button mat-raised-button color="primary" type="button" (click)="createConference()" [disabled]="!session||conversation||(userAgentAuthType !== userAgentAuthTypeEnum.CloudApiRTC)" title="Create Conference">CreateConference&nbsp;<i
+                                    class="bi bi-telephone-forward-fill"></i></button>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col">
+                        <br>
+                        <p class="alert alert-warning" role="alert">This is only available when
+                            <code>UserAgent</code> is authenticated with <strong>cloud.ApiRTC</strong>.
+                        </p>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="row" *ngIf="conversation">
             <div class="col">
+                <br>
                 <div class="alert alert-success" role="alert">
                     <p class="clearfix">Got <code>Conversation</code> with <code>name</code>
-                        <span>&lt;<strong>{{conversationNameFc.value}}</strong>&gt;</span>. Others can join at url
-                        <a href="{{conversationUrl}}" target="_blank">{{conversationUrl}}</a>
+                        <span>&lt;<strong>{{conversationNameFc.value}}</strong>&gt;</span>.
+                        <br>Others can join at url
+                        <a href="{{conversationUrlWithApiKey}}" target="_blank">{{conversationUrl}}</a>
                         <span class="float-right"><button mat-raised-button color="primary"
                                 [cdkCopyToClipboard]="conversationUrlWithApiKey" title="Copy to clipboard">Copy
                                 link&nbsp;<i class="bi bi-clipboard"></i></button></span>
@@ -200,11 +222,11 @@
             </div>
         </div>
         <div class="row">
-            <div class="col">
+            <div class="col-8 with-divider">
                 <br>
                 <p>
-                    Calling <code>Conversation.join</code> makes the current
-                    <code>UserAgent</code> take part of the <strong>conversation</strong> :
+                    Calling <code>Conversation.join</code> makes the <code>UserAgent</code> that created the
+                    <code>Session</code> take part of the <strong>conversation</strong> :
                 </p>
                 <p class="text-center">
                     <button mat-raised-button color="{{joined?'accent':'primary'}}" (click)="!joined?join():leave()" [disabled]="!conversation||joinInPrgs" title="{{!joined?'Join':'Leave'}} Conversation">{{!joined?'Join':'Leave'}}&nbsp;<i
@@ -212,6 +234,19 @@
                 </p>
                 <p *ngIf="joinError" class="alert alert-danger" role="alert">{{joinError | json}}
                 </p>
+            </div>
+            <div class="col">
+                <br>
+                <div *ngFor="let kv of joinRequestsById | keyvalue">
+                    <button mat-raised-button color="primary" (click)="acceptJoinRequest(kv.value)" title="Accept">kv.value.getContact().getUsername()&nbsp;<i
+                            class="bi bi-person-check"></i></button>
+                    <button mat-raised-button color="warn" (click)="declineJoinRequest(kv.value)" title="Decline"><i
+                            class="bi bi-person-x"></i></button>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
                 <br>
                 <p>Setting <code>UserAgent.getUserData()</code> property <code>nickname</code> is useful to get identified by other people (
                     <code>Contact</code>s) in the conversation :
@@ -224,7 +259,6 @@
                         <mat-hint>Enter a nickname</mat-hint>
                     </mat-form-field>
                 </p>
-
                 <div class="alert alert-success clearfix" *ngIf="joined">
                     <h3>List of <code>Contact</code>s in this conversation :</h3>
                     <ul *ngIf="contactHoldersById.size > 0; else elseBlock_Alone">
@@ -238,8 +272,8 @@
                     </ul>
                     <ng-template #elseBlock_Alone>No one joined yet.</ng-template>
                 </div>
-
             </div>
+
         </div>
     </div>
 
