@@ -25,18 +25,22 @@ export class ContactDecorator {
         return new ContactDecorator(contact);
     }
 
-    public update(contact: any) {
-        this.contact = contact;
-        this.username = contact.getUsername();
-        this.nickname = contact.getUserData().get(PROPERTY_NICKNAME);
-    }
-
     public getId(): string {
         return this.id;
     }
 
+    public getContact(): any {
+        return this.contact;
+    }
+
     public getStreamHoldersById(): Map<string, StreamDecorator> {
         return this.streamHoldersById;
+    }
+
+    public update(contact: any) {
+        this.contact = contact;
+        this.username = contact.getUsername();
+        this.nickname = contact.getUserData().get(PROPERTY_NICKNAME);
     }
 
     public addStream(stream: StreamDecorator) {

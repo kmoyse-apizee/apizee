@@ -3,6 +3,9 @@
         Streams from <code>Contact</code> with
         <code>nickname</code>&nbsp;<span>&lt;<strong>{{_contactHolder.nickname}}</strong>&gt;</span>
     </p>
+    <p *ngIf="withModeration">
+        <button *ngIf="withModeration" mat-raised-button color="accent" (click)="emitEject()">Eject</button>
+    </p>
     <div id="{{_contactHolder.id}}-streams" class="carousel slide" data-ride="carousel">
         <ol class="carousel-indicators">
             <!-- <li data-target="#carouselExampleIndicators" data-slide-to="0" class="active"></li> -->

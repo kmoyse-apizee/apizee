@@ -92,7 +92,7 @@
                     </div>
                     <div class="col-4 with-divider">
                         <p>Using your own authentication server that provides a <strong>Json Web Token</strong> allows to register the <code>UserAgent</code> with <strong>ApiRTC</strong>'s servers in a more secure way.</p>
-                        <app-login [btnText]="'Register with JWT'" [enable]="!session&&(userAgentCreationType === userAgentCreationTypeEnum.Key)" (credentials)="registerWithJWTAuth($event)"></app-login>
+                        <app-login [btnText]="'Register with JWT'" [enable]="!registerInPrgs&&!session&&(userAgentCreationType === userAgentCreationTypeEnum.Key)" (credentials)="registerWithJWTAuth($event)"></app-login>
                         <!-- <p *ngIf="token" class="text-success">Got token &lt;<code>{{token}}</code>&gt;</p>
                         <button mat-raised-button color="primary" (click)="registerWithToken()" [disabled]="!token" title="Register with token">Register with token
                             &nbsp;<i class="bi bi-box-arrow-in-right"></i></button> -->
@@ -101,7 +101,7 @@
                         <p>Authentication with third party server that generates a <strong>token</strong> and that
                             <strong>ApiRTC</strong>'s servers will query with this token during registration.
                         </p>
-                        <app-login [btnText]="'Register with 3rdP auth server'" [enable]="!session&&(userAgentCreationType === userAgentCreationTypeEnum.Key)" (credentials)="registerWith3rdPartyAuth($event)">
+                        <app-login [btnText]="'Register with 3rdP auth server'" [enable]="!registerInPrgs&&!session&&(userAgentCreationType === userAgentCreationTypeEnum.Key)" (credentials)="registerWith3rdPartyAuth($event)">
                         </app-login>
                     </div>
                 </div>
@@ -120,7 +120,7 @@
                 <div class="row">
                     <div class="col">
                         <p>Authentication with <strong>cloud.ApiRTC</strong> user management.</p>
-                        <app-login [btnText]="'Register with ApiRTC.com'" [username]="usernameFc.value" [enable]="userAgentCreationType === userAgentCreationTypeEnum.Username" (credentials)="registerWithApizeeUserManagement($event)">
+                        <app-login [btnText]="'Register with ApiRTC.com'" [username]="usernameFc.value" [enable]="!registerInPrgs&&!session&&(userAgentCreationType === userAgentCreationTypeEnum.Username)" (credentials)="registerWithApizeeUserManagement($event)">
                         </app-login>
                     </div>
                 </div>
@@ -186,8 +186,12 @@
                         <p>Or create a <code>Conference</code> (a private conversation, with moderation capabilities)
                         </p>
                         <div class="text-center">
-                            <button mat-raised-button color="primary" type="button" (click)="createConference()" [disabled]="!session||conversation||(userAgentAuthType !== userAgentAuthTypeEnum.CloudApiRTC)" title="Create Conference">CreateConference&nbsp;<i
-                                    class="bi bi-telephone-forward-fill"></i></button>
+                            <button mat-raised-button color="primary" type="button" (click)="createConference()" [disabled]="!session||createConferenceInPrgs||conversation||(userAgentAuthType !== userAgentAuthTypeEnum.CloudApiRTC)" title="Create Conference">CreateConference&nbsp;<i
+                                    class="bi bi-telephone-forward-fill"></i>
+                                <mat-icon *ngIf="joinInPrgs">
+                                    <mat-spinner [diameter]="16"></mat-spinner>
+                                </mat-icon>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -222,7 +226,7 @@
             </div>
         </div>
         <div class="row">
-            <div class="col-8 with-divider">
+            <div class="col">
                 <br>
                 <p>
                     Calling <code>Conversation.join</code> makes the <code>UserAgent</code> that created the
@@ -230,19 +234,15 @@
                 </p>
                 <p class="text-center">
                     <button mat-raised-button color="{{joined?'accent':'primary'}}" (click)="!joined?join():leave()" [disabled]="!conversation||joinInPrgs" title="{{!joined?'Join':'Leave'}} Conversation">{{!joined?'Join':'Leave'}}&nbsp;<i
-                            class="bi bi-chat-quote"></i></button>
+                            class="bi bi-chat-quote"></i>
+                        <mat-icon *ngIf="joinInPrgs">
+                            <mat-spinner [diameter]="16"></mat-spinner>
+                        </mat-icon>
+                    </button>
                 </p>
+                <p *ngIf="waitingForModeratorAcceptance" class="alert alert-warning" role="alert">Waiting for moderator {{moderator | json}} acceptance</p>
                 <p *ngIf="joinError" class="alert alert-danger" role="alert">{{joinError | json}}
                 </p>
-            </div>
-            <div class="col">
-                <br>
-                <div *ngFor="let kv of joinRequestsById | keyvalue">
-                    <button mat-raised-button color="primary" (click)="acceptJoinRequest(kv.value)" title="Accept">kv.value.getContact().getUsername()&nbsp;<i
-                            class="bi bi-person-check"></i></button>
-                    <button mat-raised-button color="warn" (click)="declineJoinRequest(kv.value)" title="Decline"><i
-                            class="bi bi-person-x"></i></button>
-                </div>
             </div>
         </div>
         <div class="row">
@@ -393,10 +393,20 @@
                 </p>
             </div>
         </div>
+        <div class="row">
+            <div class="col">
+                <p class="alert alert-info" role="alert" *ngFor="let kv of joinRequestsById | keyvalue">
+                    <button mat-raised-button color="primary" (click)="acceptJoinRequest(kv.value)" title="Accept">{{kv.value.sender.getUsername()}}&nbsp;<i
+                            class="bi bi-person-check"></i></button>
+                    <button mat-raised-button color="warn" (click)="declineJoinRequest(kv.value)" title="Decline"><i
+                            class="bi bi-person-x"></i></button>
+                </p>
+            </div>
+        </div>
     </div>
     <div class="row">
         <div *ngFor="let kv of contactHoldersById | keyvalue" class="col-4">
-            <app-peer [contactHolder]="kv.value" (onStreamSubscription)="subscribeOrUnsubscribeToStream($event)">
+            <app-peer [contactHolder]="kv.value" [withModeration]="_isPrivate&&(role===roleEnum.Moderator)" (onStreamSubscription)="subscribeOrUnsubscribeToStream($event)" (onEject)="eject(kv.value)">
             </app-peer>
         </div>
     </div>
@@ -412,19 +422,21 @@
                 <div class="text-center">
                     <p>
                         <button mat-stroked-button color="warn" (click)="toggleRecording()" [disabled]="!joined" title="{{!recording?'Record':'Stop Recording'}} Conversation">{{!recording?'Record':'Stop
-                            Recording'}}&nbsp;<i class="bi bi-record-circle"></i></button>
-                        <mat-spinner *ngIf=""></mat-spinner>
+                            Recording'}}&nbsp;<i class="bi bi-record-circle"></i>
+                            <mat-icon *ngIf="recording">
+                                <mat-spinner [diameter]="16"></mat-spinner>
+                            </mat-icon>
+                        </button>
                     </p>
                     <p *ngIf="recordingError" class="alert alert-danger" role="alert">code:{{recordingError.code}}, message:{{recordingError.error.message}}
                     </p>
-
                     <div class="alert alert-success clearfix text-center" *ngIf="recordingsByMediaId.size>0">
                         <mat-chip-list aria-label="record selection">
                             <mat-chip *ngFor="let kv of recordingsByMediaId | keyvalue"><a href="{{kv.value.recordingInfo.mediaURL}}" target="_blank">{{kv.value.recordingInfo.recordedFileName}}</a>
                                 <span>&nbsp;<span *ngIf="kv.value.available; else elseBlockUnavalable"><i
                                             class="bi bi-cloud-download"></i></span>
                                 <ng-template #elseBlockUnavalable>
-                                    <mat-spinner [diameter]="15"></mat-spinner>
+                                    <mat-spinner [diameter]="16"></mat-spinner>
                                 </ng-template>
                                 </span>
                             </mat-chip>

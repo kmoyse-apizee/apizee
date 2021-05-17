@@ -36,6 +36,11 @@ enum UserAgentAuthType {
   CloudApiRTC
 }
 
+enum Role {
+  Default,
+  Moderator
+}
+
 @Component({
   selector: 'app-conversation',
   templateUrl: './conversation.component.html',
@@ -57,10 +62,12 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
 
   userAgentCreationType: UserAgentCreationType;
   userAgentAuthType: UserAgentAuthType;
+  role: Role = Role.Default;
 
   // to be used from template
   userAgentCreationTypeEnum = UserAgentCreationType;
   userAgentAuthTypeEnum = UserAgentAuthType;
+  roleEnum = Role;
 
   nicknameFc: FormControl = new FormControl({ value: DEFAULT_NICKNAME, disabled: true });
 
@@ -95,9 +102,8 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   // apiRTC data objects
   //joinRequests: Array<any> = new Array();
   joinRequestsById: Map<string, any> = new Map();
-
-  // Local user credentials
-  //credentials: any = null;
+  moderator: any = null;
+  waitingForModeratorAcceptance = false;
 
   // Local Streams
   localStreamHolder: StreamDecorator;
@@ -116,6 +122,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   joined = false;
 
   publishInPrgs = false;
+  createConferenceInPrgs = false;
 
   // Peer Contacts
   // Keep here only contacts that joined the conversation
@@ -236,7 +243,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
 
   /***************************************************************************/
 
-  private _isPrivate: boolean = false;
+  _isPrivate: boolean = false;
   get isPrivate(): boolean {
     return this._isPrivate;
   }
@@ -406,7 +413,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
           id: json.userId,
           token: this.token
         });
-        this.registerInPrgs = false;
+        //this.registerInPrgs = false;
         this.registrationError = null;
       },
       error => {
@@ -444,7 +451,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
           id: json.userId,
           token: this.token
         });
-        this.registerInPrgs = false;
+        //this.registerInPrgs = false;
         this.registrationError = null;
       },
       error => {
@@ -467,8 +474,10 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   // Registration with registerInformation
   doRegisterWithRegisterInformation(registerInformation: Object) {
     this.registrationError = null;
+    this.registerInPrgs = true;
 
     this.userAgent.register(registerInformation).then((session: any) => {
+      this.registerInPrgs = false;
       this.session = session;
       console.log("Session:", session);
 
@@ -486,6 +495,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       this.registrationError = null;
     }).catch(error => {
       console.log("Registration error", error);
+      this.registerInPrgs = false;
       this.registrationError = error;
     });
   }
@@ -630,29 +640,17 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.isPrivate) {
       // WARN getConference is deprecated ! shall I finally be able to have same function for both getOrcreateConversation and createConference ?
       // just making the name different ?
-      this.conversation = this.session.getConference(this.conversationNameFc.value);
-      //this.conversation = this.session.getOrCreateConversation('Private:' + this.conversationNameFc.value);
+      // Not realy because :
+      // this.conversation = this.session.getOrCreateConversation(this.conversationNameFc.value);
+      // does not work, it actually creates another conversation.
+      // the folling works :
+      //this.conversation = this.session.getConference(this.conversationNameFc.value);
+      // and the following too :
+      this.conversation = this.session.getOrCreateConversation('Private:' + this.conversationNameFc.value);
+      // but this is not very cool...
     } else {
       this.conversation = this.session.getOrCreateConversation(this.conversationNameFc.value);
     }
-
-    // force Urls build
-    this.buildConversationUrls();
-
-    this.doListenToConversationEvents();
-  }
-
-  createConference_test_REMOVETHIS() {
-    const enterprise = this.userAgent.getEnterprise();
-    console.log("Enterprise apiKey", enterprise.getApiKey());
-
-    // use the apiKeyFc to store the apiKey (will be used to create the conversation url)
-    this.apiKeyFc.setValue(enterprise.getApiKey());
-
-    console.log("createConference2", 'Private:' + this.conversationNameFc.value);
-    this.conversation = this.session.getOrCreateConversation('Private:' + this.conversationNameFc.value);
-
-    this.isPrivate = true;
 
     // force Urls build
     this.buildConversationUrls();
@@ -672,6 +670,8 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     // use the apiKeyFc to store the apiKey (will be used to create the conversation url)
     this.apiKeyFc.setValue(enterprise.getApiKey());
 
+    this.createConferenceInPrgs = true;
+
     // TODO test with session.getOrCreateConversation with a special name name:apiKey
     enterprise.createPrivateConference().then((conference: any) => {
 
@@ -684,10 +684,14 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       //
       this.conversation = conference;
 
+      this.role = Role.Moderator;
+
       this.isPrivate = true;
 
       // in this case join is done automatically
       this.joined = true;
+
+      this.createConferenceInPrgs = false;
 
       this.doListenToConversationEvents();
 
@@ -697,35 +701,42 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
         console.log('on:conversationJoinRequest', request);
         this.joinRequestsById.set(request.getId(), request);
       });
-
-      // on top of typical Conversation Events, listen to moderation events too :
-
-      // Listen participantEjected event 
-      this.conversation.on('participantEjected', (data: any) => {
-        console.log('on:participantEjected', data);
-        // if (userRole === 'guest') {
-        //     if (data.self) {
-        //         console.log('User was ejected');
-        //         // If user was ejected handle conference leaving things
-        //         handleLeaveConference();
-        //     }
-        // } else if (userRole === 'moderator') {
-        //     if (data.contact) {
-        //         // Remove Eject button for the user
-        //         document.getElementById('eject-' + data.contact.getId()).remove();
-        //     }
-        // }
-      });
-
+    }).catch((error: any) => {
+      this.createConferenceInPrgs = false;
     });
 
+  }
+
+  //TODO : REMOVETHIS : DOES NOT WORK, subsequent join fails
+  // 2021-05-17T12:29:57.318Z][ERROR]apiRTC(Conversation) checkAccess() - cannot check access
+  // https://cloud.apizee.com/api/v2/conferences/7a3dc7993234907508525829e02f2388:glop/checkAccess
+  // {"code":10,"message":"The selected room_name field is invalid.","details":"Parameter room_name"}
+  createConference_test_DOESNOTWORK() {
+    const enterprise = this.userAgent.getEnterprise();
+    console.log("Enterprise apiKey", enterprise.getApiKey());
+
+    // use the apiKeyFc to store the apiKey (will be used to create the conversation url)
+    this.apiKeyFc.setValue(enterprise.getApiKey());
+
+    console.log("createConference2", 'Private:' + this.conversationNameFc.value);
+    this.conversation = this.session.getOrCreateConversation('Private:' + this.conversationNameFc.value);
+
+    this.role = Role.Moderator;
+
+    this.isPrivate = true;
+
+    this.doListenToConversationEvents();
+
+    this.session.on('conversationJoinRequest', (request: any) => {
+      console.log('on:conversationJoinRequest', request);
+      this.joinRequestsById.set(request.getId(), request);
+    });
   }
 
   acceptJoinRequest(request: any) {
     request.accept()
       .then(() => {
         console.log('Join request accepted');
-
         this.doRemoveJoinRequest(request);
       })
       .catch((err) => {
@@ -753,14 +764,6 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   doListenToConversationEvents() {
-
-    //console.log("this.conversation instanceof apiRTC.Conference", this.conversation instanceof apiRTC.Conference);
-    //console.log("typeof this.conversation ", typeof this.conversation);
-    if (this.isPrivate) {
-      this.conversation.on('waitingForModeratorAcceptance', (moderator: any) => {
-        console.log("on:waitingForModeratorAcceptance", moderator);
-      });
-    }
 
     // List of Streams published by peers in the Conversation shall be maintained in the application
     // by listening on streamListChanged event
@@ -949,6 +952,33 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     this.conversation.on('transferEnded', () => {
       this.uploadProgressPercentage = 100;
     });
+
+    // Moderation events
+    //
+    //console.log("this.conversation instanceof apiRTC.Conference", this.conversation instanceof apiRTC.Conference);
+    //console.log("typeof this.conversation ", typeof this.conversation);
+    if (this.isPrivate) {
+      this.conversation.on('waitingForModeratorAcceptance', (moderator: any) => {
+        console.log("on:waitingForModeratorAcceptance", moderator);
+        this.moderator = moderator;
+        this.waitingForModeratorAcceptance = true;
+      }).on('participantEjected', (data: any) => {
+        console.log('on:participantEjected', data);
+        if (this.role === Role.Default) {
+          if (data.self) {
+            console.log('User was ejected');
+            this.destroyConversation();
+          }
+        } else if (this.role === Role.Moderator) {
+          // Nothing to do here ?, the application on Default Role side shall leave and destroy conversation
+          if (data.contact) {
+            // Remove Eject button for the user
+            //
+            //this.contactHoldersById.delete(data.contact.getId());
+          }
+        }
+      });
+    }
   }
 
   join(): void {
@@ -983,6 +1013,11 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
         this.joinInPrgs = false;
         this.joinError = err;
       });
+  }
+
+  eject(contactHolder: ContactDecorator): void {
+    console.info('eject', contactHolder);
+    this.conversation.eject(contactHolder.getContact());
   }
 
   destroyConversation(): void {

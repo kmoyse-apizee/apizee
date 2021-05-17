@@ -14,3 +14,9 @@
     word-wrap: break-word;
     /* IE */
 }
+
+.spinner-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}

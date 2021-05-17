@@ -22,7 +22,11 @@ export class PeerComponent implements OnInit {
     this.streamHoldersById = contactHolder.getStreamHoldersById();
   };
 
+  @Input() withModeration: boolean = false;
+
   @Output() onStreamSubscription = new EventEmitter<StreamSubscribeEvent>();
+
+  @Output() onEject = new EventEmitter<boolean>();
 
   constructor() { }
 
@@ -31,6 +35,10 @@ export class PeerComponent implements OnInit {
 
   emitStreamSubscription(event: StreamSubscribeEvent) {
     this.onStreamSubscription.emit(event);
+  }
+
+  emitEject() {
+    this.onEject.emit(true);
   }
 
   prev() {
