@@ -25,7 +25,7 @@
             </div>
         </div>
         <div class="row">
-            <div class="col-6 with-divider">
+            <div class="col-sm-12 col-md-6 with-divider">
                 <p>Create <code>UserAgent</code> with an apiKey :</p>
                 <div class="text-center">
                     <mat-form-field [style.width.%]="60">
@@ -39,7 +39,7 @@
                     <button mat-raised-button color="primary" (click)="createUserAgent()" [disabled]="userAgent" title="Create UserAgent">new UserAgent&nbsp;<i class="bi bi-file-earmark-plus"></i></button>
                 </div>
             </div>
-            <div class="col-6">
+            <div class="col">
                 <p>Create <code>UserAgent</code> with the <code>username</code> of a user created within your enterprise account on <a href="https://cloud.apirtc.com/users" target="_blank">https://cloud.apirtc.com/users</a> :
                 </p>
                 <div class="text-center">
@@ -83,21 +83,21 @@
         </div>
         <div class="row">
 
-            <div class="col-9 with-divider">
+            <div class="col-md-12 col-lg-9 with-divider">
                 <div class="row">
-                    <div class="col-4 with-divider">
+                    <div class="col with-divider">
                         <p>Registering as guest is simple but less secured.</p>
                         <button mat-raised-button color="primary" (click)="registerWithoutAuth()" [disabled]="!userAgent||registerInPrgs||session||userAgentCreationType === userAgentCreationTypeEnum.Username" title="Register as guest">Register as
                             Guest&nbsp;<i class="bi bi-box-arrow-in-right"></i></button>
                     </div>
-                    <div class="col-4 with-divider">
+                    <div class="col with-divider">
                         <p>Using your own authentication server that provides a <strong>Json Web Token</strong> allows to register the <code>UserAgent</code> with <strong>ApiRTC</strong>'s servers in a more secure way.</p>
                         <app-login [btnText]="'Register with JWT'" [enable]="!registerInPrgs&&!session&&(userAgentCreationType === userAgentCreationTypeEnum.Key)" (credentials)="registerWithJWTAuth($event)"></app-login>
                         <!-- <p *ngIf="token" class="text-success">Got token &lt;<code>{{token}}</code>&gt;</p>
                         <button mat-raised-button color="primary" (click)="registerWithToken()" [disabled]="!token" title="Register with token">Register with token
                             &nbsp;<i class="bi bi-box-arrow-in-right"></i></button> -->
                     </div>
-                    <div class="col-4">
+                    <div class="col">
                         <p>Authentication with third party server that generates a <strong>token</strong> and that
                             <strong>ApiRTC</strong>'s servers will query with this token during registration.
                         </p>
@@ -116,7 +116,7 @@
                 </div>
             </div>
 
-            <div class="col-3">
+            <div class="col">
                 <div class="row">
                     <div class="col">
                         <p>Authentication with <strong>cloud.ApiRTC</strong> user management.</p>
@@ -166,7 +166,7 @@
             </div>
         </div>
         <div class="row">
-            <div class="col-8 with-divider">
+            <div class="col-sm-12 col-md-8 with-divider">
                 <p>From a <code>Session</code>, get or create a <code>Conversation</code> :</p>
                 <div class="text-center">
                     <form [formGroup]="conversationFormGroup" (ngSubmit)="getOrcreateConversation()">
@@ -286,7 +286,7 @@
         </div>
         <br>
         <div class="row">
-            <div class="col">
+            <div class="col-sm-12 col-md-6">
                 <form [formGroup]="messageFormGroup" (ngSubmit)="sendMessage()">
                     <mat-form-field class="w-75">
                         <mat-label>Message</mat-label>
@@ -325,14 +325,14 @@
     <div class="container">
         <div class="row">
             <div class="col">
-                <h1>5. Publish Streams</h1>
+                <h1>5. Create and Publish Streams</h1>
                 <p><strong>ApiRTC</strong> allows to publish many <code>Stream</code>s at the same time in a
                     <code>Conversation</code>. They can be webcam, screen share, video file...
                 </p>
             </div>
         </div>
         <div class="row">
-            <div class="col text-center">
+            <div class="col-sm-12 col-md-4 text-center">
                 <button mat-raised-button color="{{localStreamHolder?'accent':'primary'}}" (click)="!localStreamHolder?createStream():releaseStream()" [disabled]="!userAgent||localStreamHolder?.published">{{!localStreamHolder?'Create
                     Stream':'Release
                     Stream'}}</button>
@@ -341,38 +341,35 @@
                     Stream'}}
                     <span *ngIf="publishInPrgs" class="spinner-border text-light" role="status"></span></button>
             </div>
-            <div class="col text-center">
+            <div class="col-sm-12 col-md-4 text-center">
                 <button mat-raised-button color="{{screenSharingStreamHolder?'accent':'primary'}}" (click)="toggleScreenSharing()" [disabled]="!joined">{{screenSharingStreamHolder?'Unshare':'Share'}}
                     Screen</button>
             </div>
-            <div class="col text-center">
+            <div class="col-sm-12 col-md-4 text-center">
                 <form [formGroup]="videoFileFormGroup">
                     <input type="file" formControlName="file" (change)="createVideoStream($event)" />
                     <button mat-raised-button color="accent" (click)="releaseVideoStream()" [disabled]="!videoStreamHolder||videoStreamHolder?.published" title="Release Stream">Release</button>
                     <button mat-raised-button color="{{videoStreamHolder?.published?'accent':'primary'}}" (click)="togglePublishVideoStream()" [disabled]="!joined||!videoStreamHolder" title="{{videoStreamHolder?.published?'Unpublish':'Publish'}} Video File">{{videoStreamHolder?.published?'Unpublish':'Publish'}}</button>
                 </form>
-
             </div>
         </div>
     </div>
 
     <div class="row">
-        <div class="col-4" *ngIf="localStreamHolder">
+        <div class="col-sm-12 col-md-4" *ngIf="localStreamHolder">
             <div class="alert alert-success clearfix">
                 <app-stream [streamHolder]="localStreamHolder" [withSubscription]="false" [withDevicesControl]="true" [audioMuted]="false" [videoMuted]="false" [audioInDevices]="audioInDevices" [videoDevices]="videoDevices" (onAudioMute)="toggleAudioMute()" (onVideoMute)="toggleVideoMute()"
                     (onAudioInSelected)="selectedAudioInDevice=$event;changeLocalStream()" (onVideoSelected)="selectedVideoDevice=$event;changeLocalStream()" [background]="currentBackground" (onBackgroundSelected)="currentBackground=$event;changeLocalStream()">
                 </app-stream>
             </div>
         </div>
-
-        <div class="col-4" *ngIf="screenSharingStreamHolder">
+        <div class="col-sm-12 col-md-4" *ngIf="screenSharingStreamHolder">
             <div class="alert alert-success clearfix">
                 <app-stream [streamHolder]="screenSharingStreamHolder" [withSubscription]="false" [withDevicesControl]="false">
                 </app-stream>
             </div>
         </div>
-
-        <div class="col-4" *ngIf="videoStreamHolder">
+        <div class="col-sm-12 col-md-4" *ngIf="videoStreamHolder">
             <div class="alert alert-success clearfix">
                 <app-stream [streamHolder]="videoStreamHolder" [withSubscription]="false" [withDevicesControl]="false">
                 </app-stream>
@@ -405,7 +402,7 @@
         </div>
     </div>
     <div class="row">
-        <div *ngFor="let kv of contactHoldersById | keyvalue" class="col-4">
+        <div *ngFor="let kv of contactHoldersById | keyvalue" class="col-sm-12 col-md-4">
             <app-peer [contactHolder]="kv.value" [withModeration]="_isPrivate&&(role===roleEnum.Moderator)" (onStreamSubscription)="subscribeOrUnsubscribeToStream($event)" (onEject)="eject(kv.value)">
             </app-peer>
         </div>
@@ -446,5 +443,28 @@
             </div>
         </div>
     </div>
+
+    <hr>
+
+    <div class="container">
+        <div class="row">
+            <div class="col">
+                <h1>8. Bluetooth</h1>
+                <p>TODO
+                </p>
+                <div class="text-center">
+                    <p>
+                        <button mat-stroked-button color="primary" (click)="searchBluetooth()" title="Bluetooth">Bluetooth
+                        </button>
+                    </p>
+                    <p>bluetooth : {{bluetooth}}</p>
+                    <p>bluetoothDevice : {{bluetoothDevice}}</p>
+                    <p *ngIf="bluetoothError" class="alert alert-danger" role="alert">{{bluetoothError}}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
 
 </div>

@@ -1330,4 +1330,26 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     this.videoStreamHolder = null;
   }
 
+  bluetooth: any = null;
+  bluetoothDevice: any = null;
+  bluetoothError = null;
+
+  searchBluetooth() {
+
+    const navigatorObject: any = window.navigator;
+    if (navigatorObject && navigatorObject.bluetooth) {
+      console.log("navigatorObject.bluetooth found");
+      const bluetooth = navigatorObject.bluetooth;
+      this.bluetooth = bluetooth;
+      bluetooth.requestDevice({ acceptAllDevices: true }).then(bluetoothDevice => {
+        console.log('searchBlueTooth', bluetoothDevice);
+        this.bluetoothDevice = bluetoothDevice;
+      });
+    } else {
+      console.log("navigatorObject.bluetooth NOT found");
+      this.bluetoothError = "navigator.bluetooth NOT found, maybe your browser does not support bluetooth : please verify compatibility at https://developer.mozilla.org/en-US/docs/Web/API/Bluetooth"
+    }
+
+  }
+
 }
