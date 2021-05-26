@@ -11,6 +11,11 @@ export class StreamVideoComponent implements OnInit, AfterViewInit {
 
   @Input() stream: any;
 
+  _mirror = false;
+  @Input() set mirror(mirror: boolean) {
+    this._mirror = mirror;
+  }
+
   constructor() { }
 
   ngOnInit(): void {

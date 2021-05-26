@@ -14,6 +14,8 @@ import { StreamSubscribeEvent, BackgroundImageEvent } from '../stream/stream.com
 import { PROPERTY_NICKNAME } from './../../consts';
 const DEFAULT_NICKNAME = '';
 
+import { VideoQuality, QVGA, HD, FHD } from '../../consts';
+
 declare var apiRTC: any;
 
 // TODO FIXTHIS: generates build error :
@@ -149,6 +151,8 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   selectedVideoDevice = null;
 
   currentBackground: string | BackgroundImageEvent = 'none';
+
+  selectedVideoQuality: VideoQuality = null;
 
   uploadProgressPercentage = 0;
 
@@ -573,6 +577,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.localStreamHolder) {
 
       const published = this.localStreamHolder.isPublished();
+      const audioMuted = this.localStreamHolder.getStream().isAudioMuted();
 
       // first, unpublish and release current local stream
       if (published) {
@@ -590,6 +595,15 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       }
       if (this.selectedVideoDevice) {
         options['videoInputId'] = this.selectedVideoDevice.id;
+      }
+      if (this.selectedVideoQuality) {
+        options['constraints'] = {
+          audio: !audioMuted,
+          video: {
+            width: { min: QVGA.width, ideal: this.selectedVideoQuality.width },
+            height: { min: QVGA.height, ideal: this.selectedVideoQuality.height }
+          }
+        }
       }
 
       if (this.currentBackground instanceof BackgroundImageEvent) {
@@ -626,6 +640,14 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
         })
         .catch(err => { console.error('createStream error', err); });
     }
+  }
+
+  setCapabilitiesOfLocalStream() {
+
+    this.localStreamHolder.getStream().setCapabilities().then(() => {
+      // if local stream was published consider we should publish changed one
+    })
+      .catch(err => { console.error('createStream error', err); });
   }
 
   /***************************************************************************
@@ -1121,18 +1143,28 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // if options are specified, this is because a specific device was selected
   createStream(options?: any): Promise<Object> {
-    console.log("createStream()", options);
+    console.log("createStream() with options", options);
     return new Promise((resolve, reject) => {
 
       //var default_createStreamOptions: any = { enhancedAudioActivated: true }; // => FAILS on chrome
-      var default_createStreamOptions: any = {};
-      default_createStreamOptions.constraints = {
-        audio: true,
-        video: true,
+      const default_createStreamOptions: any = {
+        constraints: {
+          audio: true,
+          //video: true
+          // or 
+          video: {
+            width: { min: QVGA.width, ideal: HD.width, max: FHD.width },
+            height: { min: QVGA.height, ideal: HD.height, max: FHD.height }
+          }
+        }
       };
 
+      if (options && !options.constraints) {
+        options.constraints = default_createStreamOptions.constraints;
+      }
+
       this.userAgent.createStream(options ? options : default_createStreamOptions)
-        .then(stream => {
+        .then((stream: any) => {
           console.log('createStream :', stream);
 
           // build fake streamInfo object to build a local stream.
@@ -1142,7 +1174,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
           this.localStreamHolder.setStream(stream);
 
           resolve(stream);
-        }).catch(err => {
+        }).catch((err: any) => {
           console.error('createStream error', err);
           reject(err);
         });
@@ -1168,7 +1200,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     if (event.doSubscribe) {
       this.conversation.subscribeToStream(event.streamHolder.getId()).then((stream: any) => {
         console.log('onStreamSubscribe success:', stream);
-      }).catch(err => {
+      }).catch((err: any) => {
         console.error('onStreamSubscribe error', err);
       });
     } else {
@@ -1190,7 +1222,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     this.conversation.publish(stream).then((stream: any) => {
       this.localStreamHolder.setPublished(true);
       this.publishInPrgs = false;
-    }).catch(err => {
+    }).catch((err: any) => {
       console.error('publish error', err);
       this.publishInPrgs = false;
     });
@@ -1247,7 +1279,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
             console.error('toggleScreenSharing()::publish', err);
           });
         })
-        .catch(function (err) {
+        .catch(function (err: any) {
           console.error('Could not create screensharing stream :', err);
         });
     } else {
@@ -1289,7 +1321,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
           this.videoStreamHolder.setStream(stream);
           console.info('createVideoStream()::createStreamFromMediaStream', stream);
         })
-        .catch((err) => {
+        .catch((err: any) => {
           console.error('createVideoStream()::createStreamFromMediaStream', err);
         });
       // free memory

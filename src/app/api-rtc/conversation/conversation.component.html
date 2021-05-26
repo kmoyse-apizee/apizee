@@ -359,7 +359,8 @@
         <div class="col-sm-12 col-md-4" *ngIf="localStreamHolder">
             <div class="alert alert-success clearfix">
                 <app-stream [streamHolder]="localStreamHolder" [withSubscription]="false" [withDevicesControl]="true" [audioMuted]="false" [videoMuted]="false" [audioInDevices]="audioInDevices" [videoDevices]="videoDevices" (onAudioMute)="toggleAudioMute()" (onVideoMute)="toggleVideoMute()"
-                    (onAudioInSelected)="selectedAudioInDevice=$event;changeLocalStream()" (onVideoSelected)="selectedVideoDevice=$event;changeLocalStream()" [background]="currentBackground" (onBackgroundSelected)="currentBackground=$event;changeLocalStream()">
+                    (onAudioInSelected)="selectedAudioInDevice=$event;changeLocalStream()" (onVideoSelected)="selectedVideoDevice=$event;changeLocalStream()" [background]="currentBackground" (onBackgroundSelected)="currentBackground=$event;changeLocalStream()"
+                    (onVideoQualitySelected)="selectedVideoQuality=$event;changeLocalStream()">
                 </app-stream>
             </div>
         </div>

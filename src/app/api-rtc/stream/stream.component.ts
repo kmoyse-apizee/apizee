@@ -4,6 +4,8 @@ import { FormControl } from '@angular/forms';
 
 import { StreamDecorator } from '../model/model.module';
 
+import { VideoQuality } from '../../consts';
+
 export class StreamSubscribeEvent {
   readonly streamHolder: StreamDecorator;
   readonly doSubscribe: boolean;
@@ -69,17 +71,24 @@ export class StreamComponent implements OnInit, OnDestroy {
   @Output() onAudioInSelected = new EventEmitter<any>();
   @Output() onVideoSelected = new EventEmitter<any>();
   @Output() onBackgroundSelected = new EventEmitter<string | BackgroundImageEvent>();
+  @Output() onVideoQualitySelected = new EventEmitter<VideoQuality>();
 
   // Audio/Video Muting
   muteAudioFc = new FormControl(false);
   muteVideoFc = new FormControl(false);
 
+  // Mirror
+  mirrorVideoFc = new FormControl(false);
+
   // Devices handling
   audioInFc = new FormControl('');
   videoFc = new FormControl('');
 
-  // Backgroung
+  // Backgroung selection
   backgroundFc = new FormControl('none');
+
+  // Video quality selection
+  videoQualityFc = new FormControl();
 
   constructor() { }
 
@@ -113,6 +122,13 @@ export class StreamComponent implements OnInit, OnDestroy {
       if (value !== 'image') {
         this.onBackgroundSelected.emit(value);
       }
+    });
+
+    // Video quality selection
+    //
+    this.videoQualityFc.valueChanges.subscribe(value => {
+      console.log("videoQualityFc#valueChanges", value);
+      this.onVideoQualitySelected.emit(value);
     });
   }
 
