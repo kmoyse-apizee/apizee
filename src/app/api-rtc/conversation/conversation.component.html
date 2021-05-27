@@ -188,7 +188,7 @@
                         <div class="text-center">
                             <button mat-raised-button color="primary" type="button" (click)="createConference()" [disabled]="!session||createConferenceInPrgs||conversation||(userAgentAuthType !== userAgentAuthTypeEnum.CloudApiRTC)" title="Create Conference">CreateConference&nbsp;<i
                                     class="bi bi-telephone-forward-fill"></i>
-                                <mat-icon *ngIf="joinInPrgs">
+                                <mat-icon *ngIf="createConferenceInPrgs">
                                     <mat-spinner [diameter]="16"></mat-spinner>
                                 </mat-icon>
                             </button>
