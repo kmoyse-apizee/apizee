@@ -801,9 +801,10 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       const streamId = String(streamInfo.streamId);
       const contactId = String(streamInfo.contact.getId());
 
-      if (streamInfo.listEventType === 'added') {
-        if (streamInfo.isRemote === true) {
+      if (streamInfo.isRemote === true) {
+        if (streamInfo.listEventType === 'added') {
           console.log('adding Stream:', streamId);
+
           const streamHolder: StreamDecorator = StreamDecorator.build(streamInfo);
           console.log(streamHolder.getId() + "->", streamHolder);
           this.streamHoldersById.set(streamHolder.getId(), streamHolder);
@@ -814,21 +815,14 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
           this.conversation.subscribeToStream(streamInfo.streamId)
             .then((stream: any) => {
               console.log('subscribeToStream success:', stream);
-            }).catch(err => {
+            }).catch((err: any) => {
               console.error('subscribeToStream error', err);
             });
-        }
-      } else if (streamInfo.listEventType === 'removed') {
-        if (streamInfo.isRemote === true) {
-
+        } else if (streamInfo.listEventType === 'removed') {
           console.log('removing Stream:', streamId);
           this.streamHoldersById.delete(streamId);
           const contactHolder = this.contactHoldersById.get(contactId);
           contactHolder.removeStream(streamId);
-          // if (contactHolder.getStreamHoldersById().size === 0) {
-          //   // Remove contact if it has no more streams
-          //   this.contactHoldersById.delete(contactId);
-          // }
         }
       }
     });
