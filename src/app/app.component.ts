@@ -8,7 +8,7 @@ import { Component, OnInit } from '@angular/core';
 })
 export class AppComponent implements OnInit {
 
-	title = 'apiRTC_ng_demo';
+	title = 'ApiRTC_ng_demo';
 
 	ngOnInit(): void {
 		//throw new Error('Method not implemented.');

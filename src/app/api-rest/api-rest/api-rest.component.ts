@@ -25,7 +25,9 @@ export class ApiRestComponent implements OnInit, OnDestroy {
 
   access_token: string;
 
-  response: Object;
+  createConferenceResponse: any;
+  listConferencesResponse: any;
+  deleteConferenceResponse: any;
 
   constructor(public apirtcRestTokenService: ApirtcRestTokenService,
     public apirtcRestConferenceService: ApirtcRestConferenceService,
@@ -38,19 +40,19 @@ export class ApiRestComponent implements OnInit, OnDestroy {
         json => {
           //this.apirtcRestTokenService.setCachedToken(json.access_token);
           this.access_token = json.access_token;
+          this.listConferences();
         },
         error => {
-          console.error('ApiRestComponent::ngOnInit|' + JSON.stringify(error));
+          console.error('ApiRestComponent::ngOnInit|createToken', error);
         });
   }
 
   ngOnDestroy(): void {
     // cleanup
     this.apirtcRestTokenService.deleteToken(this.access_token).subscribe(json => {
-      this.response = json;
-      console.info('ApiRestComponent::ngOnDestroy|' + JSON.stringify(json));
+      console.info('ApiRestComponent::ngOnDestroy|deleteToken', json);
     }, error => {
-      console.error('ApiRestComponent::ngOnDestroy|' + JSON.stringify(error));
+      console.error('ApiRestComponent::ngOnDestroy|deleteToken', error);
     });
   }
 
@@ -96,17 +98,33 @@ export class ApiRestComponent implements OnInit, OnDestroy {
       this.access_token,
       new ConferenceOptionsBuilder(this.participants.controls.map(fc => fc.value)).withPassword(this.password.value).muteAudio(this.audioMute.value).build())
       .subscribe(json => {
-        this.response = json;
-        console.info('ApiRestComponent::createConference|' + JSON.stringify(json));
+        this.createConferenceResponse = json;
+        console.info('ApiRestComponent::onSubmit|createConference', json);
+
       }, error => {
-        console.error('ApiRestComponent::createConference|' + JSON.stringify(error));
+        console.error('ApiRestComponent::onSubmit|createConference', error);
       });
 
   }
 
   listConferences(): void {
-    this.apirtcRestConferenceService.listConferences(this.access_token);
+    this.apirtcRestConferenceService.listConferences(this.access_token)
+      .subscribe(json => {
+        this.listConferencesResponse = json;
+        console.info('ApiRestComponent::onSubmit|listConferences', json);
+      }, error => {
+        console.error('ApiRestComponent::onSubmit|listConferences', error);
+      });
+  }
 
+  deleteConference(id: string): void {
+    this.apirtcRestConferenceService.deleteConference(this.access_token, id)
+      .subscribe(json => {
+        this.deleteConferenceResponse = json;
+        console.info('ApiRestComponent::deleteConference|deleteConference', json);
+      }, error => {
+        console.error('ApiRestComponent::deleteConference|deleteConference', error);
+      });
   }
 
 }

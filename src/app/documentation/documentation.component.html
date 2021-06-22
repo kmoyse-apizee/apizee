@@ -10,12 +10,39 @@
     <p>
         <strong>ApiRTC</strong> is built on top <strong>WebRTC</strong>. It helps to fastly build rich media sharing web based applications.
     </p>
-    <p><strong>ApiRTC</strong> fills gaps <strong>WebRTC</strong> does not address.</p>
-    <p><strong>ApiRTC</strong> brings :</p>
+    <p><strong>ApiRTC</strong> fills gaps <strong>WebRTC</strong> does not address :</p>
     <ul>
-        <li> signalisation,</li>
-        <li> STUN/TURN relays,</li>
-        <li> large scale group conversations support.</li>
+        <li>
+            <p><strong>Signalisation</strong> server</p>
+            <p>In order to realize a WebRTC application, one must establish a connection between the browsers that want to communicate. WebRTC provides the solution for the media plane but does not implement the signaling, i.e. how one client’s information
+                should be sent to remote peers in order to initiate connections.
+                <strong>ApiRTC cloud</strong> implements a signaling server using WebSockets. The browser and server interaction is event-based : the browser does not have to poll the server for a reply every time data have to be exchanged.
+            </p>
+            <p><strong>ApiRTC</strong>&nbsp;<strong>signalisation</strong> enables very fast and interactive communication.</p>
+
+        </li>
+        <li>
+            <p><strong>STUN/TURN</strong> servers</p>
+            <p>To send and receive data to another browser the client must have some specific information. The most important information is the client’s public IP address. Each client or browser must know this information about each other in order to receive
+                an incoming connection from another client. Sometimes it’s difficult for the client to know its own public IP address, especially if the client is behind a firewall or NAT, which is very common these days. To overcome this, WebRTC recommends
+                the use of a STUN server. A STUN server allows clients to find out their own public IP address and which type of NAT they are behind. Sometimes it can be hard to fetch the information, depending on the NAT, and in that case, a TURN server
+                can help the process.</p>
+            <p><strong>ApiRTC</strong> provides both STUN and TURN servers.</p>
+        </li>
+        <li>
+            <p><strong>Star topology</strong> infrastructure</p>
+            <p>In a common WebRTC application using basic full mesh topology, each client must encode and send their stream(s) to each remote peer in the network : the CPU load and the required uplink bandwidth increases linearly as the number of peers grows.
+                This topology is unsuitable for applications where larger groups of peers need to be connected at once.
+            </p>
+            <p><strong>ApiRTC</strong> enables the usage of a <strong>star topology</strong> by providing SFUs (Selective Forwarding Units) that acts as a central server that relays each peers’ streams.</p>
+            <p>MCU (stands for )Multipoint Control Unit) can also be used (TODO: check this ?)</p>
+            <p>Providing theses infrastructures, <strong>ApiRTC</strong> enables large scale group conversations support.</p>
+        </li>
+        <li>
+            <p><strong>Administration</strong> infrastructure and services</p>
+            <p>dashboard</p>
+            <p>recording</p>
+        </li>
     </ul>
 
     <!-- <h2>ApiRTC Terms</h2>
@@ -169,7 +196,7 @@
 
     <!-- note : this is weird : conversation.join()-->
     <!-- could we make something easier to explain in the future : participant.join(conversationId) ? -->
-    <p>Calling <code>Conversation.join</code> makes the <code>userAgent</code> who created this instance of
+    <p>Calling <code>Conversation.join</code> makes the <code>userAgent</code> used to create the <code>Session</code> used to create this instance of
         <code>Conversation</code> (through it's <code>Session</code>) join the
         <strong>conversation</strong>.
         <!-- The <code>userAgent</code> then becomes a <strong>participant</strong>. -->
@@ -192,28 +219,37 @@
     </code></pre>
 
     <!-- TODO : All that is weird and should be simplified -->
-    <p>Subscribing to peer <strong>streams</strong> is done in two steps :</p>
+    <p>Subscribing to peer <strong>streams</strong> shall be implemented as followed :</p>
     <ul>
         <li>
-            Listening on <code>'streamListChanged'</code> event notifies of <strong>streams</strong> published to the
-            <strong>conversation</strong>. Note that the data provided by the event is not a <code>Stream</code> but a
-            <code></code>,
+            <p>Listen on <code>Conversation</code>&nbsp;<code>'streamListChanged'</code> event to get notified of
+                <strong>streams</strong> published to the
+                <strong>conversation</strong>. The data provided by the event is a
+                <code>StreamInfo</code> : It gives information on <strong>streams</strong> published in the conversation such as the id (<code>StreamInfo.streamId</code>) of the <strong>stream</strong>.
+                <code>StreamInfo.listEventType</code> property tells whether the event is triggered for and addition (value
+                <code>'added'</code>) or a removal.
+            </p>
+
         </li>
-        <li>Then method
-            <code>conversation.subscribeToStream</code> makes this <strong>conversation</strong> subscribe to a
-            <strong>stream</strong>.
+        <li>
+            <p>Calling <code>conversation.subscribeToStream</code> with the <code>StreamInfo.streamId</code> of an 'added' remote stream makes this
+                <strong>conversation</strong> subscribe to a
+                <strong>stream</strong>.
+            </p>
+        </li>
+        <li>
+            <p>Finally, listening on <code>Conversation</code>&nbsp;<code>'streamAdded'</code> notifies with a
+                <code>Stream</code> instance which can be attached to web page for display.
+            </p>
         </li>
     </ul>
-    <p>Once subscribed, listening on <code>'streamAdded'</code> notifies with a
-        <code>Stream</code> instance which can be attached to web page for display.
-    </p>
 
     <p class="text-center"><img src="assets/apirtc_conversation_subscribe.svg" alt="image"></p>
 
     <pre class="border"><code>
         conversation.on('streamListChanged', streamInfo => (&#123;
-            if (streamInfo.listEventType === 'added') &#123;
-                if (streamInfo.isRemote === true) &#123;
+            if (streamInfo.isRemote === true) &#123;
+                if (streamInfo.listEventType === 'added') &#123;
                     conversation.subscribeToStream(streamInfo.streamId);
                     ...
         &#125;);
@@ -222,7 +258,19 @@
         &#125;);
     </code></pre>
 
-    <p>At this stage, the application displays both yours and peers videos in the page !</p>
+    <p>At this stage, the application displays both yours and peers video <strong>streams</strong> in the page !</p>
+
+    <p>This process is important because a <strong>stream</strong> published to a conversation can be restarted for various technical reasons. In this case the
+        <code>'streamListChanged'</code> won't be fired ; but the <code>'streamRemoved'</code> event will be fired with corresponding
+        <code>Stream</code> instance, and a <code>'streamAdded'</code> with the new instance will follow, allowing to display correct <strong>stream</strong>.
+    </p>
+
+    <p>It is then important to listen on <code>'streamRemoved'</code> to undisplay the corresponding <code>Stream</code>.
+    </p>
+
+    <p>Handling the remote streamInfo.listEventType === 'removed' is important to get notified that a stream is not published anymore // TODO shal I unsubscribeToStream(streamId) ??
+
+    </p>
 
 
     <!-- TODO : provide a simple sample for each framework -->

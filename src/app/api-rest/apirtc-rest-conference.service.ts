@@ -116,7 +116,7 @@ export class ApirtcRestConferenceService {
         // # => Anthony shall file a BUG regarding this
         (options.password ? `&password=` + options.password : '') +
         // # TODO: when I did the test, audio was not muted...
-        // # => Anthony says the API shall be updated with a new way ton configure such things
+        // # => Anthony says the API shall be updated with a new way to configure such things
         `&audioMute=` + (options.audioMute ? "true" : "false") +
         `&videoMute=` + (options.videoMute ? "true" : "false") +
         `&soundWaitingRoom=` + (options.soundWaitingRoom ? "true" : "false") +
@@ -155,7 +155,19 @@ export class ApirtcRestConferenceService {
         return throwError(handleError(error));
       })
     );
+  }
 
+  public deleteConference(access_token: string, id: string) {
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json;charset=UTF-8',
+      'Authorization': `Bearer ${access_token}`
+    });
+    return this.http.delete(encodeURI(this.baseUrl + '/' + id), { headers: headers }).pipe(
+      catchError(error => {
+        // rethrow to let client handle it
+        return throwError(handleError(error));
+      })
+    );
   }
 
 }

@@ -6,7 +6,8 @@
     <form [formGroup]="formGroup" (ngSubmit)="onSubmit()">
         <div class="form-row">
             <div class="form-group col-md-12">
-                <label for="emails">Participants&nbsp;<button class="btn btn-primary" (click)="addParticipant()" title="Add Participant"><i class="bi bi-plus-circle-dotted"></i></button></label>
+                <label for="emails">Participants&nbsp;<button class="btn btn-primary" (click)="addParticipant()"
+                        title="Add Participant"><i class="bi bi-plus-circle-dotted"></i></button></label>
                 <div class="form-row" formArrayName="participants">
                     <div class="col" *ngFor="let fc of participants.controls; let index = index">
                         <mat-form-field appearance="fill">
@@ -44,7 +45,38 @@
 
     </form>
 
-    <p>{{response | json}}</p>
+    <p>{{createConferenceResponse | json}}</p>
 
+
+    <!-- <p>{{listConferencesResponse | json}}</p> -->
+    <div class="row">
+        <div class="col">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th scope="col">#id</th>
+                        <th scope="col">name</th>
+                        <th scope="col">created</th>
+                        <th scope="col">created_by</th>
+                        <th scope="col">url</th>
+                        <th scope="col">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let conf of listConferencesResponse.data">
+                        <th scope="row">{{conf.id}}</th>
+                        <td>{{conf.name}}</td>
+                        <td>{{conf.created}}</td>
+                        <td>{{conf.created_by.name}}</td>
+                        <td><a href="{{conf.url}}" target="_blank" rel="noopener">Open</a></td>
+                        <td><button type="button" class="btn btn-danger" (click)="deleteConference(conf.id)">Del</button></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <p>{{deleteConferenceResponse | json}}</p>
+
+
+    </div>
 
 </div>
