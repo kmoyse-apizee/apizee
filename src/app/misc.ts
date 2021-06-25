@@ -11,26 +11,28 @@ export class Error {
 	public code: number;
 	public reason: string;
 	public data: any;
+	public status: number;
 
-	public static toError(json: any): Error {
-		if (json === null) {
-			return new Error(-1, 'internal error');
-		}
-		return new Error(json.errorCode || -1, json.errorReason);
+	// public static toError(json: any): Error {
+	// 	if (json === null) {
+	// 		return new Error(-1, 'internal error', -1);
+	// 	}
+	// 	return new Error(json.errorCode || -1, json.errorReason, -1);
+	// }
+
+	public static build(code: number, reason: string, status: number): Error {
+		return new Error(code, reason, status);
 	}
 
-	public static build(code: number, reason: string): Error {
-		return new Error(code, reason);
-	}
+	// public static map(error: Error, errorMapping: any): Error {
+	// 	let reason = errorMapping[error.code] || error.reason;
+	// 	return Error.build(error.code, reason);
+	// }
 
-	public static map(error: Error, errorMapping: any): Error {
-		let reason = errorMapping[error.code] || error.reason;
-		return Error.build(error.code, reason);
-	}
-
-	constructor(code: number, reason: string) {
+	constructor(code: number, reason: string, status: number) {
 		this.code = code;
 		this.reason = reason;
+		this.status = status;
 	}
 	public setData(data: any) {
 		this.data = data;
@@ -44,16 +46,19 @@ export class Error {
 import { HttpErrorResponse } from '@angular/common/http';
 
 export function handleError(response: HttpErrorResponse): Error {
+
+	// ApiRTC Rest API format is usually like : { "code": 2, "message": "Forbidden", "details": "No rights" } 
+
 	// In a real world app, we might use a remote logging infrastructure
 	let errMsg: string;
 
 	//if (response instanceof HttpErrorResponse) {
 	try {
 		const errObj = response.error instanceof Object ? response.error : JSON.parse(response.error);
-		const error: Error = Error.build(errObj.errorCode || -1, errObj.errorReason);
+		const error: Error = Error.build(errObj.code || -1, errObj.message, response.status);
 		let data = new Object();
 		for (let k in errObj) {
-			if ((k !== 'errorCode') && (k !== 'errorReason')) {
+			if ((k !== 'code') && (k !== 'message')) {
 				data[k] = errObj[k];
 			}
 		}
@@ -69,5 +74,5 @@ export function handleError(response: HttpErrorResponse): Error {
 	//		errMsg = response.message ? response.message : response.toString();
 	//	}
 	console.error('Misc::handleError|building error with' + errMsg);
-	return Error.build(-1, errMsg);
+	return Error.build(-1, errMsg, response.status);
 }

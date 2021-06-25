@@ -8,6 +8,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatListModule } from '@angular/material/list';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatTableModule } from '@angular/material/table';
+import { MatPaginatorModule } from '@angular/material/paginator';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 
 import { ApiRestComponent } from './api-rest/api-rest.component';
@@ -23,7 +26,8 @@ export { ApiRestComponent } from './api-rest/api-rest.component';
 
     FormsModule, ReactiveFormsModule,
     MatFormFieldModule, MatInputModule, MatIconModule, MatButtonModule,
-    MatListModule, MatSlideToggleModule
+    MatListModule, MatSlideToggleModule,
+    MatTableModule, MatPaginatorModule, MatProgressSpinnerModule
   ],
   exports: [ApiRestComponent]
 })
