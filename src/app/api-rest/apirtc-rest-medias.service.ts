@@ -7,20 +7,15 @@ import { catchError } from 'rxjs/operators';
 
 import { handleError } from '../misc';
 
-import { APIZEE_ACCOUNT } from './consts';
+import { APIZEE_CLOUD } from './consts';
+
+import { ApiRTCListResponse } from './api-rest.module';
 
 
 // export interface Media {
 //   id: string;
 //   total_count: number;
 // }
-
-export interface ApiRTCListResponse {
-  //data: Media[];
-  data: any[];
-  total: number;
-  next_offset: number;
-}
 
 @Injectable({
   providedIn: 'root'
@@ -30,11 +25,11 @@ export class ApirtcRestMediasService {
   baseUrl: string;
 
   constructor(private http: HttpClient) {
-    this.apiUrl = `${APIZEE_ACCOUNT.host}/api`;
+    this.apiUrl = `${APIZEE_CLOUD.host}/api`;
     this.baseUrl = `${this.apiUrl}/media`;
   }
 
-  public listMedias(access_token: string, offset?: number): Observable<ApiRTCListResponse> {
+  public list(access_token: string, offset?: number): Observable<ApiRTCListResponse> {
     const headers = new HttpHeaders({
       'Content-Type': 'application/json;charset=UTF-8',
       'Authorization': `Bearer ${access_token}`
@@ -52,7 +47,7 @@ export class ApirtcRestMediasService {
     );
   }
 
-  public deleteMedia(access_token: string, id: string) {
+  public delete(access_token: string, id: string) {
     const headers = new HttpHeaders({
       'Content-Type': 'application/json;charset=UTF-8',
       'Authorization': `Bearer ${access_token}`

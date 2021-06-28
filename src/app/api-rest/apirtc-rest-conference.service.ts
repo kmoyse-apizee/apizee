@@ -6,7 +6,7 @@ import { catchError } from 'rxjs/operators';
 
 import { handleError } from '../misc';
 
-import { APIZEE_ACCOUNT } from './consts';
+import { APIZEE_CLOUD } from './consts';
 
 export class ConferenceOptions {
 
@@ -32,25 +32,25 @@ export class ConferenceOptions {
 
 
 export class ConferenceOptionsBuilder {
-  //public participants:string;
-  public name: string = 'Test conf';
-  public message: string = 'join me';
-  public visibility: string = 'private';
-  public password: number;
-  public audioMute: boolean = true;
-  public videoMute: boolean = false;
-  public soundWaitingRoom: boolean = false;
-  public denyGuest: boolean = false;
-  public moderation: boolean = false;
-  public startTime: string;
-  public open: boolean = true;
-  public durationMinutes: number;
-  public reminderMinutes: number;
-  public language: string = 'fr';
-  public invite: boolean = true;
-  public moderator: string;
+  //private participants:string;
+  private name: string = 'Test conf';
+  private message: string = 'join me';
+  private visibility: string = 'private';
+  private password: number;
+  private audioMute: boolean = true;
+  private videoMute: boolean = false;
+  private soundWaitingRoom: boolean = false;
+  private denyGuest: boolean = false;
+  private moderation: boolean = false;
+  private startTime: string;
+  private open: boolean = true;
+  private durationMinutes: number;
+  private reminderMinutes: number;
+  private language: string = 'fr';
+  private invite: boolean = true;
+  private moderator: string;
 
-  constructor(public participants: Array<string>) {
+  constructor(private participants: Array<string>) {
   }
 
   public named(name: string): ConferenceOptionsBuilder {
@@ -94,7 +94,7 @@ export class ApirtcRestConferenceService {
   baseUrl: string;
 
   constructor(private http: HttpClient) {
-    this.apiUrl = `${APIZEE_ACCOUNT.host}/api`;
+    this.apiUrl = `${APIZEE_CLOUD.host}/api`;
     this.baseUrl = `${this.apiUrl}/conferences`;
   }
 

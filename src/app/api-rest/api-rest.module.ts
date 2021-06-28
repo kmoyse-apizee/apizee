@@ -18,6 +18,11 @@ import { ApiRestComponent } from './api-rest/api-rest.component';
 // to be used from routing
 export { ApiRestComponent } from './api-rest/api-rest.component';
 
+export interface ApiRTCListResponse {
+  data: any[];
+  total: number;
+  next_offset: number;
+}
 
 @NgModule({
   declarations: [ApiRestComponent],

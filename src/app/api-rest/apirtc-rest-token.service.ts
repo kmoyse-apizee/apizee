@@ -7,7 +7,7 @@ import { catchError } from 'rxjs/operators';
 
 import { handleError } from '../misc';
 
-import { APIZEE_ACCOUNT } from './consts';
+import { APIZEE_CLOUD } from './consts';
 
 @Injectable({
   providedIn: 'root'
@@ -20,7 +20,7 @@ export class ApirtcRestTokenService {
   //private access_token: string;
 
   constructor(private http: HttpClient) {
-    this.apiUrl = `${APIZEE_ACCOUNT.host}/api`;
+    this.apiUrl = `${APIZEE_CLOUD.host}/api`;
     this.baseUrl = `${this.apiUrl}/token`;
   }
 
@@ -49,7 +49,7 @@ export class ApirtcRestTokenService {
       );
   }
 
-  public checkUserToken(userId: string, access_token: string): Observable<any> {
+  public checkUserToken(apiKey: string, userId: string, access_token: string): Observable<any> {
 
     const headers = new HttpHeaders({
       'Content-Type': 'application/json;charset=UTF-8',
@@ -57,7 +57,7 @@ export class ApirtcRestTokenService {
     });
 
     return this.http
-      .post(encodeURI(this.apiUrl + '/checkUserToken' + `?apiKey=${APIZEE_ACCOUNT.apiKey}&userId=${userId}&token=${access_token}`), {}, { headers: headers })
+      .post(encodeURI(this.apiUrl + '/checkUserToken' + `?apiKey=${apiKey}&userId=${userId}&token=${access_token}`), {}, { headers: headers })
       .pipe(
         catchError(error => {
           // and rethrow to let client handle it
