@@ -1,8 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, } from '@angular/common/http';
 
-import { Observable } from 'rxjs';
-import { throwError } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
 import { handleError } from '../misc';
@@ -75,13 +74,21 @@ export class ApirtcRestEnterprisesService {
     this.baseUrl = `${this.apiUrl}/enterprises`;
   }
 
-  public list(access_token: string, offset?: number): Observable<ApiRTCListResponse> {
+  public list(access_token: string, offset?: number, min_depth?: number, max_depth?: number): Observable<ApiRTCListResponse> {
     const headers = new HttpHeaders({
       'Content-Type': 'application/json;charset=UTF-8',
       'Authorization': `Bearer ${access_token}`
     });
 
-    return this.http.get<ApiRTCListResponse>(encodeURI(this.baseUrl + '?' + 'offset=' + (offset || 0)), { headers: headers }).pipe(
+    var url = this.baseUrl + '?' + 'offset=' + (offset || 0);
+    if (min_depth !== undefined) {
+      url += '&min_depth=' + min_depth;
+    }
+    if (max_depth !== undefined) {
+      url += '&max_depth=' + max_depth;
+    }
+
+    return this.http.get<ApiRTCListResponse>(encodeURI(url), { headers: headers }).pipe(
       catchError(error => {
         // rethrow to let client handle it
         return throwError(handleError(error));
@@ -89,6 +96,19 @@ export class ApirtcRestEnterprisesService {
     );
   }
 
+  public listConversations(access_token: string, enterpriseId: string, offset?: number, limit?: number): Observable<ApiRTCListResponse> {
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json;charset=UTF-8',
+      'Authorization': `Bearer ${access_token}`
+    });
+
+    return this.http.get<ApiRTCListResponse>(encodeURI(this.baseUrl + '/' + enterpriseId + '/conversations' + '?' + 'offset=' + (offset || 0) + '&limit=' + (limit || 20)), { headers: headers }).pipe(
+      catchError(error => {
+        // rethrow to let client handle it
+        return throwError(handleError(error));
+      })
+    );
+  }
 
   public create(access_token: string, options: EnterpriseOptions) {
     const headers = new HttpHeaders({

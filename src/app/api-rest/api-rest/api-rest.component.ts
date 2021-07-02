@@ -10,6 +10,7 @@ import { ApirtcRestTokenService } from '../apirtc-rest-token.service';
 import { ApirtcRestConferenceService, ConferenceOptionsBuilder } from '../apirtc-rest-conference.service';
 import { ApirtcRestMediasService } from '../apirtc-rest-medias.service';
 import { ApirtcRestEnterprisesService, EnterpriseOptionsBuilder } from '../apirtc-rest-enterprises.service';
+import { ApirtcRestConversationsService } from '../apirtc-rest-conversations.service';
 
 import { ApiRTCListResponse } from '../api-rest.module';
 
@@ -27,12 +28,15 @@ import { ApiRTCListResponse } from '../api-rest.module';
 //   password: '@pi21Zee',
 // }
 
+// const USER_ACCOUNT = {
+//   username: 'kevin.2@apizee.com',
+//   password: '@pi21Zee',
+// }
+
 const USER_ACCOUNT = {
-  username: 'kevin.2@apizee.com',
-  password: '@pi21Zee',
+  username: 'kevin-3@apizee.com',
+  password: '@pi21Zee'
 }
-
-
 
 //a sub enterprise user (inherit=true) :
 // const USER_ACCOUNT = {
@@ -102,20 +106,33 @@ export class ApiRestComponent implements OnInit, AfterViewInit, OnDestroy {
   enterprises: any[] = [];
   enterprisesPageSize = 10;
 
+  isLoadingConversationsResults = false;
+  conversationsColumnsToDisplay = ['id', 'created_at'];
+  conversationsLength: number;
+  conversations: any[] = [];
+  conversationsPageSize = 10;
+
   createEnterpriseResponse: any;
   createEnterpriseError: any;
   deleteEnterpriseResponse: any;
 
+  deleteConversationResponse: any;
+
   quotaResponse: any;
+
+
+  enterpriseId: string;
 
   //@ViewChild(MatPaginator) mediasPaginator: MatPaginator;
   @ViewChild("mediasElt") mediasPaginator: MatPaginator;
   @ViewChild("enterprisesElt") enterprisesPaginator: MatPaginator;
+  @ViewChild("conversationsElt") conversationsPaginator: MatPaginator;
 
   constructor(public apirtcRestTokenService: ApirtcRestTokenService,
     public apirtcRestConferenceService: ApirtcRestConferenceService,
     public apirtcRestMediasService: ApirtcRestMediasService,
     public apirtcRestEnterprisesService: ApirtcRestEnterprisesService,
+    public apirtcRestConversationsService: ApirtcRestConversationsService,
     private fb: FormBuilder) {
   }
 
@@ -133,6 +150,13 @@ export class ApiRestComponent implements OnInit, AfterViewInit, OnDestroy {
           this.doListMedias();
           this.doListEnterprises();
           this.doQuota();
+          this.apirtcRestEnterprisesService.list(this.access_token, 0, 0, 0).subscribe(json => {
+            console.log('ApiRestComponent::ngAfterViewInit|get root enterprise', json);
+            this.enterpriseId = json.data[0].id;
+            this.doListConversations(this.enterpriseId);
+          }, error => {
+            console.error('ApiRestComponent::ngAfterViewInit|listEnterprises', error);
+          });
         },
         error => {
           console.error('ApiRestComponent::ngOnInit|createToken', error);
@@ -159,6 +183,29 @@ export class ApiRestComponent implements OnInit, AfterViewInit, OnDestroy {
     ).subscribe(list => {
       console.log('doListMedias', list);
       this.medias = list
+    });
+  }
+
+  doListConversations(enterpriseId: string) {
+    this.conversationsPaginator.page.pipe(
+      startWith({}),
+      switchMap(() => {
+        this.isLoadingConversationsResults = true;
+        const offset = this.conversationsPaginator.pageIndex * this.conversationsPageSize;
+        return this.apirtcRestEnterprisesService.listConversations(this.access_token, enterpriseId, offset).pipe(catchError(() => of(null)));
+      }),
+      map((response: ApiRTCListResponse) => {
+        // Flip flag to show that loading has finished.
+        this.isLoadingConversationsResults = false;
+        if (response === null) {
+          return [];
+        }
+        this.conversationsLength = response.total;
+        return response.data;
+      })
+    ).subscribe(list => {
+      console.log('doListConversations', list);
+      this.conversations = list;
     });
   }
 
@@ -193,6 +240,14 @@ export class ApiRestComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
+  listConversations(enterpriseId: string) {
+    this.apirtcRestEnterprisesService.listConversations(this.access_token, enterpriseId).subscribe(json => {
+      console.log('ApiRestComponent::listConversations|listConversations', json);
+    }, error => {
+      console.error('ApiRestComponent::listConversations|listConversations', error);
+    });
+  }
+
   ngOnDestroy(): void {
     // cleanup
     this.apirtcRestTokenService.deleteToken(this.access_token).subscribe(json => {
@@ -211,8 +266,6 @@ export class ApiRestComponent implements OnInit, AfterViewInit, OnDestroy {
   get audioMute() {
     return this.confFormGroup.get('audioMute') as FormControl;
   }
-
-
 
   getEmailErrorMessage(fc: FormControl) {
     if (fc.hasError('required')) {
@@ -272,6 +325,27 @@ export class ApiRestComponent implements OnInit, AfterViewInit, OnDestroy {
         console.info('ApiRestComponent::deleteConference|deleteConference', json);
       }, error => {
         console.error('ApiRestComponent::deleteConference|deleteConference', error);
+      });
+  }
+
+  deleteConversation(id: string): void {
+    // TODO : DELETE /conversations not implemented in ApiRTC ?
+    // this.apirtcRestConversationsService.delete(this.access_token, id)
+    //   .subscribe(json => {
+    //     this.deleteConversationResponse = json;
+    //     console.info('ApiRestComponent::deleteConversation|delete', json);
+    //   }, (error: any) => {
+    //     console.error('ApiRestComponent::deleteConversation|delete', error);
+    //   });
+  }
+
+  listMessages(conversationId: string): void {
+    this.apirtcRestConversationsService.listMessages(this.access_token, conversationId)
+      .subscribe(json => {
+        this.deleteConversationResponse = json;
+        console.info('ApiRestComponent::listMessages|listMessages', json);
+      }, (error: any) => {
+        console.error('ApiRestComponent::listMessages|listMessages', error);
       });
   }
 
