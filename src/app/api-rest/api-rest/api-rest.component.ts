@@ -33,8 +33,18 @@ import { ApiRTCListResponse } from '../api-rest.module';
 //   password: '@pi21Zee',
 // }
 
+// const USER_ACCOUNT = {
+//   username: 'kevin-3@apizee.com',
+//   password: '@pi21Zee'
+// }
+
+// const USER_ACCOUNT = {
+//   username: 'kevin_moyse@yahoo.fr',
+//   password: '@pi21Zee'
+// }
+
 const USER_ACCOUNT = {
-  username: 'kevin-3@apizee.com',
+  username: 'kevin.moyse@apizee.com',
   password: '@pi21Zee'
 }
 
@@ -150,6 +160,12 @@ export class ApiRestComponent implements OnInit, AfterViewInit, OnDestroy {
           this.doListMedias();
           this.doListEnterprises();
           this.doQuota();
+
+          //this.doListConversations("3573");
+          //code	2
+          // message	"You do not have permission to scan conversations."
+          // details	""
+
           this.apirtcRestEnterprisesService.list(this.access_token, 0, 0, 0).subscribe(json => {
             console.log('ApiRestComponent::ngAfterViewInit|get root enterprise', json);
             this.enterpriseId = json.data[0].id;

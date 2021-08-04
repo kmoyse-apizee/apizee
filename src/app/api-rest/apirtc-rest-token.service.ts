@@ -7,7 +7,7 @@ import { catchError } from 'rxjs/operators';
 
 import { handleError } from '../misc';
 
-import { APIZEE_CLOUD } from './consts';
+import { APIRTC_CLOUD } from './consts';
 
 @Injectable({
   providedIn: 'root'
@@ -20,7 +20,7 @@ export class ApirtcRestTokenService {
   //private access_token: string;
 
   constructor(private http: HttpClient) {
-    this.apiUrl = `${APIZEE_CLOUD.host}/api`;
+    this.apiUrl = `${APIRTC_CLOUD.host}/api`;
     this.baseUrl = `${this.apiUrl}/token`;
   }
 

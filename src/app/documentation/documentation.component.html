@@ -31,11 +31,16 @@
         </li>
         <li>
             <p><strong>Star topology</strong> infrastructure</p>
-            <p>In a common WebRTC application using basic full mesh topology, each client must encode and send their stream(s) to each remote peer in the network : the CPU load and the required uplink bandwidth increases linearly as the number of peers grows.
-                This topology is unsuitable for applications where larger groups of peers need to be connected at once.
+            <p>In a common WebRTC application using basic full mesh topology, each client must :</p>
+            <ul>
+                <li>encode and send their stream(s) to each remote peer</li>
+                <li>receive and decode every remote peer stream(s)</li>
+            </ul>
+            <p>
+                The CPU load and the required bandwidth increases linearly as the number of peers and streams grows. This topology is unsuitable for applications where larger groups of peers need to be connected at once.
             </p>
             <p><strong>ApiRTC</strong> enables the usage of a <strong>star topology</strong> by providing SFUs (Selective Forwarding Units) that acts as a central server that relays each peers’ streams.</p>
-            <p>MCU (stands for )Multipoint Control Unit) can also be used (TODO: check this ?)</p>
+            <p>MCU (stands for Multipoint Control Unit) can also be used (TODO: check this ?)</p>
             <p>Providing theses infrastructures, <strong>ApiRTC</strong> enables large scale group conversations support.</p>
         </li>
         <li>
@@ -78,7 +83,7 @@
             <br>
             <div class="card">
                 <div class="card-body">
-                    <p>In your angular project run :</p>
+                    <p>In your project run :</p>
                     <p><code>npm install @apizee/apirtc@latest --save</code></p>
                     <p>And in
                         <code>angular.json</code> add script :
@@ -99,6 +104,8 @@
                                         "node_modules/@apizee/apirtc/apiRTC.min.js"
             </code>
                 </pre>
+                    <p>In your code, declare apiRTC variable :</p>
+                    <p><code>declare var apiRTC: any;</code></p>
                 </div>
             </div>
         </mat-tab>
@@ -106,7 +113,21 @@
             <br>
             <div class="card">
                 <div class="card-body">
-                    <p>TODO</p>
+                    <p>In your project run :</p>
+                    <p><code>npm install @apizee/apirtc@latest --save</code></p>
+                    <p>In your code, import ApiRTC entrypoint classes :</p>
+                    <p><code>import {{ '{' }}' UserAgent {{ '}' }}' from "@apizee/apirtc";</code></p>
+                </div>
+            </div>
+        </mat-tab>
+        <mat-tab label="VueJS">
+            <br>
+            <div class="card">
+                <div class="card-body">
+                    <p>In your project run :</p>
+                    <p><code>npm install @apizee/apirtc@latest --save</code></p>
+                    <p>In your code, import ApiRTC entrypoint classes :</p>
+                    <p><code>import  {{ '{' }}' UserAgent  {{ '}' }}' from "@apizee/apirtc";</code></p>
                 </div>
             </div>
         </mat-tab>
@@ -120,6 +141,8 @@
                     </p>
                     <!-- <code>&lt;head&gt;...&lt;/head&gt;</code> tags of <code>index.html</code> -->
                     <p>inside <code>&lt;head&gt;...&lt;/head&gt;</code> tag of <code>.html</code> document.</p>
+                    <p>In your code, declare apiRTC variable :</p>
+                    <p><code>declare var apiRTC: any;</code></p>
                 </div>
             </div>
         </mat-tab>
@@ -268,7 +291,7 @@
     <p>It is then important to listen on <code>'streamRemoved'</code> to undisplay the corresponding <code>Stream</code>.
     </p>
 
-    <p>Handling the remote streamInfo.listEventType === 'removed' is important to get notified that a stream is not published anymore // TODO shal I unsubscribeToStream(streamId) ??
+    <p>Handling the remote <code>streamInfo.listEventType === 'removed'</code> is important to get notified that a stream is not published anymore // TODO shal I unsubscribeToStream(streamId) ??
 
     </p>
 

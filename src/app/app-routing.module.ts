@@ -7,7 +7,7 @@ import { ApiRestComponent } from './api-rest/api-rest.module';
 const routes: Routes = [
   { path: 'doc', component: DocumentationComponent },
   { path: 'apirest', component: ApiRestComponent },
-  { path: '', redirectTo: '/doc', pathMatch: 'full' }
+  { path: '', redirectTo: '/apirest', pathMatch: 'full' }
 ];
 
 @NgModule({

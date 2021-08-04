@@ -7,7 +7,7 @@ import { catchError } from 'rxjs/operators';
 
 import { handleError } from '../misc';
 
-import { APIZEE_CLOUD } from './consts';
+import { APIRTC_CLOUD } from './consts';
 
 import { ApiRTCListResponse } from './api-rest.module';
 
@@ -25,7 +25,7 @@ export class ApirtcRestMediasService {
   baseUrl: string;
 
   constructor(private http: HttpClient) {
-    this.apiUrl = `${APIZEE_CLOUD.host}/api`;
+    this.apiUrl = `${APIRTC_CLOUD.host}/api`;
     this.baseUrl = `${this.apiUrl}/media`;
   }
 

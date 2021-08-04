@@ -6,7 +6,7 @@ import { catchError } from 'rxjs/operators';
 
 import { handleError } from '../misc';
 
-import { APIZEE_CLOUD } from './consts';
+import { APIRTC_CLOUD } from './consts';
 
 import { ApiRTCListResponse } from './api-rest.module';
 
@@ -70,7 +70,7 @@ export class ApirtcRestEnterprisesService {
   baseUrl: string;
 
   constructor(private http: HttpClient) {
-    this.apiUrl = `${APIZEE_CLOUD.host}/api`;
+    this.apiUrl = `${APIRTC_CLOUD.host}/api`;
     this.baseUrl = `${this.apiUrl}/enterprises`;
   }
 
@@ -142,7 +142,7 @@ export class ApirtcRestEnterprisesService {
       'Authorization': `Bearer ${access_token}`
     });
 
-    const url = `${APIZEE_CLOUD.host}/api/quota`;
+    const url = `${APIRTC_CLOUD.host}/api/quota`;
 
     return this.http.get<any>(encodeURI(url), { headers: headers }).pipe(
       catchError(error => {
@@ -160,7 +160,7 @@ export class ApirtcRestEnterprisesService {
 
     //this.baseUrl + '/' + id // Does not work
     //this.baseUrl + '?enterpriseId=' + id => Does not work either
-    const url = `${APIZEE_CLOUD.host}/api/deleteEnterprise?enterpriseId=${id}`; // working
+    const url = `${APIRTC_CLOUD.host}/api/deleteEnterprise?enterpriseId=${id}`; // working
     // TODO : make this API corrected !!
 
     return this.http.delete(encodeURI(url), { headers: headers }).pipe(

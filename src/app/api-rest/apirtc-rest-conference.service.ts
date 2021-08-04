@@ -6,7 +6,7 @@ import { catchError } from 'rxjs/operators';
 
 import { handleError } from '../misc';
 
-import { APIZEE_CLOUD } from './consts';
+import { APIRTC_CLOUD } from './consts';
 
 export class ConferenceOptions {
 
@@ -94,7 +94,7 @@ export class ApirtcRestConferenceService {
   baseUrl: string;
 
   constructor(private http: HttpClient) {
-    this.apiUrl = `${APIZEE_CLOUD.host}/api`;
+    this.apiUrl = `${APIRTC_CLOUD.host}/api`;
     this.baseUrl = `${this.apiUrl}/conferences`;
   }
 
