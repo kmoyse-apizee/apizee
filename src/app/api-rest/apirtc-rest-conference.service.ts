@@ -26,7 +26,8 @@ export class ConferenceOptions {
     public reminderMinutes: number,
     public language: string,
     public invite: boolean,
-    public moderator: string) {
+    public moderator: string,
+    public scope: string) {
   }
 }
 
@@ -49,6 +50,7 @@ export class ConferenceOptionsBuilder {
   private language: string = 'fr';
   private invite: boolean = true;
   private moderator: string;
+  private scope: string;
 
   constructor(private participants: Array<string>) {
   }
@@ -73,6 +75,11 @@ export class ConferenceOptionsBuilder {
     return this;
   }
 
+  public withScope(scope: string): ConferenceOptionsBuilder {
+    this.scope = scope;
+    return this;
+  }
+
   // TODO
   // write all methods
 
@@ -81,7 +88,7 @@ export class ConferenceOptionsBuilder {
       this.message, this.visibility, this.password,
       this.audioMute, this.videoMute, this.soundWaitingRoom, this.denyGuest,
       this.moderation, this.startTime, this.open, this.durationMinutes,
-      this.reminderMinutes, this.language, this.invite, this.moderator)
+      this.reminderMinutes, this.language, this.invite, this.moderator, this.scope)
   }
 
 }
@@ -134,6 +141,8 @@ export class ApirtcRestConferenceService {
         `&language=` + options.language +
         `&invite=` + (options.invite ? "true" : "false") +
         (options.moderator ? `&moderator=${options.moderator}` : '')
+        +
+        (options.scope ? `&scope=${options.scope}` : '')
       ), {}, { headers: headers })
       .pipe(
         catchError(error => {
@@ -142,6 +151,20 @@ export class ApirtcRestConferenceService {
         })
       );
 
+  }
+
+  public getConference(access_token: string, conferenceId: string, scope?: string) {
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json;charset=UTF-8',
+      'Authorization': `Bearer ${access_token}`
+    });
+    return this.http.get(encodeURI(this.baseUrl + '/' + conferenceId +
+      (scope ? `?scope=${scope}` : '')), { headers: headers }).pipe(
+        catchError(error => {
+          // rethrow to let client handle it
+          return throwError(handleError(error));
+        })
+      );
   }
 
   public listConferences(access_token: string) {

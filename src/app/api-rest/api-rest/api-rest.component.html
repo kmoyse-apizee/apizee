@@ -184,12 +184,16 @@
                         <td>{{conf.created}}</td>
                         <td>{{conf.created_by.name}}</td>
                         <td><a href="{{conf.url}}" target="_blank" rel="noopener">Open</a></td>
-                        <td><button type="button" class="btn btn-danger" (click)="deleteConference(conf.id)">Del</button></td>
+                        <td><button type="button" class="btn btn-danger" (click)="deleteConference(conf.id)">Del</button>
+                            <button type="button" class="btn btn-primary" (click)="getConference(conf.id)">Get(sso)</button>
+                        </td>
                     </tr>
                 </tbody>
             </table>
         </div>
         <p>{{deleteConferenceResponse | json}}</p>
+        <p>{{getConferenceResponse | json}}</p>
+        <p *ngIf="getConferenceError" class="alert alert-danger" role="alert">{{getConferenceError | json}}</p>
     </div>
 
     <hr>

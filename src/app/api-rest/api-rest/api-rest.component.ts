@@ -80,6 +80,9 @@ export class ApiRestComponent implements OnInit, AfterViewInit, OnDestroy {
   createConferenceResponse: any;
   createConferenceError: any;
 
+  getConferenceResponse: any;
+  getConferenceError: any;
+
   listConferencesResponse: any;
   listConferencesError: any;
 
@@ -312,7 +315,7 @@ export class ApiRestComponent implements OnInit, AfterViewInit, OnDestroy {
     this.apirtcRestConferenceService.createConference(this.access_token,
       new ConferenceOptionsBuilder(this.participants.controls.map(fc => fc.value))
         .withPassword(this.password.value)
-        .muteAudio(this.audioMute.value)
+        .muteAudio(this.audioMute.value).withScope("sso")
         .build())
       .subscribe(json => {
         this.createConferenceResponse = json;
@@ -320,6 +323,18 @@ export class ApiRestComponent implements OnInit, AfterViewInit, OnDestroy {
       }, error => {
         console.error('ApiRestComponent::onSubmit|createConference', error);
         this.createConferenceError = error;
+      });
+  }
+
+
+  getConference(conferenceId: string): void {
+    this.apirtcRestConferenceService.getConference(this.access_token, conferenceId, "sso")
+      .subscribe(json => {
+        this.getConferenceResponse = json;
+        console.info('getConference', json);
+      }, error => {
+        console.error('getConference', error);
+        this.getConferenceError = error;
       });
   }
 
