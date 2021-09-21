@@ -11,10 +11,10 @@ import { APIRTC_CLOUD } from './consts';
 export class ConferenceOptions {
 
   constructor(public participants: Array<string>,
-    public name: string,
-    public message: string,
+    public name: string | undefined,
+    public message: string | undefined,
     public visibility: string,
-    public password: number,
+    public password: number | undefined,
     public audioMute: boolean,
     public videoMute: boolean,
     public soundWaitingRoom: boolean,
@@ -34,10 +34,10 @@ export class ConferenceOptions {
 
 export class ConferenceOptionsBuilder {
   //private participants:string;
-  private name: string = 'Test conf';
-  private message: string = 'join me';
+  private name: string | undefined;
+  private message: string | undefined;
   private visibility: string = 'private';
-  private password: number;
+  private password: number | undefined;
   private audioMute: boolean = true;
   private videoMute: boolean = false;
   private soundWaitingRoom: boolean = false;
@@ -65,7 +65,7 @@ export class ConferenceOptionsBuilder {
     return this;
   }
 
-  public withPassword(password: number): ConferenceOptionsBuilder {
+  public withPassword(password: number | undefined): ConferenceOptionsBuilder {
     this.password = password;
     return this;
   }
@@ -115,9 +115,9 @@ export class ApirtcRestConferenceService {
     return this.http
       .post(encodeURI(this.baseUrl + '?' +
         `participants=` + options.participants.join(',') +
-        `&name=` + options.name +
-        `&message=` + options.message +
-        `&visibility=` + options.visibility +
+        (options.name ? `&name=` + options.name : '') +
+        (options.message ? `&message=` + options.message : '') +
+        //`&visibility=` + options.visibility +
         // # TODO: initially I put 'passwd21Test' but the conference product provide only a digits pad
         // # invitation were made but I could not enter the password..
         // # => Anthony shall file a BUG regarding this

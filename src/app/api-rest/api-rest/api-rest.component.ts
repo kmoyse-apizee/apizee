@@ -11,9 +11,9 @@ import { ApirtcRestConferenceService, ConferenceOptionsBuilder } from '../apirtc
 import { ApirtcRestMediasService } from '../apirtc-rest-medias.service';
 import { ApirtcRestEnterprisesService, EnterpriseOptionsBuilder } from '../apirtc-rest-enterprises.service';
 import { ApirtcRestConversationsService } from '../apirtc-rest-conversations.service';
+import { ApirtcRestUsersService } from '../apirtc-rest-users.service';
 
 import { ApiRTCListResponse } from '../api-rest.module';
-
 
 // const USER_ACCOUNT = {
 //   //userId: 7613,
@@ -43,9 +43,24 @@ import { ApiRTCListResponse } from '../api-rest.module';
 //   password: '@pi21Zee'
 // }
 
+// const USER_ACCOUNT = {
+//   username: 'kevin.moyse@apizee.com',
+//   password: '@pi21Zee'
+// }
+
+// const USER_ACCOUNT = {
+//   username: 'kmoyse',
+//   password: '@pi21Zee'
+// }
+
+// const USER_ACCOUNT = {
+//   username: 'client.targetfirst.com',
+//   password: 'Apizee22'
+// }
+
 const USER_ACCOUNT = {
-  username: 'kevin.moyse@apizee.com',
-  password: '@pi21Zee'
+  username: 'api@client.targetfirst.com',
+  password: 'oLXtEVAmXrDKQsFc1fDnvM7V'
 }
 
 //a sub enterprise user (inherit=true) :
@@ -69,9 +84,10 @@ export class ApiRestComponent implements OnInit, AfterViewInit, OnDestroy {
 
   confFormGroup = this.fb.group({
     participants: this.fb.array([
-      this.fb.control('', [Validators.required, Validators.email])
+      //this.fb.control('', [Validators.required, Validators.email])
     ]),
-    password: this.fb.control(1234, [Validators.required]),
+    name: this.fb.control(undefined),
+    password: this.fb.control(undefined),
     audioMute: this.fb.control(false)
   });
 
@@ -88,6 +104,9 @@ export class ApiRestComponent implements OnInit, AfterViewInit, OnDestroy {
 
   deleteConferenceResponse: any;
 
+  listConversationsResponse: any;
+  listConversationsError: any;
+
   isLoadingMediasResults = false;
   mediasColumnsToDisplay = ['id', 'created', 'url'];
   mediasLength: number;
@@ -96,13 +115,16 @@ export class ApiRestComponent implements OnInit, AfterViewInit, OnDestroy {
 
   deleteMediaResponse: any;
 
+
+
+  // Enterprises
+
   enterpriseformGroup = this.fb.group({
     email: this.fb.control('', [Validators.required, Validators.email]),
     password: this.fb.control(null, [Validators.required]),
     name: this.fb.control(null)
   });
 
-  // Enterprises
   get eemail() {
     return this.enterpriseformGroup.get('email') as FormControl;
   }
@@ -118,6 +140,34 @@ export class ApiRestComponent implements OnInit, AfterViewInit, OnDestroy {
   enterprisesLength: number;
   enterprises: any[] = [];
   enterprisesPageSize = 10;
+
+  // Users
+
+  userformGroup = this.fb.group({
+    username: this.fb.control(null, [Validators.required]),
+    password: this.fb.control(null, [Validators.required]),
+    email: this.fb.control('', [Validators.required, Validators.email])
+  });
+
+  get uusername() {
+    return this.userformGroup.get('username') as FormControl;
+  }
+  get upassword() {
+    return this.userformGroup.get('password') as FormControl;
+  }
+  get uemail() {
+    return this.userformGroup.get('email') as FormControl;
+  }
+
+  createUserResponse: any;
+  createUserError: any;
+  deleteUserResponse: any;
+
+  isLoadingUsersResults = false;
+  usersColumnsToDisplay = ['id', 'created', 'first_name', 'last_name', 'email'];
+  usersLength: number;
+  users: any[] = [];
+  usersPageSize = 10;
 
   isLoadingConversationsResults = false;
   conversationsColumnsToDisplay = ['id', 'created_at'];
@@ -139,6 +189,7 @@ export class ApiRestComponent implements OnInit, AfterViewInit, OnDestroy {
   //@ViewChild(MatPaginator) mediasPaginator: MatPaginator;
   @ViewChild("mediasElt") mediasPaginator: MatPaginator;
   @ViewChild("enterprisesElt") enterprisesPaginator: MatPaginator;
+  @ViewChild("usersElt") usersPaginator: MatPaginator;
   @ViewChild("conversationsElt") conversationsPaginator: MatPaginator;
 
   constructor(public apirtcRestTokenService: ApirtcRestTokenService,
@@ -146,6 +197,7 @@ export class ApiRestComponent implements OnInit, AfterViewInit, OnDestroy {
     public apirtcRestMediasService: ApirtcRestMediasService,
     public apirtcRestEnterprisesService: ApirtcRestEnterprisesService,
     public apirtcRestConversationsService: ApirtcRestConversationsService,
+    public apirtcRestUsersService: ApirtcRestUsersService,
     private fb: FormBuilder) {
   }
 
@@ -162,6 +214,7 @@ export class ApiRestComponent implements OnInit, AfterViewInit, OnDestroy {
           this.listConferences();
           this.doListMedias();
           this.doListEnterprises();
+          this.doListUsers();
           this.doQuota();
 
           //this.doListConversations("3573");
@@ -251,6 +304,29 @@ export class ApiRestComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
+  doListUsers() {
+    this.usersPaginator.page.pipe(
+      startWith({}),
+      switchMap(() => {
+        this.isLoadingUsersResults = true;
+        const offset = this.usersPaginator.pageIndex * this.usersPageSize;
+        return this.apirtcRestUsersService.list(this.access_token, offset).pipe(catchError(() => of(null)));
+      }),
+      map((response: ApiRTCListResponse) => {
+        // Flip flag to show that loading has finished.
+        this.isLoadingUsersResults = false;
+        if (response === null) {
+          return [];
+        }
+        this.usersLength = response.total;
+        return response.data;
+      })
+    ).subscribe(list => {
+      console.log('doListUsers', list);
+      this.users = list;
+    });
+  }
+
   doQuota() {
     this.apirtcRestEnterprisesService.quota(this.access_token).subscribe(json => {
       this.quotaResponse = json;
@@ -279,12 +355,16 @@ export class ApiRestComponent implements OnInit, AfterViewInit, OnDestroy {
   get participants() {
     return this.confFormGroup.get('participants') as FormArray;
   }
+  get conf_name_fc() {
+    return this.confFormGroup.get('name') as FormControl;
+  }
   get password() {
     return this.confFormGroup.get('password') as FormControl;
   }
   get audioMute() {
     return this.confFormGroup.get('audioMute') as FormControl;
   }
+
 
   getEmailErrorMessage(fc: FormControl) {
     if (fc.hasError('required')) {
@@ -312,8 +392,11 @@ export class ApiRestComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   createConference(): void {
+    this.createConferenceResponse = null;
+    this.createConferenceError = null;
     this.apirtcRestConferenceService.createConference(this.access_token,
       new ConferenceOptionsBuilder(this.participants.controls.map(fc => fc.value))
+        .named(this.conf_name_fc.value)
         .withPassword(this.password.value)
         .muteAudio(this.audioMute.value).withScope("sso")
         .build())
@@ -328,6 +411,8 @@ export class ApiRestComponent implements OnInit, AfterViewInit, OnDestroy {
 
 
   getConference(conferenceId: string): void {
+    this.getConferenceResponse = null;
+    this.getConferenceError = null;
     this.apirtcRestConferenceService.getConference(this.access_token, conferenceId, "sso")
       .subscribe(json => {
         this.getConferenceResponse = json;
@@ -339,6 +424,8 @@ export class ApiRestComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   listConferences(): void {
+    this.listConferencesResponse = null;
+    this.listConferencesError = null;
     this.apirtcRestConferenceService.listConferences(this.access_token)
       .subscribe(json => {
         this.listConferencesResponse = json;
@@ -350,6 +437,7 @@ export class ApiRestComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   deleteConference(id: string): void {
+    this.deleteConferenceResponse = null;
     this.apirtcRestConferenceService.deleteConference(this.access_token, id)
       .subscribe(json => {
         this.deleteConferenceResponse = json;
@@ -371,11 +459,14 @@ export class ApiRestComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   listMessages(conversationId: string): void {
+    this.listConversationsResponse = null;
+    this.listConversationsError = null;
     this.apirtcRestConversationsService.listMessages(this.access_token, conversationId)
       .subscribe(json => {
-        this.deleteConversationResponse = json;
+        this.listConversationsResponse = json;
         console.info('ApiRestComponent::listMessages|listMessages', json);
       }, (error: any) => {
+        this.listConversationsError = error;
         console.error('ApiRestComponent::listMessages|listMessages', error);
       });
   }
@@ -424,6 +515,19 @@ export class ApiRestComponent implements OnInit, AfterViewInit, OnDestroy {
         console.info('ApiRestComponent::deleteEnterprise|delete', json);
       }, error => {
         console.error('ApiRestComponent::deleteEnterprise|delete', error);
+      });
+  }
+
+  createUser(): void {
+    this.createUserResponse = null;
+    this.createUserError = null;
+    this.apirtcRestUsersService.create(this.access_token, this.uusername.value, this.upassword.value, this.uemail.value)
+      .subscribe(json => {
+        this.createUserResponse = json;
+        console.info('ApiRestComponent::createUser|create', json);
+      }, error => {
+        console.error('ApiRestComponent::createUser|create', error);
+        this.createUserError = error;
       });
   }
 
